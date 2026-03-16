@@ -1,6 +1,6 @@
 import uuid
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -8,7 +8,9 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models import Base, TimestampMixin
-#from src.models.lookups import ExperienceLevel
+
+if TYPE_CHECKING:
+    from src.models.lookups import ExperienceLevel
 
 
 class User(Base, TimestampMixin):
@@ -39,7 +41,7 @@ class UserProfile(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id"))
     skilss: Mapped[Dict] = mapped_column(JSONB)
-    raw_cv: Mapped[str] = mapped_column(Text, nullable=True)
+    raw_cv: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="user_profile")
