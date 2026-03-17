@@ -1,0 +1,231 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">
+      <div class="logo-icon"></div>
+      <span>CV<span class="logo-accent">_ANALIZER</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Jak to działa</a>
+      <a href="#about">O nas</a>
+    </div>
+    <div class="nav-auth">
+      <button class="btn-text">Masz już konto?</button>
+      <button class="btn-primary">Zaloguj się</button>
+    </div>
+  </div>
+</nav>
+
+<div class="background-glow">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+</div>
+
+<div class="home-container">
+  
+  <section class="hero-section animate-up">
+    <span class="badge">Skaner Kompetencji</span>
+      <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
+      <p>Przestań tracić czas na przeglądanie setek ofert. <strong>CV_ANALIZER</strong> przeanalizuje Twoje CV i wybierze tylko te ogłoszenia, które realnie pasują do Twoich umiejętności i oczekiwań.</p>
+  </section>
+
+  <main class="main-card animate-up delay-1">
+    
+    <div class="upload-area" *ngIf="!scanComplete">
+      
+      <ng-container *ngIf="!isScanning">
+        <input type="file" #fileInput id="cvUpload" hidden accept=".pdf" (change)="onFileSelected($event)">
+        <button type="button" class="dropzone" [class.dragging]="isDragging" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="fileInput.click()">
+          <div class="dropzone-inner">
+            <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span>Wgraj CV (PDF) - AI automatycznie uzupełni dane</span>
+          </div>
+        </button>
+      </ng-container>
+
+      <div class="scanner-container" *ngIf="isScanning">
+        <div class="radar-box">
+          <div class="radar-sweep"></div>
+          <svg viewBox="0 0 24 24" width="40" height="40" stroke="#6366f1" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <h3 class="scanning-text">{{ scanStatus }}</h3>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="scanProgress"></div>
+        </div>
+        <p class="progress-percent">{{ scanProgress }}%</p>
+      </div>
+    </div>
+
+    <div class="scan-success-banner" *ngIf="scanComplete">
+      <div class="success-icon">✓</div>
+      <div class="success-info">
+        <strong>CV przeanalizowane: {{ selectedFile?.name }}</strong>
+        <span>Formularz został automatycznie wypełniony. Przejrzyj i popraw dane.</span>
+      </div>
+      <button type="button" class="remove-link" (click)="removeFile($event)">Usuń CV</button>
+    </div>
+
+    <div class="divider"><span>DANE KANDYDATA</span></div>
+
+    <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
+      
+      <h3 class="form-section-title">1. Doświadczenie i Rola</h3>
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="itArea">Główna rola (np. Java Developer) *</label>
+          <input type="text" id="itArea" formControlName="itArea" placeholder="Wpisz stanowisko">
+        </div>
+        <div class="input-group">
+          <label for="exp">Lata doświadczenia w IT *</label>
+          <input type="number" id="exp" formControlName="experienceYears">
+        </div>
+      </div>
+
+      <h3 class="form-section-title">2. Finanse i Kontrakt</h3>
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="salaryFrom">Widełki płacowe (Od - PLN)</label>
+          <input id="salaryFrom" type="number" formControlName="salaryFrom" placeholder="Minimalnie">
+        </div>
+        <div class="input-group">
+          <label for="salaryTo">Widełki płacowe (Do - PLN)</label>
+          <input id="salaryTo" type="number" formControlName="salaryTo" placeholder="Maksymalnie">
+        </div>
+        <div class="input-group">
+          <label for="contract">Rodzaj kontraktu</label>
+          <select id="contract" formControlName="contractType">
+            <option value="uop">Umowa o Pracę</option>
+            <option value="b2b">B2B (Faktura)</option>
+            <option value="uz">Zlecenie / Dzieło</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="notice">Okres wypowiedzenia</label>
+          <select id="notice" formControlName="noticePeriod">
+            <option value="immediate">Dostępny od zaraz</option>
+            <option value="2_weeks">2 tygodnie</option>
+            <option value="1_month">1 miesiąc</option>
+            <option value="3_months">3 miesiące</option>
+          </select>
+        </div>
+      </div>
+      
+ <h3 class="form-section-title">Źródła ofert</h3>
+      <div class="form-grid">
+        <div class="input-group full-width">
+          <fieldset formGroupName="jobSites" class="site-fieldset" aria-labelledby="jobSitesLegend">
+            <legend id="jobSitesLegend" class="sr-only">Skąd pobierać oferty</legend>
+            <div class="site-cards-grid">
+              
+              <label class="site-card" for="job_pracuj">
+                <input id="job_pracuj" type="checkbox" formControlName="pracuj">
+                <div class="site-card-content">
+                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Pracuj.pl</span>
+                </div>
+              </label>
+
+              <label class="site-card" for="job_olx">
+                <input id="job_olx" type="checkbox" formControlName="olx">
+                <div class="site-card-content">
+                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>OLX Praca</span>
+                </div>
+              </label>
+
+              <label class="site-card" for="job_linkedin">
+                <input id="job_linkedin" type="checkbox" formControlName="linkedin">
+                <div class="site-card-content">
+                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>LinkedIn</span>
+                </div>
+              </label>
+
+              <label class="site-card" for="job_nofluff">
+                <input id="job_nofluff" type="checkbox" formControlName="nofluff">
+                <div class="site-card-content">
+                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>NoFluffJobs</span>
+                </div>
+              </label>
+
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <h3 class="form-section-title">4. Umiejętności</h3>
+      <div class="form-grid">
+        <div class="input-group full-width">
+          <label for="tech">Główny stos technologiczny (oddziel przecinkiem) *</label>
+          <input type="text" id="tech" formControlName="technologies" placeholder="np. Python, Django, PostgreSQL, Kubernetes">
+        </div>
+        <div class="input-group full-width">
+          <label for="english">Poziom znajomości j. angielskiego</label>
+          <select id="english" formControlName="englishLevel">
+            <option value="A1">A1 (Początkujący)</option>
+            <option value="A2">A2 (Podstawowy)</option>
+            <option value="B1">B1 (Średniozaawansowany)</option>
+            <option value="B2">B2 (Wyżej średni)</option>
+            <option value="C1">C1 (Zaawansowany)</option>
+            <option value="C2">C2 (Biegły / Native)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="student-box">
+        <label class="checkbox-container">
+          <input type="checkbox" formControlName="isStudent">
+          Posiadam status studenta
+        </label>
+        <div *ngIf="candidateForm.get('isStudent')?.value" class="student-input">
+          <input type="number" formControlName="studyYear" placeholder="Rok studiów (1-5)">
+        </div>
+      </div>
+
+      <h3 class="form-section-title ai-section-title">✨ 5. Inteligentne Dopasowanie</h3>
+      <div class="form-grid">
+        <div class="input-group full-width slider-group">
+          <div class="slider-header">
+            <label>Wymagana precyzja ofert:</label>
+            <span class="precision-badge" [ngClass]="{'strict': candidateForm.get('matchPrecision')?.value === 100, 'loose': candidateForm.get('matchPrecision')?.value === 50}">
+              {{ candidateForm.get('matchPrecision')?.value }}% Zgodności
+            </span>
+          </div>
+          <input type="range" formControlName="matchPrecision" min="50" max="100" step="25" class="ai-slider">
+          <div class="slider-labels">
+            <span>50%<br><small>Eksploracja (okazje do nauki)</small></span>
+            <span>75%<br><small>Zalecane (dopuszcza małe braki)</small></span>
+            <span>100%<br><small>Tylko idealne (bez kompromisów)</small></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button type="submit" class="submit-button">
+          Szukaj dopasowanych ofert
+        </button>
+        <button type="button" class="secondary-button" (click)="submitAndSignup()" aria-label="Rozpocznij analizę i załóż konto">
+          Zapisz profil i załóż konto
+        </button>
+      </div>
+    </form>
+  </main>
+  
+  <section id="features" class="features-grid">
+    <div class="feature-card animate-up delay-2">
+      <div class="icon-box">🔍</div>
+      <h3>Smart Scraper</h3>
+      <p>Przeszukujemy ponad 50 portali z ofertami pracy co godzinę, abyś Ty nie musiał.</p>
+    </div>
+    <div class="feature-card animate-up delay-3">
+      <div class="icon-box">🧠</div>
+      <h3>AI Analysis</h3>
+      <p>Nasz model rozumie kontekst Twojego doświadczenia, a nie tylko słowa kluczowe z CV.</p>
+    </div>
+    <div class="feature-card animate-up delay-4">
+      <div class="icon-box">🎯</div>
+      <h3>Perfect Match</h3>
+      <p>Otrzymujesz tylko te oferty, które realnie Cię zainteresują i w których masz szanse.</p>
+    </div>
+  </section>
+</div>
