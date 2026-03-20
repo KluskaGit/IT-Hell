@@ -7,7 +7,7 @@ import { HomeComponent } from '../features/home/home.component';
   standalone: true,
   imports: [RouterOutlet, HomeComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css']
 })
 export class App { 
   title = 'cv-analizer';

@@ -50,6 +50,15 @@ export class HomeComponent implements OnInit {
   scanStatus = '';
   scanComplete = false;
 
+  // Suwak płacowy
+  minSalaryAllowed = 0;
+  maxSalaryAllowed = 50000;
+  salaryStep = 500;
+
+  // Flagi zwijania sekcji
+  showAllSpecs = false;
+  showAllTech = false;
+
   constructor(private readonly fb: FormBuilder, private readonly router: Router) {}
 
   ngOnInit(): void {
@@ -59,23 +68,55 @@ export class HomeComponent implements OnInit {
 
   private initForm(): void {
     this.candidateForm = this.fb.group({
-      itArea: ['', Validators.required],
-      experienceYears: [0, [Validators.required, Validators.min(0)]],
-      salaryFrom: [null, [Validators.min(0)]],
-      salaryTo: [null, [Validators.min(0)]],
-      contractType: ['uop'],
-      location: ['', Validators.required],
-      maxDistance: [0],
-      workType: ['remote'],
-      technologies: ['', Validators.required],
+      itArea: ['Backend', Validators.required],
+      seniority: ['Junior', Validators.required],
+      
+      technologies: this.fb.group({
+        javascript: [false], html: [false], sql: [false], python: [false], java: [false],
+        csharp: [false], php: [false], cpp: [false], typescript: [false], go: [false],
+        c: [false], dotnet: [false], react: [false], angular: [false], android: [false],
+        aws: [false], ios: [false], rust: [false], r: [false], nodejs: [false],
+        ruby: [false], hibernate: [false]
+      }),
       englishLevel: ['B2'],
-      jobSites: this.fb.group({ pracuj: [true], olx: [true], linkedin: [true], nofluff: [false] }),
-      noticePeriod: ['1_month'],
-      availability: ['full_time'],
       isStudent: [false],
       studyYear: [{ value: null, disabled: true }],
+
+      salaryFrom: [22000, [Validators.min(this.minSalaryAllowed), Validators.max(this.maxSalaryAllowed)]],
+      salaryTo: [35000, [Validators.min(this.minSalaryAllowed), Validators.max(this.maxSalaryAllowed)]],
+      contractType: ['uop'],
+      noticePeriod: ['1_month'],
+      
+      jobSites: this.fb.group({ pracuj: [true], olx: [true], linkedin: [true], nofluff: [false] }),
       matchPrecision: [75] 
     });
+  }
+
+  // --- LOGIKA SUWAKA PŁACOWEGO ---
+  checkSalaryRange(type: 'from' | 'to'): void {
+    const fromCtrl = this.candidateForm.get('salaryFrom');
+    const toCtrl = this.candidateForm.get('salaryTo');
+    if (!fromCtrl || !toCtrl) return;
+
+    let from = Number(fromCtrl.value) || this.minSalaryAllowed;
+    let to = Number(toCtrl.value) || this.maxSalaryAllowed;
+    const gap = 1000;
+
+    if (type === 'from' && from >= to) toCtrl.setValue(from + gap, { emitEvent: false });
+    else if (type === 'to' && to <= from) fromCtrl.setValue(to - gap, { emitEvent: false });
+  }
+
+  getSalaryProgessPercent(): number {
+    const from = Number(this.candidateForm.get('salaryFrom')?.value) || this.minSalaryAllowed;
+    const to = Number(this.candidateForm.get('salaryTo')?.value) || this.maxSalaryAllowed;
+    const range = this.maxSalaryAllowed - this.minSalaryAllowed;
+    return Math.max(0, Math.min(100, ((to - from) / range) * 100));
+  }
+
+  getSalaryProgessLeft(): number {
+    const from = Number(this.candidateForm.get('salaryFrom')?.value) || this.minSalaryAllowed;
+    const range = this.maxSalaryAllowed - this.minSalaryAllowed;
+    return Math.max(0, Math.min(100, ((from - this.minSalaryAllowed) / range) * 100));
   }
 
   // --- LOGIKA SKANERA AI ---
@@ -109,13 +150,12 @@ export class HomeComponent implements OnInit {
 
   private autoFillForm() {
     this.candidateForm.patchValue({
-      itArea: 'Senior Backend Developer',
-      experienceYears: 5,
-      technologies: 'Java 17, Spring Boot, Microservices, Docker, AWS',
+      itArea: 'Backend',
+      seniority: 'Mid / Regular',
+      technologies: { java: true, sql: true, aws: true, hibernate: true },
       englishLevel: 'C1',
       salaryFrom: 18000,
       salaryTo: 25000,
-      location: 'Zdalnie',
       matchPrecision: 75
     });
   }
@@ -124,7 +164,7 @@ export class HomeComponent implements OnInit {
     e.stopPropagation();
     this.selectedFile = null;
     this.scanComplete = false;
-    this.candidateForm.reset({ matchPrecision: 75, workType: 'remote', contractType: 'uop', englishLevel: 'B2', jobSites: { pracuj: true, olx: true, linkedin: true } });
+    this.candidateForm.reset({ matchPrecision: 75, contractType: 'uop', englishLevel: 'B2', jobSites: { pracuj: true, olx: true, linkedin: true }, salaryFrom: 22000, salaryTo: 35000 });
   }
 
   submitAndSignup(): void {

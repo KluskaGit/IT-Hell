@@ -31,7 +31,6 @@
   <main class="main-card animate-up delay-1">
     
     <div class="upload-area" *ngIf="!scanComplete">
-      
       <ng-container *ngIf="!isScanning">
         <input type="file" #fileInput id="cvUpload" hidden accept=".pdf" (change)="onFileSelected($event)">
         <button type="button" class="dropzone" [class.dragging]="isDragging" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="fileInput.click()">
@@ -69,96 +68,92 @@
     <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
       
       <h3 class="form-section-title">1. Doświadczenie i Rola</h3>
-      <div class="form-grid">
-        <div class="input-group">
-          <label for="itArea">Główna rola (np. Java Developer) *</label>
-          <input type="text" id="itArea" formControlName="itArea" placeholder="Wpisz stanowisko">
-        </div>
-        <div class="input-group">
-          <label for="exp">Lata doświadczenia w IT *</label>
-          <input type="number" id="exp" formControlName="experienceYears">
-        </div>
-      </div>
-
-      <h3 class="form-section-title">2. Finanse i Kontrakt</h3>
-      <div class="form-grid">
-        <div class="input-group">
-          <label for="salaryFrom">Widełki płacowe (Od - PLN)</label>
-          <input id="salaryFrom" type="number" formControlName="salaryFrom" placeholder="Minimalnie">
-        </div>
-        <div class="input-group">
-          <label for="salaryTo">Widełki płacowe (Do - PLN)</label>
-          <input id="salaryTo" type="number" formControlName="salaryTo" placeholder="Maksymalnie">
-        </div>
-        <div class="input-group">
-          <label for="contract">Rodzaj kontraktu</label>
-          <select id="contract" formControlName="contractType">
-            <option value="uop">Umowa o Pracę</option>
-            <option value="b2b">B2B (Faktura)</option>
-            <option value="uz">Zlecenie / Dzieło</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label for="notice">Okres wypowiedzenia</label>
-          <select id="notice" formControlName="noticePeriod">
-            <option value="immediate">Dostępny od zaraz</option>
-            <option value="2_weeks">2 tygodnie</option>
-            <option value="1_month">1 miesiąc</option>
-            <option value="3_months">3 miesiące</option>
-          </select>
-        </div>
-      </div>
       
- <h3 class="form-section-title">Źródła ofert</h3>
-      <div class="form-grid">
-        <div class="input-group full-width">
-          <fieldset formGroupName="jobSites" class="site-fieldset" aria-labelledby="jobSitesLegend">
-            <legend id="jobSitesLegend" class="sr-only">Skąd pobierać oferty</legend>
-            <div class="site-cards-grid">
-              
-              <label class="site-card" for="job_pracuj">
-                <input id="job_pracuj" type="checkbox" formControlName="pracuj">
-                <div class="site-card-content">
-                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>Pracuj.pl</span>
-                </div>
-              </label>
-
-              <label class="site-card" for="job_olx">
-                <input id="job_olx" type="checkbox" formControlName="olx">
-                <div class="site-card-content">
-                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>OLX Praca</span>
-                </div>
-              </label>
-
-              <label class="site-card" for="job_linkedin">
-                <input id="job_linkedin" type="checkbox" formControlName="linkedin">
-                <div class="site-card-content">
-                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>LinkedIn</span>
-                </div>
-              </label>
-
-              <label class="site-card" for="job_nofluff">
-                <input id="job_nofluff" type="checkbox" formControlName="nofluff">
-                <div class="site-card-content">
-                  <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>NoFluffJobs</span>
-                </div>
-              </label>
-
-            </div>
-          </fieldset>
+      <div class="input-group full-width" style="margin-bottom: 1.5rem;">
+        <label>Główna rola (np. Java Developer) *</label>
+        <div class="pills-container">
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Backend"><div class="pill-content">Backend</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Frontend"><div class="pill-content">Frontend</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Full-stack"><div class="pill-content">Full-stack</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Mobile"><div class="pill-content">Mobile</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Architecture"><div class="pill-content">Architecture</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="DevOps"><div class="pill-content">DevOps</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Game dev"><div class="pill-content">Game dev</div></label>
+          <label class="pill-card"><input type="radio" formControlName="itArea" value="Data analytics & BI"><div class="pill-content">Data analytics & BI</div></label>
+  
+          <ng-container *ngIf="showAllSpecs">
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Big Data / Data Science"><div class="pill-content">Big Data / Data Science</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Embedded"><div class="pill-content">Embedded</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="QA/Testing"><div class="pill-content">QA/Testing</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Security"><div class="pill-content">Security</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Helpdesk"><div class="pill-content">Helpdesk</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Product Management"><div class="pill-content">Product Management</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Project Management"><div class="pill-content">Project Management</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Agile"><div class="pill-content">Agile</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="UX/UI"><div class="pill-content">UX/UI</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="Business analytics"><div class="pill-content">Business analytics</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="System analytics"><div class="pill-content">System analytics</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="SAP&ERP"><div class="pill-content">SAP&ERP</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="IT admin"><div class="pill-content">IT admin</div></label>
+            <label class="pill-card"><input type="radio" formControlName="itArea" value="AI/ML"><div class="pill-content">AI/ML</div></label>
+          </ng-container>
+  
+          <button type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
+            {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+          </button>
         </div>
       </div>
 
-      <h3 class="form-section-title">4. Umiejętności</h3>
-      <div class="form-grid">
-        <div class="input-group full-width">
-          <label for="tech">Główny stos technologiczny (oddziel przecinkiem) *</label>
-          <input type="text" id="tech" formControlName="technologies" placeholder="np. Python, Django, PostgreSQL, Kubernetes">
+      <div class="input-group full-width" style="margin-bottom: 2rem;">
+        <label>Poziom doświadczenia</label>
+        <div class="pills-container">
+          <label class="pill-card"><input type="radio" formControlName="seniority" value="Stażysta / Trainee"><div class="pill-content">Stażysta / Trainee</div></label>
+          <label class="pill-card"><input type="radio" formControlName="seniority" value="Junior"><div class="pill-content">Junior</div></label>
+          <label class="pill-card"><input type="radio" formControlName="seniority" value="Mid / Regular"><div class="pill-content">Mid / Regular</div></label>
+          <label class="pill-card"><input type="radio" formControlName="seniority" value="Senior"><div class="pill-content">Senior</div></label>
+          <label class="pill-card"><input type="radio" formControlName="seniority" value="Expert / Lead / Architect"><div class="pill-content">Expert / Lead / Architect</div></label>
         </div>
+      </div>
+
+      <h4 class="sub-section-title">Umiejętności</h4>
+      <div class="input-group full-width" style="margin-bottom: 1.5rem;">
+        <label>Popularne technologie *</label>
+        <fieldset formGroupName="technologies" class="site-fieldset">
+          <div class="pills-container">
+            <label class="pill-card"><input type="checkbox" formControlName="javascript"><div class="pill-content"><i class="devicon-javascript-plain colored"></i> JavaScript</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="html"><div class="pill-content"><i class="devicon-html5-plain colored"></i> HTML</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="sql"><div class="pill-content"><i class="devicon-azuresqldatabase-plain colored"></i> SQL</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="python"><div class="pill-content"><i class="devicon-python-plain colored"></i> Python</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="java"><div class="pill-content"><i class="devicon-java-plain colored"></i> Java</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="csharp"><div class="pill-content"><i class="devicon-csharp-plain colored"></i> C#</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="php"><div class="pill-content"><i class="devicon-php-plain colored"></i> PHP</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="cpp"><div class="pill-content"><i class="devicon-cplusplus-plain colored"></i> C++</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="typescript"><div class="pill-content"><i class="devicon-typescript-plain colored"></i> TypeScript</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="go"><div class="pill-content"><i class="devicon-go-original-wordmark colored"></i> Go</div></label>
+            
+            <ng-container *ngIf="showAllTech">
+              <label class="pill-card"><input type="checkbox" formControlName="c"><div class="pill-content"><i class="devicon-c-plain colored"></i> C</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="dotnet"><div class="pill-content"><i class="devicon-dot-net-plain colored"></i> .NET</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="react"><div class="pill-content"><i class="devicon-react-original colored"></i> React.js</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="angular"><div class="pill-content"><i class="devicon-angularjs-plain colored"></i> Angular</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="android"><div class="pill-content"><i class="devicon-android-plain colored"></i> Android</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="aws"><div class="pill-content"><i class="devicon-amazonwebservices-original colored"></i> AWS</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="ios"><div class="pill-content"><i class="devicon-apple-original"></i> iOS</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="rust"><div class="pill-content"><i class="devicon-rust-plain"></i> Rust</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="r"><div class="pill-content"><i class="devicon-r-original colored"></i> R</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="nodejs"><div class="pill-content"><i class="devicon-nodejs-plain colored"></i> Node.js</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="ruby"><div class="pill-content"><i class="devicon-rubyonrails-plain colored"></i> Ruby on Rails</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="hibernate"><div class="pill-content"><i class="devicon-hibernate-plain colored"></i> Hibernate</div></label>
+            </ng-container>
+  
+            <button type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
+              {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+            </button>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="form-grid">
         <div class="input-group full-width">
           <label for="english">Poziom znajomości j. angielskiego</label>
           <select id="english" formControlName="englishLevel">
@@ -182,6 +177,69 @@
         </div>
       </div>
 
+      <h3 class="form-section-title">2. Finanse i Kontrakt</h3>
+      
+      <div class="input-group full-width slider-group salary-slider-group" style="margin-bottom: 1.5rem;">
+        <label>Widełki płacowe (PLN / m-c)</label>
+        <div class="salary-labels">
+          <span class="salary-badge from">OD: {{ candidateForm.get('salaryFrom')?.value | number:'1.0-0' }}</span>
+          <span class="salary-badge to">DO: {{ candidateForm.get('salaryTo')?.value | number:'1.0-0' }}</span>
+        </div>
+        <div class="salary-range-slider">
+          <div class="salary-progess-fill" [style.width.%]="getSalaryProgessPercent()" [style.left.%]="getSalaryProgessLeft()"></div>
+          <input type="range" formControlName="salaryFrom" [min]="minSalaryAllowed" [max]="maxSalaryAllowed" [step]="salaryStep" (input)="checkSalaryRange('from')" class="salary-input salary-input-from">
+          <input type="range" formControlName="salaryTo" [min]="minSalaryAllowed" [max]="maxSalaryAllowed" [step]="salaryStep" (input)="checkSalaryRange('to')" class="salary-input salary-input-to">
+        </div>
+        <div class="slider-labels range-markers"><span>0 PLN</span><span>{{ maxSalaryAllowed | number:'1.0-0' }} PLN</span></div>
+      </div>
+
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="contract">Rodzaj kontraktu</label>
+          <select id="contract" formControlName="contractType">
+            <option value="uop">Umowa o Pracę</option>
+            <option value="b2b">B2B (Faktura)</option>
+            <option value="uz">Zlecenie / Dzieło</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="notice">Okres wypowiedzenia</label>
+          <select id="notice" formControlName="noticePeriod">
+            <option value="immediate">Dostępny od zaraz</option>
+            <option value="2_weeks">2 tygodnie</option>
+            <option value="1_month">1 miesiąc</option>
+            <option value="3_months">3 miesiące</option>
+          </select>
+        </div>
+      </div>
+      
+      <h4 class="sub-section-title">Źródła ofert</h4>
+      <div class="form-grid">
+        <div class="input-group full-width">
+          <fieldset formGroupName="jobSites" class="site-fieldset" aria-labelledby="jobSitesLegend">
+            <legend id="jobSitesLegend" class="sr-only">Skąd pobierać oferty</legend>
+            <div class="site-cards-grid">
+              <label class="site-card" for="job_pracuj">
+                <input id="job_pracuj" type="checkbox" formControlName="pracuj">
+                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Pracuj.pl</span></div>
+              </label>
+              <label class="site-card" for="job_olx">
+                <input id="job_olx" type="checkbox" formControlName="olx">
+                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>OLX Praca</span></div>
+              </label>
+              <label class="site-card" for="job_linkedin">
+                <input id="job_linkedin" type="checkbox" formControlName="linkedin">
+                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>LinkedIn</span></div>
+              </label>
+              <label class="site-card" for="job_nofluff">
+                <input id="job_nofluff" type="checkbox" formControlName="nofluff">
+                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>NoFluffJobs</span></div>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
       <h3 class="form-section-title ai-section-title">✨ 5. Inteligentne Dopasowanie</h3>
       <div class="form-grid">
         <div class="input-group full-width slider-group">
@@ -201,12 +259,8 @@
       </div>
 
       <div class="actions-row">
-        <button type="submit" class="submit-button">
-          Szukaj dopasowanych ofert
-        </button>
-        <button type="button" class="secondary-button" (click)="submitAndSignup()" aria-label="Rozpocznij analizę i załóż konto">
-          Zapisz profil i załóż konto
-        </button>
+        <button type="submit" class="submit-button">Szukaj dopasowanych ofert</button>
+        <button type="button" class="secondary-button" (click)="submitAndSignup()" aria-label="Rozpocznij analizę i załóż konto">Zapisz profil i załóż konto</button>
       </div>
     </form>
   </main>
