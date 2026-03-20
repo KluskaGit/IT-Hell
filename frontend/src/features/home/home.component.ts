@@ -44,20 +44,21 @@ export class HomeComponent implements OnInit {
   selectedFile: File | null = null;
   isDragging = false;
 
-  // Zmienne do skanera AI
   isScanning = false;
   scanProgress = 0;
   scanStatus = '';
   scanComplete = false;
 
-  // Suwak płacowy
-  minSalaryAllowed = 0;
-  maxSalaryAllowed = 50000;
-  salaryStep = 500;
-
-  // Flagi zwijania sekcji
   showAllSpecs = false;
   showAllTech = false;
+
+  // --- SUWAK LOGARYTMICZNY ---
+  salaryOptions = [
+    0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 
+    13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000, 
+    25000, 30000, 35000, 40000, 45000, 50000
+  ];
+  maxSalaryIndex = this.salaryOptions.length - 1;
 
   constructor(private readonly fb: FormBuilder, private readonly router: Router) {}
 
@@ -68,7 +69,13 @@ export class HomeComponent implements OnInit {
 
   private initForm(): void {
     this.candidateForm = this.fb.group({
-      itArea: ['Backend', Validators.required],
+      itArea: this.fb.group({
+        backend: [true], frontend: [false], fullstack: [false], mobile: [false],
+        architecture: [false], devops: [false], gamedev: [false], data: [false],
+        bigdata: [false], embedded: [false], qa: [false], security: [false],
+        helpdesk: [false], product: [false], project: [false], agile: [false],
+        ux: [false], business: [false], system: [false], sap: [false], admin: [false], ai: [false]
+      }),
       seniority: ['Junior', Validators.required],
       
       technologies: this.fb.group({
@@ -82,111 +89,100 @@ export class HomeComponent implements OnInit {
       isStudent: [false],
       studyYear: [{ value: null, disabled: true }],
 
-      salaryFrom: [22000, [Validators.min(this.minSalaryAllowed), Validators.max(this.maxSalaryAllowed)]],
-      salaryTo: [35000, [Validators.min(this.minSalaryAllowed), Validators.max(this.maxSalaryAllowed)]],
+      // Indeksy suwaka dla: Od 18 000 (index 16) do 35 000 (index 22)
+      salaryFromIndex: [16],
+      salaryToIndex: [22],
+      
       contractType: ['uop'],
       noticePeriod: ['1_month'],
-      
       jobSites: this.fb.group({ pracuj: [true], olx: [true], linkedin: [true], nofluff: [false] }),
       matchPrecision: [75] 
     });
   }
 
-  // --- LOGIKA SUWAKA PŁACOWEGO ---
+  get salaryFromValue(): number { 
+    return this.salaryOptions[Number(this.candidateForm.get('salaryFromIndex')?.value) || 0]; 
+  }
+  
+  get salaryToValue(): number { 
+    return this.salaryOptions[Number(this.candidateForm.get('salaryToIndex')?.value) || this.maxSalaryIndex]; 
+  }
+
   checkSalaryRange(type: 'from' | 'to'): void {
-    const fromCtrl = this.candidateForm.get('salaryFrom');
-    const toCtrl = this.candidateForm.get('salaryTo');
+    const fromCtrl = this.candidateForm.get('salaryFromIndex');
+    const toCtrl = this.candidateForm.get('salaryToIndex');
     if (!fromCtrl || !toCtrl) return;
 
-    let from = Number(fromCtrl.value) || this.minSalaryAllowed;
-    let to = Number(toCtrl.value) || this.maxSalaryAllowed;
-    const gap = 1000;
+    let from = Number(fromCtrl.value);
+    let to = Number(toCtrl.value);
 
-    if (type === 'from' && from >= to) toCtrl.setValue(from + gap, { emitEvent: false });
-    else if (type === 'to' && to <= from) fromCtrl.setValue(to - gap, { emitEvent: false });
+    if (from >= to) {
+      if (type === 'from') toCtrl.setValue(from + 1, { emitEvent: false });
+      else fromCtrl.setValue(to - 1, { emitEvent: false });
+    }
   }
 
   getSalaryProgessPercent(): number {
-    const from = Number(this.candidateForm.get('salaryFrom')?.value) || this.minSalaryAllowed;
-    const to = Number(this.candidateForm.get('salaryTo')?.value) || this.maxSalaryAllowed;
-    const range = this.maxSalaryAllowed - this.minSalaryAllowed;
-    return Math.max(0, Math.min(100, ((to - from) / range) * 100));
+    const from = Number(this.candidateForm.get('salaryFromIndex')?.value) || 0;
+    const to = Number(this.candidateForm.get('salaryToIndex')?.value) || this.maxSalaryIndex;
+    return ((to - from) / this.maxSalaryIndex) * 100;
   }
 
   getSalaryProgessLeft(): number {
-    const from = Number(this.candidateForm.get('salaryFrom')?.value) || this.minSalaryAllowed;
-    const range = this.maxSalaryAllowed - this.minSalaryAllowed;
-    return Math.max(0, Math.min(100, ((from - this.minSalaryAllowed) / range) * 100));
+    const from = Number(this.candidateForm.get('salaryFromIndex')?.value) || 0;
+    return (from / this.maxSalaryIndex) * 100;
   }
 
-  // --- LOGIKA SKANERA AI ---
   private handleFile(file: File) {
-    if (file.type !== 'application/pdf') {
-      alert('Obsługujemy tylko format PDF!');
-      return;
-    }
-    this.selectedFile = file;
-    this.simulateScanning();
+    if (file.type !== 'application/pdf') { alert('Tylko PDF!'); return; }
+    this.selectedFile = file; this.simulateScanning();
   }
 
   private simulateScanning() {
-    this.isScanning = true;
-    this.scanProgress = 0;
-    this.scanStatus = 'Inicjalizacja silnika OCR...';
-
-    setTimeout(() => { this.scanProgress = 25; this.scanStatus = 'Ekstrakcja tekstu i bloków semantycznych...'; }, 800);
-    setTimeout(() => { this.scanProgress = 55; this.scanStatus = 'Wykrywanie technologii i lat doświadczenia...'; }, 2000);
-    setTimeout(() => { this.scanProgress = 85; this.scanStatus = 'Weryfikacja poziomu języków obcych...'; }, 3200);
-    setTimeout(() => {
-      this.scanProgress = 100;
-      this.scanStatus = 'Analiza zakończona! Wypełniam formularz...';
-      setTimeout(() => {
-        this.isScanning = false;
-        this.scanComplete = true;
-        this.autoFillForm();
-      }, 1000);
-    }, 4500);
+    this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
+    setTimeout(() => { this.scanProgress = 35; }, 800);
+    setTimeout(() => { this.scanProgress = 70; }, 1800);
+    setTimeout(() => { 
+      this.scanProgress = 100; this.scanStatus = 'Zakończono!'; 
+      setTimeout(() => { this.isScanning = false; this.scanComplete = true; this.autoFillForm(); }, 800); 
+    }, 2800);
   }
 
   private autoFillForm() {
     this.candidateForm.patchValue({
-      itArea: 'Backend',
-      seniority: 'Mid / Regular',
-      technologies: { java: true, sql: true, aws: true, hibernate: true },
-      englishLevel: 'C1',
-      salaryFrom: 18000,
-      salaryTo: 25000,
-      matchPrecision: 75
+      itArea: { backend: true, architecture: true, aws: false },
+      seniority: 'Senior',
+      technologies: { java: true, sql: true, aws: true, python: false },
+      salaryFromIndex: 18, 
+      salaryToIndex: 22    
     });
   }
 
-  removeFile(e: Event) {
-    e.stopPropagation();
-    this.selectedFile = null;
-    this.scanComplete = false;
-    this.candidateForm.reset({ matchPrecision: 75, contractType: 'uop', englishLevel: 'B2', jobSites: { pracuj: true, olx: true, linkedin: true }, salaryFrom: 22000, salaryTo: 35000 });
+  removeFile(e: Event) { 
+    e.stopPropagation(); this.selectedFile = null; this.scanComplete = false; 
+    this.candidateForm.reset({ matchPrecision: 75, salaryFromIndex: 16, salaryToIndex: 22, contractType: 'uop', englishLevel: 'B2', jobSites: { pracuj: true, olx: true, linkedin: true }}); 
   }
 
-  submitAndSignup(): void {
-    if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; }
-    this.router.navigate(['/signup']);
+  submitAndSignup(): void { 
+    if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; } 
+    this.router.navigate(['/signup']); 
   }
   
-  onSubmit(): void {
-    if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; }
-    console.log('Dane do wysłania:', this.candidateForm.value);
+  onSubmit(): void { 
+    if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; } 
+    console.log('Dane formularza:', this.candidateForm.value); 
   }
 
   private setupStudentValidation(): void {
     this.candidateForm.get('isStudent')?.valueChanges.subscribe((isStudent: boolean) => {
       const studyYearControl = this.candidateForm.get('studyYear');
-      if (isStudent) {
-        studyYearControl?.enable();
-        studyYearControl?.setValidators([Validators.required, Validators.min(1), Validators.max(5)]);
-      } else {
-        studyYearControl?.disable();
-        studyYearControl?.clearValidators();
-        studyYearControl?.setValue(null);
+      if (isStudent) { 
+        studyYearControl?.enable(); 
+        studyYearControl?.setValidators([Validators.required, Validators.min(1), Validators.max(5)]); 
+      } else { 
+        studyYearControl?.disable(); 
+        studyYearControl?.clearValidators(); 
+        studyYearControl?.setValue(null); 
       }
       studyYearControl?.updateValueAndValidity();
     });
