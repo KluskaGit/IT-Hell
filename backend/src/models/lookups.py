@@ -35,7 +35,7 @@ class Site(Base):
         primary_key=True,
         default=uuid.uuid4
     )
-    url: Mapped[str] = mapped_column(String(50), unique=True)
+    url: Mapped[str] = mapped_column(String(250), unique=True) # string 50 was a bit too short for url IMHO
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="site")
@@ -77,6 +77,6 @@ class Location(Base):
     city: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="work_type")
+    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="location") #should be "location"? Before was "work_type"
 
 
