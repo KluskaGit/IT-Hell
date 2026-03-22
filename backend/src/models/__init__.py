@@ -18,3 +18,9 @@ class TimestampMixin:
         server_default=func.now(),
         onupdate=func.now()
     )
+
+# Import models to register them with Base.metadata
+from src.models.job_offers import *
+from src.models.lookups import *
+from src.models.users import *
+
