@@ -18,11 +18,3 @@ class TimestampMixin:
         server_default=func.now(),
         onupdate=func.now()
     )
-
-# Import all models here to ensure they are registered with SQLAlchemy's metadata
-from src.models.users import User, UserProfile
-from src.models.lookups import ExperienceLevel
-
-# Meybe we need also these models?
-from src.models.lookups import Site, Company, WorkType, Location
-from src.models.job_offers import JobOffer
