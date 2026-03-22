@@ -15,6 +15,8 @@ if TYPE_CHECKING:
         Company,
         WorkType,
         Location,
+        Specialization,
+        Technology,
     )
 
 class JobOffer(Base, TimestampMixin):
@@ -25,11 +27,13 @@ class JobOffer(Base, TimestampMixin):
         primary_key=True,
         default=uuid.uuid4
     )
-    site_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sites.uuid"))
-    exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.uuid"))
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.uuid"))
-    work_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_types.uuid"))
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.uuid"))
+    site_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sites.id"))
+    exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id"))
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
+    work_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_types.id"))
+    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.id"))
+    specialization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("specializations.id"))
+    technology_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("technologies.id"))
 
     salary_from: Mapped[float | None] = mapped_column(Float, nullable=True)
     salary_to: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -43,3 +47,5 @@ class JobOffer(Base, TimestampMixin):
     company: Mapped["Company"] = relationship(back_populates="job_offers")
     work_type: Mapped["WorkType"] = relationship(back_populates="job_offers")
     location: Mapped["Location"] = relationship(back_populates="job_offers")
+    specialization: Mapped["Specialization"] = relationship(back_populates="job_offers")
+    technologies: Mapped["Technology"] = relationship(back_populates="job_offers")

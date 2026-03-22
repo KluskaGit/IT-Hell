@@ -79,4 +79,30 @@ class Location(Base):
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="location")
 
+class Specialization(Base):
+    __tablename__ = "specializations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+    specialization: Mapped[str] = mapped_column(String(50), unique=True)
+
+    # Relationships
+    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="specialization")
+
+class Technology(Base):
+    __tablename__ = "technologies"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+    technologies: Mapped[str] = mapped_column(String(50), unique=True)
+
+    # Relationships
+    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="technologies")
+
 
