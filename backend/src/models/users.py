@@ -40,7 +40,7 @@ class UserProfile(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id"))
-    skilss: Mapped[Dict] = mapped_column(JSONB)
+    skills: Mapped[Dict] = mapped_column(JSONB)
     raw_cv: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
