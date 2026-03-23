@@ -5,3 +5,5 @@ __pycache__/
 uv.lock
 # Environments variables
 .env
+# Angular 22k files stuff
+**/node_modules/
