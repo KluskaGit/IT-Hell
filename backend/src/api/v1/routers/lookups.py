@@ -6,6 +6,7 @@ from src.repositories import lookups
 from src.schemas.lookups import (
     CompanyNameRead,
     ExperienceLevelRead,
+    LocationRead,
     SiteUrlRead,
     WorkTypeRead
 )
@@ -31,3 +32,8 @@ async def read_site_urls(session: SessionDep):
 async def read_company_names(session: SessionDep):
     company_names = await lookups.get_company_names(session)
     return company_names
+
+@router.get("/locations", response_model=List[LocationRead])
+async def read_locations(session: SessionDep):
+    locations = await lookups.get_locations(session)
+    return locations
