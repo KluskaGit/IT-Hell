@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from src.models.lookups import (
+    Company,
     ExperienceLevel,
     WorkType,
     Site
@@ -25,3 +26,9 @@ async def get_site_urls(session: AsyncSession):
     result = await session.execute(stmt)
     sites_url = result.scalars().all()
     return sites_url
+
+async def get_company_names(session: AsyncSession):
+    stmt = select(Company)
+    result = await session.execute(stmt)
+    company_names = result.scalars().all()
+    return company_names
