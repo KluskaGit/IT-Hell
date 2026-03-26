@@ -36,3 +36,9 @@ class SpecializationRead(BaseModel):
     specialization: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class TechnologyRead(BaseModel):
+    id: uuid.UUID
+    technology_name: str
+
+    model_config = ConfigDict(from_attributes=True)
