@@ -9,6 +9,7 @@ from src.schemas.lookups import (
     LocationRead,
     SiteUrlRead,
     SpecializationRead,
+    TechnologyRead,
     WorkTypeRead
 )
 
@@ -43,3 +44,8 @@ async def read_locations(session: SessionDep):
 async def read_specializations(session: SessionDep):
     specializations = await lookups.get_specializations(session)
     return specializations
+
+@router.get("/technologies", response_model=List[TechnologyRead])
+async def read_technologies(session: SessionDep):
+    technologies = await lookups.get_technologies(session)
+    return technologies
