@@ -24,3 +24,9 @@ class CompanyNameRead(BaseModel):
     company_name: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class LocationRead(BaseModel):
+    id: uuid.UUID
+    city: str
+
+    model_config = ConfigDict(from_attributes=True)
