@@ -4,6 +4,7 @@ from sqlalchemy import select
 from src.models.lookups import (
     Company,
     ExperienceLevel,
+    Location,
     WorkType,
     Site
 )
@@ -32,3 +33,9 @@ async def get_company_names(session: AsyncSession):
     result = await session.execute(stmt)
     company_names = result.scalars().all()
     return company_names
+
+async def get_locations(session: AsyncSession):
+    stmt = select(Location)
+    result = await session.execute(stmt)
+    locations = result.scalars().all()
+    return locations
