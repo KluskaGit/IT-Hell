@@ -6,3 +6,9 @@ class ExperienceLevelRead(BaseModel):
     exp_level: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class WorkTypeRead(BaseModel):
+    id: uuid.UUID
+    work_type: str
+
+    model_config = ConfigDict(from_attributes=True)
