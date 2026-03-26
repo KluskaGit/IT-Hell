@@ -5,6 +5,7 @@ from src.db import SessionDep
 from src.repositories import lookups
 from src.schemas.lookups import (
     ExperienceLevelRead,
+    SiteUrlRead,
     WorkTypeRead
 )
 
@@ -19,3 +20,8 @@ async def read_experience_levels(session: SessionDep):
 async def read_work_types(session: SessionDep):
     work_types = await  lookups.get_work_types(session)
     return work_types
+
+@router.get("/site-urls", response_model=List[SiteUrlRead])
+async def read_site_urls(session: SessionDep):
+    sites_urls = await lookups.get_site_urls(session)
+    return sites_urls
