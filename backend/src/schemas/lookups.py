@@ -12,3 +12,9 @@ class WorkTypeRead(BaseModel):
     work_type: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class SiteUrlRead(BaseModel):
+    id: uuid.UUID
+    url: str
+
+    model_config = ConfigDict(from_attributes=True)
