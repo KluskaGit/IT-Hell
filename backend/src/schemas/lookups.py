@@ -30,3 +30,9 @@ class LocationRead(BaseModel):
     city: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class SpecializationRead(BaseModel):
+    id: uuid.UUID
+    specialization: str
+
+    model_config = ConfigDict(from_attributes=True)
