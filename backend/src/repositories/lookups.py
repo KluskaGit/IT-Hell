@@ -6,6 +6,7 @@ from src.models.lookups import (
     ExperienceLevel,
     Location,
     Specialization,
+    Technology,
     WorkType,
     Site
 )
@@ -46,3 +47,9 @@ async def get_specializations(session: AsyncSession):
     result = await session.execute(stmt)
     specializations = result.scalars().all()
     return specializations
+
+async def get_technologies(session: AsyncSession):
+    stmt = select(Technology)
+    result = await session.execute(stmt)
+    technologies = result.scalars().all()
+    return technologies
