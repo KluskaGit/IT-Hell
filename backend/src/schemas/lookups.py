@@ -18,3 +18,9 @@ class SiteUrlRead(BaseModel):
     url: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class CompanyNameRead(BaseModel):
+    id: uuid.UUID
+    company_name: str
+
+    model_config = ConfigDict(from_attributes=True)
