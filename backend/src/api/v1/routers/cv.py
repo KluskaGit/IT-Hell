@@ -51,7 +51,7 @@ async def upload_cv(user_id: str, file: UploadFile, db: SessionDep):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Error reading file: {str:e}"
+            detail=f"Error reading file: {str:(e)}"
         )
     
     # Writing to database
