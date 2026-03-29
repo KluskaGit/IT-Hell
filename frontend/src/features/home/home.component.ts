@@ -31,6 +31,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { constants } from 'node:fs/promises';
 
 @Component({
   selector: 'app-home',
@@ -133,9 +134,17 @@ export class HomeComponent implements OnInit {
     return (from / this.maxSalaryIndex) * 100;
   }
 
-  private handleFile(file: File) {
-    if (file.type !== 'application/pdf') { alert('Tylko PDF!'); return; }
-    this.selectedFile = file; this.simulateScanning();
+  private handleFile(file: File) : void {
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    const fileName = file.name.toLocaleLowerCase();
+
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    if (!hasValidExtension) { 
+      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!'); 
+      return; }
+
+    this.selectedFile = file;
+    this.simulateScanning();
   }
 
   private simulateScanning() {
@@ -148,11 +157,23 @@ export class HomeComponent implements OnInit {
     }, 2800);
   }
 
-  private autoFillForm() {
-    this.candidateForm.patchValue({
-      itArea: { backend: true, architecture: true, aws: false },
+  private autoFillForm() : void 
+  {
+    this.candidateForm.patchValue(
+    {
+      itArea: 
+      { 
+        backend: true,
+        architecture: true,
+      },
       seniority: 'Senior',
-      technologies: { java: true, sql: true, aws: true, python: false },
+      technologies: 
+      { 
+        java: true, 
+        sql: true, 
+        aws: true, 
+        python: false 
+      },
       salaryFromIndex: 18, 
       salaryToIndex: 22    
     });
@@ -191,5 +212,13 @@ export class HomeComponent implements OnInit {
   onDragOver(e: DragEvent) { e.preventDefault(); this.isDragging = true; }
   onDragLeave(e: DragEvent) { e.preventDefault(); this.isDragging = false; }
   onDrop(e: DragEvent) { e.preventDefault(); this.isDragging = false; if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]); }
-  onFileSelected(e: any) { if (e.target.files.length) this.handleFile(e.target.files[0]); }
+  onFileSelected(e: Event) 
+  { 
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) 
+      {
+      this.handleFile(input.files[0]); 
+      }
+      
+  }
 }
