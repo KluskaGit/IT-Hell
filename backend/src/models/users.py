@@ -21,8 +21,8 @@ class User(Base, TimestampMixin):
         primary_key=True,
         default=uuid.uuid4
     )
-    email: Mapped[str] = mapped_column(String(30))
-    password: Mapped[str] = mapped_column(String(500))
+    email: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(100), nullable=False)
 
     # Relationships
     user_profile: Mapped["UserProfile"] = relationship(
