@@ -1,5 +1,5 @@
 import uuid
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -10,4 +10,8 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
