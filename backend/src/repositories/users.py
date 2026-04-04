@@ -21,11 +21,8 @@ class UserRepository:
     async def create_user(self, email: str, password: str) -> User:
         user = User(email=email, password=password)
         self.session.add(user)
-        try:
-            await self.session.commit()
-            await self.session.refresh(user)
-        except IntegrityError:
-            await self.session.rollback()
-            raise ValueError("User with this email already exists.")
+        
+        await self.session.commit()
+        await self.session.refresh(user)
         
         return user
