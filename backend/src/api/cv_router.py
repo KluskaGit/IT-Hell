@@ -5,7 +5,7 @@ from docx import Document
 from fastapi import APIRouter, UploadFile, HTTPException, status
 from sqlalchemy import select
 
-from src.db import SessionDep
+from src.core.db import SessionDep
 from src.models.users import UserProfile
 
 router = APIRouter(prefix="/cv", tags=["CV Analysis"])

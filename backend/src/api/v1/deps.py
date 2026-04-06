@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends
 
-from src.db import SessionDep
+from src.core.db import SessionDep
 from src.repositories.users import UserRepository
 from src.services.auth_service import AuthService
 from src.models.users import User

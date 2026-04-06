@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from typing import List
 
-from src.db import SessionDep
+from src.core.db import SessionDep
 from src.repositories.lookups import get_experience_levels
 from src.schemas.lookups import (
     ExperienceLevelRead,
