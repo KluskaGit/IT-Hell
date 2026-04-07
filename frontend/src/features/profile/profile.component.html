@@ -1,0 +1,359 @@
+<!-- ============================================================================
+  PROJEKT: CV_ANALIZER — User Profile Dashboard
+  PLIK: profile.component.html
+  ============================================================================
+  OPIS: Template dashboardu profilu z sekcjami: Hero, CV Upload, Career Analytics,
+  Preferencje Zawodowe, Finanse, AI Precision, Activity Log.
+  Layout: Mobile-first grid (1 col → 2 col @ 768px+).
+  ============================================================================ -->
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-container">
+    <a routerLink="/" class="logo">
+      <div class="logo-icon"></div>
+      <span>CV<span class="logo-accent">_ANALIZER</span></span>
+    </a>
+    <div class="nav-links">
+      <a routerLink="/">Strona główna</a>
+      <a routerLink="/profile" class="nav-active">Mój profil</a>
+    </div>
+    <button type="button" class="btn-danger" (click)="onLogout()">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Wyloguj
+    </button>
+  </div>
+</nav>
+
+<!-- BACKGROUND GLOWS -->
+<div class="background-glow">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+  <div class="glow-3"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="profile-container">
+
+  <!-- ═══ HERO SECTION ═══ -->
+  <section class="glass-card hero-card animate-up">
+    <div class="hero-layout">
+      <div class="avatar-container">
+        <div class="avatar">
+          <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <button type="button" class="avatar-edit-btn" title="Zmień zdjęcie">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+      </div>
+
+      <div class="hero-info" [formGroup]="profileForm">
+        <div class="form-row">
+          <div class="input-group">
+            <label>Imię</label>
+            <input formControlName="firstName" placeholder="Twoje imię">
+          </div>
+          <div class="input-group">
+            <label>Nazwisko</label>
+            <input formControlName="lastName" placeholder="Twoje nazwisko">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>E-mail</label>
+          <input [value]="user.email" readonly class="input-readonly">
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Badge -->
+    <div class="student-box" [formGroup]="profileForm">
+      <label class="checkbox-container">
+        <input type="checkbox" formControlName="isStudent">
+        Posiadam status studenta
+      </label>
+      <div *ngIf="profileForm.get('isStudent')?.value" class="student-years-container">
+        <span class="year-label">Rok studiów:</span>
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let y of [1,2,3,4,5]">
+            <input type="radio" formControlName="studyYear" [value]="y">
+            <div class="pill-content year-pill">{{ y }}</div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TWO-COLUMN GRID ═══ -->
+  <div class="dashboard-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="grid-col">
+
+      <!-- CV UPLOAD -->
+      <section class="glass-card animate-up delay-1">
+        <h3 class="section-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Moje CV
+        </h3>
+
+        <!-- Current file -->
+        <div class="cv-current" *ngIf="currentCvFile">
+          <div class="cv-file-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="cv-file-info">
+            <strong>{{ currentCvFile }}</strong>
+            <span>Wgrano: {{ currentCvDate }} · Przeanalizowano przez AI</span>
+          </div>
+          <button type="button" class="btn-icon-danger" (click)="removeCv()" title="Usuń CV">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+
+        <!-- Dropzone -->
+        <input type="file" #fileInput hidden accept=".pdf,.doc,.docx" (change)="onFileSelected($event)">
+        <button type="button" class="dropzone" [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)" (click)="fileInput.click()">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>{{ currentCvFile ? 'Aktualizuj CV' : 'Wgraj CV (PDF, DOC)' }}</span>
+        </button>
+      </section>
+
+      <!-- SALARY GAP ANALYTICS -->
+      <section class="glass-card animate-up delay-2">
+        <h3 class="section-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Salary Gap
+        </h3>
+        <div class="salary-gap-card">
+          <div class="gap-row">
+            <div class="gap-item">
+              <span class="gap-label">Twoje oczekiwania</span>
+              <span class="gap-value primary">{{ salaryGap.userExpected | number:'1.0-0' }} PLN</span>
+            </div>
+            <div class="gap-divider">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+            <div class="gap-item">
+              <span class="gap-label">Średnia rynkowa</span>
+              <span class="gap-value">{{ salaryGap.marketAverage | number:'1.0-0' }} PLN</span>
+            </div>
+          </div>
+          <div class="gap-badge up">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            {{ salaryGap.difference }} powyżej rynku
+          </div>
+        </div>
+      </section>
+
+      <!-- ACTIVITY LOG -->
+      <section class="glass-card animate-up delay-3">
+        <h3 class="section-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Ostatnie analizy
+        </h3>
+        <div class="activity-list">
+          <div class="activity-item" *ngFor="let item of activityLog">
+            <div class="activity-info">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.date }}</span>
+            </div>
+            <div class="activity-score" [ngClass]="getMatchScoreClass(item.matchScore)">
+              {{ item.matchScore }}%
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="grid-col">
+
+      <!-- PREFERENCES -->
+      <section class="glass-card animate-up delay-1" [formGroup]="profileForm">
+        <h3 class="section-title">1. Doświadczenie i Rola</h3>
+
+        <!-- Roles -->
+        <div class="field-block">
+          <label class="field-label">Główna rola</label>
+          <fieldset formGroupName="itArea" class="pills-fieldset">
+            <div class="pills-container">
+              <label class="pill-card"><input type="checkbox" formControlName="backend"><div class="pill-content">Backend</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="frontend"><div class="pill-content">Frontend</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="fullstack"><div class="pill-content">Full-stack</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="mobile"><div class="pill-content">Mobile</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="architecture"><div class="pill-content">Architecture</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="devops"><div class="pill-content">DevOps</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="gamedev"><div class="pill-content">Game dev</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="data"><div class="pill-content">Data analytics & BI</div></label>
+
+              <ng-container *ngIf="showAllSpecs">
+                <label class="pill-card"><input type="checkbox" formControlName="bigdata"><div class="pill-content">Big Data / Data Science</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="embedded"><div class="pill-content">Embedded</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="qa"><div class="pill-content">QA/Testing</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="security"><div class="pill-content">Security</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="helpdesk"><div class="pill-content">Helpdesk</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="product"><div class="pill-content">Product Management</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="project"><div class="pill-content">Project Management</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="agile"><div class="pill-content">Agile</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="ux"><div class="pill-content">UX/UI</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="business"><div class="pill-content">Business analytics</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="system"><div class="pill-content">System analytics</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="sap"><div class="pill-content">SAP&ERP</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="admin"><div class="pill-content">IT admin</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="ai"><div class="pill-content">AI/ML</div></label>
+              </ng-container>
+
+              <button type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
+                {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+              </button>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Seniority -->
+        <div class="field-block">
+          <label class="field-label">Poziom doświadczenia</label>
+          <div class="pills-container">
+            <label class="pill-card"><input type="radio" formControlName="seniority" value="Stażysta / Trainee"><div class="pill-content">Stażysta / Trainee</div></label>
+            <label class="pill-card"><input type="radio" formControlName="seniority" value="Junior"><div class="pill-content">Junior</div></label>
+            <label class="pill-card"><input type="radio" formControlName="seniority" value="Mid / Regular"><div class="pill-content">Mid / Regular</div></label>
+            <label class="pill-card"><input type="radio" formControlName="seniority" value="Senior"><div class="pill-content">Senior</div></label>
+          </div>
+        </div>
+
+        <!-- Technologies -->
+        <div class="field-block">
+          <label class="field-label">Popularne technologie</label>
+          <fieldset formGroupName="technologies" class="pills-fieldset">
+            <div class="pills-container">
+              <label class="pill-card"><input type="checkbox" formControlName="javascript"><div class="pill-content">JavaScript</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="html"><div class="pill-content">HTML</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="sql"><div class="pill-content">SQL</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="python"><div class="pill-content">Python</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="java"><div class="pill-content">Java</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="csharp"><div class="pill-content">C#</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="php"><div class="pill-content">PHP</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="cpp"><div class="pill-content">C++</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="typescript"><div class="pill-content">TypeScript</div></label>
+              <label class="pill-card"><input type="checkbox" formControlName="go"><div class="pill-content">Go</div></label>
+
+              <ng-container *ngIf="showAllTech">
+                <label class="pill-card"><input type="checkbox" formControlName="c"><div class="pill-content">C</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="dotnet"><div class="pill-content">.NET</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="react"><div class="pill-content">React.js</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="angular"><div class="pill-content">Angular</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="android"><div class="pill-content">Android</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="aws"><div class="pill-content">AWS</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="ios"><div class="pill-content">iOS</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="rust"><div class="pill-content">Rust</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="r"><div class="pill-content">R</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="nodejs"><div class="pill-content">Node.js</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="ruby"><div class="pill-content">Ruby on Rails</div></label>
+                <label class="pill-card"><input type="checkbox" formControlName="hibernate"><div class="pill-content">Hibernate</div></label>
+              </ng-container>
+
+              <button type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
+                {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+              </button>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- English -->
+        <div class="field-block">
+          <label class="field-label">Poziom j. angielskiego</label>
+          <select formControlName="englishLevel" class="styled-select">
+            <option value="A1">A1 (Początkujący)</option>
+            <option value="A2">A2 (Podstawowy)</option>
+            <option value="B1">B1 (Średniozaawansowany)</option>
+            <option value="B2">B2 (Wyżej średni)</option>
+            <option value="C1">C1 (Zaawansowany)</option>
+            <option value="C2">C2 (Biegły / Native)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- FINANCE -->
+      <section class="glass-card animate-up delay-2" [formGroup]="profileForm">
+        <h3 class="section-title">2. Finanse i Kontrakt</h3>
+
+        <!-- Salary Dual Slider -->
+        <div class="salary-slider-group">
+          <label class="field-label">Widełki płacowe (PLN / m-c)</label>
+          <div class="salary-labels">
+            <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
+            <span class="salary-badge">DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}</span>
+          </div>
+          <div class="salary-range-slider">
+            <div class="salary-progress-fill" [style.width.%]="getSalaryProgressPercent()" [style.left.%]="getSalaryProgressLeft()"></div>
+            <input type="range" formControlName="salaryFromIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('from')" class="salary-input">
+            <input type="range" formControlName="salaryToIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('to')" class="salary-input">
+          </div>
+          <div class="range-markers"><span>0 PLN</span><span>50 000+ PLN</span></div>
+        </div>
+
+        <!-- Contract & Notice -->
+        <div class="form-row" style="margin-top: 1.5rem;">
+          <div class="input-group">
+            <label>Rodzaj kontraktu</label>
+            <select formControlName="contractType" class="styled-select">
+              <option value="uop">Umowa o Pracę</option>
+              <option value="b2b">B2B (Faktura)</option>
+              <option value="uz">Zlecenie / Dzieło</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Okres wypowiedzenia</label>
+            <select formControlName="noticePeriod" class="styled-select">
+              <option value="immediate">Dostępny od zaraz</option>
+              <option value="2_weeks">2 tygodnie</option>
+              <option value="1_month">1 miesiąc</option>
+              <option value="3_months">3 miesiące</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI PRECISION -->
+      <section class="glass-card animate-up delay-3" [formGroup]="profileForm">
+        <h3 class="section-title ai-accent">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Inteligentne Dopasowanie
+        </h3>
+        <div class="ai-slider-group">
+          <div class="slider-header">
+            <label class="field-label">Wymagana precyzja ofert:</label>
+            <span class="precision-badge"
+              [ngClass]="{
+                'strict': profileForm.get('matchPrecision')?.value === 100,
+                'loose': profileForm.get('matchPrecision')?.value === 50
+              }">
+              {{ profileForm.get('matchPrecision')?.value }}% Zgodności
+            </span>
+          </div>
+          <input type="range" formControlName="matchPrecision" min="50" max="100" step="25" class="ai-slider">
+          <div class="slider-labels">
+            <span>50%<br><small>Eksploracja</small></span>
+            <span>75%<br><small>Zalecane</small></span>
+            <span>100%<br><small>Tylko idealne</small></span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══ ACTION BUTTONS ═══ -->
+  <div class="actions-row animate-up delay-4">
+    <button type="button" class="submit-button" (click)="onSave()">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Zapisz zmiany
+    </button>
+    <button type="button" class="secondary-button" routerLink="/">Anuluj</button>
+  </div>
+
+</div>

@@ -46,13 +46,22 @@ loginWithSocial(provider: string): void {
   }
 
   // Klasyczne logowanie
-  onSubmit(): void {
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched();
-      return;
-    }
-    console.log('Dane logowania:', this.loginForm.value);
-    // Po udanym logowaniu wracamy na stronę główną:
-    // this.router.navigate(['/']);
+  // onSubmit(): void {
+  //   if (this.loginForm.invalid) {
+  //     this.loginForm.markAllAsTouched();
+  //     return;
+  //   }
+  //   console.log('Dane logowania:', this.loginForm.value);
+  //   // Po udanym logowaniu wracamy na stronę główną:
+  //   // this.router.navigate(['/']);
+  // }
+  // login.component.ts
+onSubmit() {
+  const { email, password } = this.loginForm.value;
+  if (password === 'admin123') {
+    this.router.navigate(['/profile']); // Przekierowanie na profil
+  } else {
+    alert('Błędne hasło! Użyj: admin123');
   }
+}
 }
