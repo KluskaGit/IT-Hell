@@ -32,11 +32,11 @@
     
     <div class="upload-area" *ngIf="!scanComplete">
       <ng-container *ngIf="!isScanning">
-        <input type="file" #fileInput id="cvUpload" hidden accept=".pdf" (change)="onFileSelected($event)">
+         <input type="file" #fileInput id="cvUpload" hidden accept=".pdf, .doc, .docx" (change)="onFileSelected($event)">
         <button type="button" class="dropzone" [class.dragging]="isDragging" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="fileInput.click()">
           <div class="dropzone-inner">
             <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            <span>Wgraj CV (PDF) - AI automatycznie uzupełni dane</span>
+            <span>Wgraj CV (PDF, DOC, DOCX) - AI automatycznie uzupełni dane</span>
           </div>
         </button>
       </ng-container>
@@ -174,7 +174,7 @@
           Posiadam status studenta
         </label>
         
-        <div *ngIf="candidateForm.get('isStudent')?.value" class="student-years-container animate-pillsIn">
+        <div *ngIf="candidateForm.get('isStudent')?.value" class="student-years-container">
           <span class="year-label">Rok studiów:</span>
           <div class="pills-container">
             <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="1"><div class="pill-content year-pill">1</div></label>

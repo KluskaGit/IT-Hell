@@ -16,7 +16,7 @@
  * - Nawigacja: Wykorzystanie Angular Router do bezprzeładowaniowych 
  * przekierowań (SPA) na ścieżkę logowania/rejestracji.
  * * * STRUKTURA PLIKU (Użyj Ctrl+F, aby szybko znaleźć):
- * 1. IMPORTS & DECORATOR    - Wymagane moduły Angulara i konfiguracja @Component
+ * 1. IMPORTS & DECORATOR    - Wymagane moduły Angulara i konfiguracja Component
  * 2. PROPERTIES             - Definicje zmiennych stanu (FormGroup, Skaner, Plik)
  * 3. LIFECYCLE HOOKS        - Metoda ngOnInit inicjalizująca formularz
  * 4. FORM BUILDER           - Metoda initForm() budująca strukturę Reactive Forms
@@ -26,16 +26,16 @@
  * 8. DRAG & DROP HANDLERS   - Zdarzenia okna na upuszczenie pliku .pdf
  * ============================================================================
  */
-
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router'; 
+import { constants } from 'node:fs/promises';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule], 
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
@@ -43,16 +43,13 @@ export class HomeComponent implements OnInit {
   candidateForm!: FormGroup;
   selectedFile: File | null = null;
   isDragging = false;
-
   isScanning = false;
   scanProgress = 0;
   scanStatus = '';
   scanComplete = false;
-
   showAllSpecs = false;
   showAllTech = false;
 
-  // --- SUWAK LOGARYTMICZNY ---
   salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 
     13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000, 
@@ -77,7 +74,6 @@ export class HomeComponent implements OnInit {
         ux: [false], business: [false], system: [false], sap: [false], admin: [false], ai: [false]
       }),
       seniority: ['Junior', Validators.required],
-      
       technologies: this.fb.group({
         javascript: [false], html: [false], sql: [false], python: [false], java: [false],
         csharp: [false], php: [false], cpp: [false], typescript: [false], go: [false],
@@ -88,11 +84,8 @@ export class HomeComponent implements OnInit {
       englishLevel: ['B2'],
       isStudent: [false],
       studyYear: [{ value: null, disabled: true }],
-
-      // Indeksy suwaka dla: Od 18 000 (index 16) do 35 000 (index 22)
       salaryFromIndex: [16],
       salaryToIndex: [22],
-      
       contractType: ['uop'],
       noticePeriod: ['1_month'],
       jobSites: this.fb.group({ pracuj: [true], olx: [true], linkedin: [true], nofluff: [false] }),
@@ -112,10 +105,8 @@ export class HomeComponent implements OnInit {
     const fromCtrl = this.candidateForm.get('salaryFromIndex');
     const toCtrl = this.candidateForm.get('salaryToIndex');
     if (!fromCtrl || !toCtrl) return;
-
     let from = Number(fromCtrl.value);
     let to = Number(toCtrl.value);
-
     if (from >= to) {
       if (type === 'from') toCtrl.setValue(from + 1, { emitEvent: false });
       else fromCtrl.setValue(to - 1, { emitEvent: false });
@@ -133,9 +124,17 @@ export class HomeComponent implements OnInit {
     return (from / this.maxSalaryIndex) * 100;
   }
 
-  private handleFile(file: File) {
-    if (file.type !== 'application/pdf') { alert('Tylko PDF!'); return; }
-    this.selectedFile = file; this.simulateScanning();
+   private handleFile(file: File) : void {
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    const fileName = file.name.toLocaleLowerCase();
+
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    if (!hasValidExtension) { 
+      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!'); 
+      return; }
+
+    this.selectedFile = file;
+    this.simulateScanning();
   }
 
   private simulateScanning() {
@@ -148,11 +147,23 @@ export class HomeComponent implements OnInit {
     }, 2800);
   }
 
-  private autoFillForm() {
-    this.candidateForm.patchValue({
-      itArea: { backend: true, architecture: true, aws: false },
+private autoFillForm() : void 
+  {
+    this.candidateForm.patchValue(
+    {
+      itArea: 
+      { 
+        backend: true,
+        architecture: true,
+      },
       seniority: 'Senior',
-      technologies: { java: true, sql: true, aws: true, python: false },
+      technologies: 
+      { 
+        java: true, 
+        sql: true, 
+        aws: true, 
+        python: false 
+      },
       salaryFromIndex: 18, 
       salaryToIndex: 22    
     });
@@ -165,7 +176,7 @@ export class HomeComponent implements OnInit {
 
   submitAndSignup(): void { 
     if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; } 
-    this.router.navigate(['/signup']); 
+    this.router.navigate(['/login']); 
   }
   
   onSubmit(): void { 
@@ -191,5 +202,13 @@ export class HomeComponent implements OnInit {
   onDragOver(e: DragEvent) { e.preventDefault(); this.isDragging = true; }
   onDragLeave(e: DragEvent) { e.preventDefault(); this.isDragging = false; }
   onDrop(e: DragEvent) { e.preventDefault(); this.isDragging = false; if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]); }
-  onFileSelected(e: any) { if (e.target.files.length) this.handleFile(e.target.files[0]); }
+  onFileSelected(e: Event) 
+  { 
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) 
+      {
+      this.handleFile(input.files[0]); 
+      }
+      
+  }
 }
