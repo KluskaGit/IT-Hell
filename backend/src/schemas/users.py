@@ -5,13 +5,11 @@ class UserBase(BaseModel):
     email: EmailStr
 
 class UserRead(UserBase):
-    id: uuid.UUID
-
+    first_name: str
+    last_name: str
     model_config = ConfigDict(from_attributes=True)
 
 class UserCreate(UserBase):
-    password: str = Field(min_length=8)
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+    first_name: str | None
+    last_name: str | None
+    id_keycloak: uuid.UUID
