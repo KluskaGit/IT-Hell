@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 
 from src.models.users import (
     User,
     UserProfile,
 )
+from src.schemas.users import UserCreate
+
 
 class UserRepository:
     def __init__(self, session: AsyncSession):
@@ -18,11 +19,20 @@ class UserRepository:
         
         return user
 
-    async def create_user(self, email: str, password: str) -> User:
-        user = User(email=email, password=password)
-        self.session.add(user)
+    async def create_user(
+        self,
+        user: UserCreate
+    ) -> User:
+        
+        new_user = User(
+            id_keycloak=user.id_keycloak,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name
+        )
+        self.session.add(new_user)
         
         await self.session.commit()
-        await self.session.refresh(user)
+        await self.session.refresh(new_user)
         
-        return user
+        return new_user
