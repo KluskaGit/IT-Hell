@@ -1,77 +1,80 @@
 import jwt
-from datetime import datetime, timedelta, timezone
+import uuid
 
-from fastapi import HTTPException
 from typing import Dict, Any
 
+from jwt import PyJWKClient
+
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+
 from src.repositories.users import UserRepository
-from src.core.security import hash_password, verify_password
 from src.schemas.users import UserCreate
 from src.models.users import User
 
 from src.core.settings import settings
 
-from src.schemas.users import Token
 
 class AuthService:
 
     def __init__(self, user_repository: UserRepository):
         self.user_repo = user_repository
+        certs_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM_NAME}/protocol/openid-connect/certs"
+        self.jwks_client = PyJWKClient(certs_url)
 
-    async def register_user(self, user: UserCreate) -> User:
-        existing_user = await self.user_repo.get_user_by_email(user.email)
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        
-        hashed_password = hash_password(user.password)
-        new_user = await self.user_repo.create_user(user.email, hashed_password)
-        return new_user
+    async def check_or_create_user(self, payload: Dict[str, Any]) -> User: 
+        email = payload.get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Email claim missing in token")
+
+        existing_user = await self.user_repo.get_user_by_email(email)
+
+        if not existing_user:
+            id_keycloak_str = payload.get("sub")
+            
+            if not id_keycloak_str:
+                raise HTTPException(status_code=401, detail="Subject (sub) claim missing in token")
+            try:
+                id_keycloak = uuid.UUID(id_keycloak_str)
+            except ValueError:
+                raise HTTPException(status_code=401, detail="Invalid Keycloak ID format")
+
+            first_name = payload.get("given_name")
+            last_name = payload.get("family_name")
+
+            user = UserCreate(
+                id_keycloak=id_keycloak,
+                email=email, 
+                first_name=first_name,
+                last_name=last_name,
+            )
+
+            new_user = await self.user_repo.create_user(user)
+            return new_user
+
+        return existing_user
     
-    def _create_jwt_token(self, payload: Dict[str, Any], expires_delta: timedelta) -> str:
-        to_encode = payload.copy()
-        expire = datetime.now(timezone.utc) + expires_delta
+    async def authorize(self, credentials: HTTPAuthorizationCredentials) -> User:
 
-        to_encode.update({"exp": expire})
-        
-        token = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-
-        return token
-    
-    async def validate_token(self, token: str) -> User:
-        credential_exception = HTTPException(
-            status_code=401,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        token = credentials.credentials
         try:
-            payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-            email = payload.get("sub")
-            if not email:
-                raise credential_exception
-        except jwt.PyJWTError:
-            raise credential_exception
-        
-        user = await self.user_repo.get_user_by_email(email)
+            signing_key = self.jwks_client.get_signing_key_from_jwt(token)
+            payload = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=[settings.KEYCLOAK_ALGORITHM],
+                audience=settings.KEYCLOAK_CLIENT_ID,
+                issuer=f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM_NAME}",
+            )
+  
+            user = await self.check_or_create_user(payload=payload)
+            return user
 
-        if user is None:
-            raise credential_exception
-        
-        return user
-
-
-    
-    async def authenticate_user_jwt(self, email: str, password: str) -> Token:
-        user = await self.user_repo.get_user_by_email(email)
-        if not user or not verify_password(password, user.password):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-        
-        access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = self._create_jwt_token(
-            payload={"sub": user.email},
-            expires_delta=access_token_expires
-        )
-
-        return Token(access_token=access_token, token_type="bearer")
-
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token has expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        except jwt.PyJWTError as e:
+            raise HTTPException(status_code=500, detail=f"Token verification error, {e}")
 
         
