@@ -2,8 +2,7 @@ import uuid
 
 from typing import Dict, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import ForeignKey, String, Text, Boolean, Uuid, JSON
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +16,7 @@ class User(Base, TimestampMixin):
     __tablename__ = "users"
 
     id_keycloak: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
     )
     email: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
@@ -37,13 +36,13 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id_keycloak"))
     exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id"))
-    skills: Mapped[Dict] = mapped_column(JSONB)
+    skills: Mapped[Dict] = mapped_column(JSON)
     raw_cv: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships

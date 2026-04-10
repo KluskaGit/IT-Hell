@@ -2,9 +2,8 @@ import uuid
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text, Float
+from sqlalchemy import ForeignKey, String, Text, Float, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 
 from src.models import Base, TimestampMixin
 
@@ -23,7 +22,7 @@ class JobOffer(Base, TimestampMixin):
     __tablename__ = "job_offers"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
