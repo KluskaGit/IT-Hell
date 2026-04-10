@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
-    JWT_SECRET: str
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    JWT_ALGORITHM: str = "HS256"
+    KEYCLOAK_URL: str = "http://localhost:8080"
+    KEYCLOAK_REALM_NAME: str
+    KEYCLOAK_CLIENT_ID: str
+    KEYCLOAK_ALGORITHM: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
