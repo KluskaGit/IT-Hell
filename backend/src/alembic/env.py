@@ -23,7 +23,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-from src.db import get_db_url
+from src.core.db import get_db_url
 config.set_main_option('sqlalchemy.url', get_db_url())
 
 

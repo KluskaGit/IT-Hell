@@ -2,8 +2,7 @@ import uuid
 
 from typing import List, TYPE_CHECKING
 
-from sqlalchemy import String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Uuid
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +16,7 @@ class ExperienceLevel(Base):
     __tablename__ = "experience_levels"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
@@ -31,7 +30,7 @@ class Site(Base):
     __tablename__ = "sites"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
@@ -44,7 +43,7 @@ class Company(Base):
     __tablename__ = "companies"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
@@ -57,7 +56,7 @@ class WorkType(Base):
     __tablename__ = "work_types"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
@@ -70,20 +69,22 @@ class Location(Base):
     __tablename__ = "locations"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
     city: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="location")
+    job_offers: Mapped[List["JobOffer"]] = relationship(
+        secondary="job_offer_location",
+        back_populates="locations")
 
 class Specialization(Base):
     __tablename__ = "specializations"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
@@ -96,13 +97,20 @@ class Technology(Base):
     __tablename__ = "technologies"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
     technologies: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="technologies")
+    job_offers: Mapped[List["JobOffer"]] = relationship(
+        secondary="job_offer_technology",
+        back_populates="technologies"
+    )
+    user_profiles: Mapped[List["UserProfile"]] = relationship(
+        secondary="user_profile_technology",
+        back_populates="technologies",
+    )
 
 

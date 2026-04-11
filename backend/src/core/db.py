@@ -11,14 +11,16 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
+from src.core.settings import settings
+
 def get_db_url(asynchronous=False) -> str:
     load_dotenv()
 
-    user = os.environ['POSTGRES_USER']
-    password = os.environ['POSTGRES_PASSWORD']
-    host = os.environ['POSTGRES_HOST']
-    port = os.environ['POSTGRES_PORT']
-    db = os.environ['POSTGRES_DB']
+    user = settings.POSTGRES_USER
+    password = settings.POSTGRES_PASSWORD
+    host = settings.POSTGRES_HOST
+    port = settings.POSTGRES_PORT
+    db = settings.POSTGRES_DB
 
     if asynchronous:
         return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
