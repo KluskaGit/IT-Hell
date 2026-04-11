@@ -12,6 +12,14 @@ class Settings(BaseSettings):
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_ALGORITHM: str
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
+    REDIS_STREAM: str
+    REDIS_GROUP: str
+    REDIS_CONSUMER: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings() # type: ignore
