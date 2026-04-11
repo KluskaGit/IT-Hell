@@ -53,9 +53,7 @@ class JobOffer(Base, TimestampMixin):
     exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id", ondelete="CASCADE"))
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"))
     work_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_types.id", ondelete="CASCADE"))
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.id", ondelete="CASCADE"), nullable=True)
     specialization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("specializations.id", ondelete="CASCADE"))
-    technology_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("technologies.id", ondelete="CASCADE"))
 
     salary_from: Mapped[float | None] = mapped_column(Float, nullable=True)
     salary_to: Mapped[float | None] = mapped_column(Float, nullable=True)

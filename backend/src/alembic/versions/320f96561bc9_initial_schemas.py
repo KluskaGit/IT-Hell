@@ -1,8 +1,8 @@
 """Initial schemas
 
-Revision ID: 2614334a85cb
+Revision ID: 320f96561bc9
 Revises: 
-Create Date: 2026-04-11 13:10:38.515041
+Create Date: 2026-04-11 13:33:23.986660
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2614334a85cb'
+revision: str = '320f96561bc9'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -80,9 +80,7 @@ def upgrade() -> None:
     sa.Column('exp_level_id', sa.Uuid(), nullable=False),
     sa.Column('company_id', sa.Uuid(), nullable=False),
     sa.Column('work_type_id', sa.Uuid(), nullable=False),
-    sa.Column('location_id', sa.Uuid(), nullable=True),
     sa.Column('specialization_id', sa.Uuid(), nullable=False),
-    sa.Column('technology_id', sa.Uuid(), nullable=False),
     sa.Column('salary_from', sa.Float(), nullable=True),
     sa.Column('salary_to', sa.Float(), nullable=True),
     sa.Column('url', sa.String(), nullable=False),
@@ -92,10 +90,8 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['exp_level_id'], ['experience_levels.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['location_id'], ['locations.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['site_id'], ['sites.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['specialization_id'], ['specializations.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['technology_id'], ['technologies.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['work_type_id'], ['work_types.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
