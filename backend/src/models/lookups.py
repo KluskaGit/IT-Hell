@@ -76,7 +76,9 @@ class Location(Base):
     city: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="location")
+    job_offers: Mapped[List["JobOffer"]] = relationship(
+        secondary="job_offer_location",
+        back_populates="locations")
 
 class Specialization(Base):
     __tablename__ = "specializations"
@@ -102,6 +104,13 @@ class Technology(Base):
     technologies: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="technologies")
+    job_offers: Mapped[List["JobOffer"]] = relationship(
+        secondary="job_offer_technology",
+        back_populates="technologies"
+    )
+    user_profiles: Mapped[List["UserProfile"]] = relationship(
+        secondary="user_profile_technology",
+        back_populates="technologies",
+    )
 
 
