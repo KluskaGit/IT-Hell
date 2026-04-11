@@ -1,8 +1,16 @@
 import uuid
 
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text, Float, Uuid
+from sqlalchemy import (
+    ForeignKey,
+    String,
+    Text,
+    Float,
+    Uuid,
+    Table,
+    Column
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models import Base, TimestampMixin
@@ -18,6 +26,21 @@ if TYPE_CHECKING:
         Technology,
     )
 
+
+job_offer_location_table = Table(
+    "job_offer_location",
+    Base.metadata,
+    Column("job_offer_id", ForeignKey("job_offers.id", ondelete="CASCADE"), primary_key=True),
+    Column("location_id", ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True),
+)
+
+job_offer_technology_table = Table(
+    "job_offer_technology",
+    Base.metadata,
+    Column("job_offer_id", ForeignKey("job_offers.id", ondelete="CASCADE"), primary_key=True),
+    Column("technology_id", ForeignKey("technologies.id", ondelete="CASCADE"), primary_key=True),
+)
+
 class JobOffer(Base, TimestampMixin):
     __tablename__ = "job_offers"
 
@@ -26,13 +49,13 @@ class JobOffer(Base, TimestampMixin):
         primary_key=True,
         default=uuid.uuid4
     )
-    site_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sites.id"))
-    exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id"))
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
-    work_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_types.id"))
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.id"))
-    specialization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("specializations.id"))
-    technology_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("technologies.id"))
+    site_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sites.id", ondelete="CASCADE"))
+    exp_level_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experience_levels.id", ondelete="CASCADE"))
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"))
+    work_type_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_types.id", ondelete="CASCADE"))
+    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.id", ondelete="CASCADE"), nullable=True)
+    specialization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("specializations.id", ondelete="CASCADE"))
+    technology_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("technologies.id", ondelete="CASCADE"))
 
     salary_from: Mapped[float | None] = mapped_column(Float, nullable=True)
     salary_to: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -45,6 +68,13 @@ class JobOffer(Base, TimestampMixin):
     exp_level: Mapped["ExperienceLevel"] = relationship(back_populates="job_offers")
     company: Mapped["Company"] = relationship(back_populates="job_offers")
     work_type: Mapped["WorkType"] = relationship(back_populates="job_offers")
-    location: Mapped["Location"] = relationship(back_populates="job_offers")
     specialization: Mapped["Specialization"] = relationship(back_populates="job_offers")
-    technologies: Mapped["Technology"] = relationship(back_populates="job_offers")
+
+    locations: Mapped[List["Location"]] = relationship(
+        secondary="job_offer_location",
+        back_populates="job_offers"
+    )
+    technologies: Mapped["Technology"] = relationship(
+        secondary="job_offer_technology",
+        back_populates="job_offers"
+    )
