@@ -1,10 +1,15 @@
+from codecs import lookup
 import os
 import json
 import asyncio
 import redis.asyncio as aredis
 
-from src.core.settings import settings
 from worker.core.redis import redis_connect
+from worker.lookups import save_lookups_to_db
+
+from src.core.settings import settings
+from src.core.db import a_sessionmaker
+
 
 class Worker:
     def __init__(self) -> None:
@@ -42,10 +47,14 @@ class Worker:
             
             if message:
                 message_id, data =  message[0][1][0]
-                payload = json.loads(data["lookups"])
-                
-                if payload:
-                    print(payload)
+                lookups = data.get("lookups", None)
+
+                if lookups:
+                    payload = json.loads(lookups)
+                    
+                    if payload:
+                        await save_lookups_to_db(payload)
+
 
                 await self.redis_client.xack(self.stream, self.group, message_id)
 
