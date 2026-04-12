@@ -29,7 +29,7 @@ class ScraperPracujPL:
             f.write(response.text)
 
     def scraper_cache(self):
-        with open(f"{DATA_PATH}/response.html", "r") as f:
+        with open(f"{DATA_PATH}/response.html", "r", encoding="utf-8") as f:
             html = f.read()
         soup = BeautifulSoup(html, 'html.parser')
         next_data_script = soup.find('script', id='__NEXT_DATA__')
@@ -39,7 +39,7 @@ class ScraperPracujPL:
                 json.dump(data, out, indent=4)
 
     def get_next_data(self) -> Dict:
-        with open(f"{DATA_PATH}/next_data.json", "r") as f:
+        with open(f"{DATA_PATH}/next_data.json", "r", encoding="utf-8") as f:
             data = f.read()
             next_data = json.loads(data)
 
@@ -52,8 +52,8 @@ class ScraperPracujPL:
 
 async def main():
     scraper = ScraperPracujPL()
-    #scraper.scraper_get()
-    #scraper.scraper_cache()
+    # scraper.scraper_get()
+    # scraper.scraper_cache()
     await scraper.send_lookups()
     pass
 
