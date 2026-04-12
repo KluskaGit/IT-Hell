@@ -21,7 +21,7 @@ class Lookup(Base):
         primary_key=True,
         default=uuid.uuid4
     )
-    name: Mapped[str] = mapped_column(String(50), unique=True)
+    name: Mapped[str] = mapped_column(String(70), unique=True)
 
 class ExperienceLevel(Lookup):
     __tablename__ = "experience_levels"
