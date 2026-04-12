@@ -1,7 +1,7 @@
 from typing import List, Type, TypeVar
-from fastapi import HTTPException
 
 from src.repositories.lookups import LookupsRepository
+from src.core.exceptions import RecordNotFoundError, RecordAlreadyExistsError
 from src.models.lookups import Lookup
 
 T = TypeVar("T", bound=Lookup)
@@ -33,7 +33,7 @@ class LookupsService:
         """
         record = await self.repo.get_by_name(model, name)
         if record is None:
-            raise HTTPException(status_code=404, detail=f"{model.__name__} with name '{name}' not found")
+            raise RecordNotFoundError(f"{model.__name__} with name '{name}' not found")
         return record
     
     async def get_by_id(self, model: Type[T], lookup_id: str) -> T | None:
@@ -48,7 +48,7 @@ class LookupsService:
         """
         record = await self.repo.get_by_id(model, lookup_id)
         if record is None:
-            raise HTTPException(status_code=404, detail=f"{model.__name__} with ID {lookup_id} not found")
+            raise RecordNotFoundError(f"{model.__name__} with ID {lookup_id} not found")
         return record
     
     async def add(self, model: Type[T], name: str) -> T:
@@ -63,7 +63,7 @@ class LookupsService:
         """
         existing_record = await self.repo.get_by_name(model, name)
         if existing_record:
-            raise HTTPException(status_code=400, detail=f"{model.__name__} with name '{name}' already exists")
+            raise RecordAlreadyExistsError(f"{model.__name__} with name '{name}' already exists")
         
         return await self.repo.add(model, name)
     
@@ -80,11 +80,11 @@ class LookupsService:
         """
         existing_record = await self.repo.get_by_name(model, name)
         if existing_record and existing_record.id != lookup_id:
-            raise HTTPException(status_code=400, detail=f"{model.__name__} with name '{name}' already exists")
+            raise RecordAlreadyExistsError(f"{model.__name__} with name '{name}' already exists")
         
         updated_record = await self.repo.update(model, lookup_id, name)
         if updated_record is None:
-            raise HTTPException(status_code=404, detail=f"{model.__name__} with ID {lookup_id} not found")
+            raise RecordNotFoundError(f"{model.__name__} with ID {lookup_id} not found")
         
         return updated_record
     
@@ -100,4 +100,4 @@ class LookupsService:
         """
         success = await self.repo.delete(model, lookup_id)
         if not success:
-            raise HTTPException(status_code=404, detail=f"{model.__name__} with ID {lookup_id} not found")
+            raise RecordNotFoundError(f"{model.__name__} with ID {lookup_id} not found")
