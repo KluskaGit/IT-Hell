@@ -7,3 +7,5 @@ uv.lock
 .env
 # Angular 22k files stuff
 **/node_modules/
+# Scrapers
+scrapers/pracuj_pl/data/

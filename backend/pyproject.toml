@@ -19,4 +19,5 @@ dependencies = [
     "uuid>=1.30",
     "uvicorn>=0.40.0",
     "fastapi[standard]>=0.135.3",
+    "redis>=7.4.0",
 ]

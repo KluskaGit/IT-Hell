@@ -4,17 +4,32 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends
 
 from src.core.db import SessionDep
-from src.models.users import User
+
 from src.repositories.users import UserRepository
+from src.repositories.lookups import LookupsRepository
+
 from src.services.auth_service import AuthService
+from src.services.lookups_service import LookupsService
+
+from src.models.users import User
 
 
 security_scheme = HTTPBearer()
 
+# Lookups
+
+def get_lookups_repo(session: SessionDep) -> LookupsRepository:
+    return LookupsRepository(session)
+
+def get_lookups_service(lookups_repo: Annotated[LookupsRepository, Depends(get_lookups_repo)]) -> LookupsService:
+    return LookupsService(lookups_repo)
+
+# Auth
+
 def get_user_repo(session: SessionDep) -> UserRepository:
     return UserRepository(session)
 
-def get_auth_service(user_repo: UserRepository = Depends(get_user_repo)) -> AuthService:
+def get_auth_service(user_repo: Annotated[UserRepository, Depends(get_user_repo)]) -> AuthService:
     return AuthService(user_repo)
 
 async def get_current_user(
