@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
-from src.api.v1 import router
+from src.api.v1.router import router_v1
 from src.core.exceptions import RecordNotFoundError, RecordAlreadyExistsError
 
 app = FastAPI()
 
-app.include_router(router.router_v1)
+app.include_router(router_v1)
 
 @app.get("/")
 async def root():
