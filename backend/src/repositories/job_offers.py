@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from src.models.job_offers import JobOffer
+from src.models.lookups import Technology, Location
 
 
 class JobOffersRepository:
@@ -166,7 +167,6 @@ class JobOffersRepository:
 
         if offer:
             # Get the technology and add it
-            from src.models.lookups import Technology
             tech_stmt = select(Technology).where(Technology.id == technology_id)
             tech_result = await self.session.execute(tech_stmt)
             technology = tech_result.scalars().first()
@@ -187,7 +187,6 @@ class JobOffersRepository:
         offer = result.scalars().first()
 
         if offer:
-            from src.models.lookups import Technology
             tech_stmt = select(Technology).where(Technology.id == technology_id)
             tech_result = await self.session.execute(tech_stmt)
             technology = tech_result.scalars().first()
@@ -209,7 +208,6 @@ class JobOffersRepository:
 
         if offer:
             # Get the location and add it
-            from src.models.lookups import Location
             loc_stmt = select(Location).where(Location.id == location_id)
             loc_result = await self.session.execute(loc_stmt)
             location = loc_result.scalars().first()
@@ -230,7 +228,6 @@ class JobOffersRepository:
         offer = result.scalars().first()
 
         if offer:
-            from src.models.lookups import Location
             loc_stmt = select(Location).where(Location.id == location_id)
             loc_result = await self.session.execute(loc_stmt)
             location = loc_result.scalars().first()
