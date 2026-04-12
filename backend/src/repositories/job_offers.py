@@ -26,54 +26,6 @@ class JobOffersRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def get_by_title(self, title: str) -> List[JobOffer]:
-        """
-        Get job offers by title (partial match).
-        """
-        stmt = select(JobOffer).where(JobOffer.title.ilike(f"%{title}%"))
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_by_company_id(self, company_id: UUID) -> List[JobOffer]:
-        """
-        Get all job offers from a specific company.
-        """
-        stmt = select(JobOffer).where(JobOffer.company_id == company_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_by_site_id(self, site_id: UUID) -> List[JobOffer]:
-        """
-        Get all job offers from a specific site.
-        """
-        stmt = select(JobOffer).where(JobOffer.site_id == site_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_by_work_type_id(self, work_type_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by work type.
-        """
-        stmt = select(JobOffer).where(JobOffer.work_type_id == work_type_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_by_specialization_id(self, specialization_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by specialization.
-        """
-        stmt = select(JobOffer).where(JobOffer.specialization_id == specialization_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_by_experience_level_id(self, exp_level_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by experience level.
-        """
-        stmt = select(JobOffer).where(JobOffer.exp_level_id == exp_level_id)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
     async def filter(
         self,
         skip: int = 0,

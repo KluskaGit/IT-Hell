@@ -25,59 +25,6 @@ class JobOffersService:
             raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
         return offer
 
-    async def get_by_title(self, title: str) -> List[JobOffer]:
-        """
-        Get job offers by title (partial match).
-        """
-        if not title or len(title.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Title search parameter cannot be empty")
-        return await self.repo.get_by_title(title)
-
-    async def get_by_company_id(self, company_id: UUID) -> List[JobOffer]:
-        """
-        Get all job offers from a specific company.
-        """
-        offers = await self.repo.get_by_company_id(company_id)
-        if not offers:
-            raise HTTPException(status_code=404, detail=f"No job offers found for company {company_id}")
-        return offers
-
-    async def get_by_site_id(self, site_id: UUID) -> List[JobOffer]:
-        """
-        Get all job offers from a specific site.
-        """
-        offers = await self.repo.get_by_site_id(site_id)
-        if not offers:
-            raise HTTPException(status_code=404, detail=f"No job offers found for site {site_id}")
-        return offers
-
-    async def get_by_work_type_id(self, work_type_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by work type.
-        """
-        offers = await self.repo.get_by_work_type_id(work_type_id)
-        if not offers:
-            raise HTTPException(status_code=404, detail=f"No job offers found for work type {work_type_id}")
-        return offers
-
-    async def get_by_specialization_id(self, specialization_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by specialization.
-        """
-        offers = await self.repo.get_by_specialization_id(specialization_id)
-        if not offers:
-            raise HTTPException(status_code=404, detail=f"No job offers found for specialization {specialization_id}")
-        return offers
-
-    async def get_by_experience_level_id(self, exp_level_id: UUID) -> List[JobOffer]:
-        """
-        Get job offers by experience level.
-        """
-        offers = await self.repo.get_by_experience_level_id(exp_level_id)
-        if not offers:
-            raise HTTPException(status_code=404, detail=f"No job offers found for experience level {exp_level_id}")
-        return offers
-
     async def filter(
         self,
         skip: int = 0,
