@@ -179,10 +179,19 @@ private autoFillForm() : void
     this.router.navigate(['/login']); 
   }
   
-  onSubmit(): void { 
-    if (this.candidateForm.invalid) { this.candidateForm.markAllAsTouched(); return; } 
-    console.log('Dane formularza:', this.candidateForm.value); 
+  onSubmit(): void {
+  if (this.candidateForm.invalid) {
+    this.candidateForm.markAllAsTouched();
+    return;
   }
+
+  this.router.navigate(['/offers'], {
+    state: {
+      filters: this.candidateForm.getRawValue(),
+      cvFileName: this.selectedFile?.name ?? null
+    }
+  });
+}
 
   private setupStudentValidation(): void {
     this.candidateForm.get('isStudent')?.valueChanges.subscribe((isStudent: boolean) => {

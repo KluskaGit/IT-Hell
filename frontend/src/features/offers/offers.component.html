@@ -1,0 +1,171 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <a routerLink="/" class="logo">
+      <div class="logo-icon"></div>
+      <span>CV<span class="logo-accent">_ANALIZER</span></span>
+    </a>
+
+    <div class="nav-links">
+      <a routerLink="/">Strona główna</a>
+      <a routerLink="/profile">Mój profil</a>
+    </div>
+
+    <div class="nav-actions">
+      <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
+      <button type="button" class="btn-primary" routerLink="/login">Zaloguj się</button>
+    </div>
+  </div>
+</nav>
+
+<div class="background-glow">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+</div>
+
+<div class="offers-page">
+  <section class="hero-section animate-up">
+    <span class="badge">Dopasowane oferty</span>
+    <h1>Oferty pracy dopasowane do <span class="text-gradient">Twojego profilu</span></h1>
+    <p>
+      Na podstawie Twojego CV, wybranych ról, doświadczenia, technologii i preferencji
+      finansowych wyświetlamy oferty, które najlepiej pasują do Twojego profilu.
+    </p>
+  </section>
+
+  <section class="summary-card animate-up delay-1" *ngIf="filters">
+    <div class="summary-header">
+      <h2>Podsumowanie dopasowania</h2>
+      <span class="summary-count">
+        {{ matchedOffers.length }} ofert
+      </span>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-block">
+        <h3>CV</h3>
+        <p>{{ cvFileName || 'Brak nazwy pliku' }}</p>
+      </div>
+
+      <div class="summary-block">
+        <h3>Poziom doświadczenia</h3>
+        <p>{{ filters.seniority }}</p>
+      </div>
+
+      <div class="summary-block">
+        <h3>Kontrakt</h3>
+        <p>{{ getContractLabel(filters.contractType) }}</p>
+      </div>
+
+      <div class="summary-block">
+        <h3>Widełki</h3>
+        <p>
+          {{ salaryFrom | number:'1.0-0' }} –
+          {{ salaryTo === 50000 ? '50 000+' : (salaryTo | number:'1.0-0') }}
+          PLN
+        </p>
+      </div>
+
+      <div class="summary-block full-width">
+        <h3>Główne role</h3>
+        <div class="chip-list">
+          <span class="chip" *ngFor="let role of selectedRoles">{{ role }}</span>
+        </div>
+      </div>
+
+      <div class="summary-block full-width">
+        <h3>Technologie</h3>
+        <div class="chip-list">
+          <span class="chip" *ngFor="let tech of selectedTechnologies">{{ tech }}</span>
+        </div>
+      </div>
+
+      <div class="summary-block full-width">
+        <h3>Źródła ofert</h3>
+        <div class="chip-list">
+          <span class="chip" *ngFor="let source of selectedSources">{{ formatSource(source) }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="offers-list animate-up delay-2" *ngIf="matchedOffers.length > 0; else emptyState">
+    <article class="offer-card" *ngFor="let offer of matchedOffers">
+      <div class="offer-top-row">
+        <div class="offer-main-info">
+          <div class="company-logo">
+            {{ offer.company.charAt(0) }}
+          </div>
+
+          <div class="offer-heading">
+            <div class="offer-title-row">
+              <h2>{{ offer.title }}</h2>
+              <span class="match-badge" [ngClass]="getMatchClass(offer.matchScore)">
+                {{ offer.matchScore }}% match
+              </span>
+            </div>
+
+            <div class="offer-meta">
+              <span>{{ offer.company }}</span>
+              <span>•</span>
+              <span>{{ offer.location }}</span>
+              <span>•</span>
+              <span>{{ getWorkModeLabel(offer.workMode) }}</span>
+              <span>•</span>
+              <span>{{ getContractLabel(offer.contractType) }}</span>
+              <span>•</span>
+              <span>{{ formatSource(offer.source) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="offer-salary-box">
+          <strong>
+            {{ offer.salaryMin | number:'1.0-0' }} – {{ offer.salaryMax | number:'1.0-0' }} PLN
+          </strong>
+          <span>{{ offer.postedLabel }}</span>
+        </div>
+      </div>
+
+      <p class="offer-description">
+        {{ offer.description }}
+      </p>
+
+      <div class="offer-section" *ngIf="offer.matchedRoles.length > 0">
+        <h3>Pasujące role</h3>
+        <div class="chip-list">
+          <span class="chip chip-role" *ngFor="let role of offer.matchedRoles">{{ role }}</span>
+        </div>
+      </div>
+
+      <div class="offer-section">
+        <h3>Technologie</h3>
+        <div class="chip-list">
+          <span
+            class="chip"
+            [ngClass]="{ 'chip-highlight': offer.matchedTech.includes(tech) }"
+            *ngFor="let tech of offer.technologies"
+          >
+            {{ tech }}
+          </span>
+        </div>
+      </div>
+
+      <div class="offer-actions">
+        <button type="button" class="btn-outline">Zapisz ofertę</button>
+        <button type="button" class="btn-primary">Zobacz ofertę</button>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #emptyState>
+    <section class="empty-state animate-up delay-2">
+      <div class="empty-icon">🔎</div>
+      <h2>Brak ofert spełniających aktualne kryteria</h2>
+      <p>
+        Spróbuj zmniejszyć poziom dopasowania, poszerzyć zakres wynagrodzenia
+        albo zaznaczyć więcej ról i technologii.
+      </p>
+      <button type="button" class="btn-primary" routerLink="/">Wróć do formularza</button>
+    </section>
+  </ng-template>
+</div>
