@@ -12,96 +12,58 @@ if TYPE_CHECKING:
     from src.models.users import UserProfile
     from src.models.job_offers import JobOffer
 
-class ExperienceLevel(Base):
-    __tablename__ = "experience_levels"
+
+class Lookup(Base):
+    __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
-    exp_level: Mapped[str] = mapped_column(String(30), unique=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
+
+class ExperienceLevel(Lookup):
+    __tablename__ = "experience_levels"
 
     # Relationships
     user_profiles: Mapped[List["UserProfile"]] = relationship(back_populates="exp_level")
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="exp_level")
 
-class Site(Base):
+class Site(Lookup):
     __tablename__ = "sites"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    url: Mapped[str] = mapped_column(String(250), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="site")
 
-class Company(Base):
+class Company(Lookup):
     __tablename__ = "companies"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    company_name: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="company")
 
-class WorkType(Base):
+class WorkType(Lookup):
     __tablename__ = "work_types"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    work_type: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="work_type")
 
-class Location(Base):
+class Location(Lookup):
     __tablename__ = "locations"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    city: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(
         secondary="job_offer_location",
         back_populates="locations")
 
-class Specialization(Base):
+class Specialization(Lookup):
     __tablename__ = "specializations"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    specialization: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(back_populates="specialization")
 
-class Technology(Base):
+class Technology(Lookup):
     __tablename__ = "technologies"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    technologies: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
     job_offers: Mapped[List["JobOffer"]] = relationship(
