@@ -1,12 +1,22 @@
-from typing import List, Optional
+from typing import List, Optional, Type, TypeVar
 from uuid import UUID
 
 from src.repositories.job_offers import JobOffersRepository
 from src.models.job_offers import JobOffer
-from src.models.lookups import Technology, Location
+from src.models.lookups import (
+    Technology,
+    Location,
+    Site,
+    ExperienceLevel,
+    Company,
+    WorkType,
+    Specialization,
+    Lookup,
+)
 from src.services.lookups_service import LookupsService
 from src.core.exceptions import RecordNotFoundError, ValidationError, RecordAlreadyExistsError
 
+TLookup = TypeVar("TLookup", bound=Lookup)
 
 class JobOffersService:
     def __init__(self, repo: JobOffersRepository, lookups_service: LookupsService):
@@ -154,11 +164,11 @@ class JobOffersService:
 
     async def create_from_scraper(
         self,
-        site_id: UUID,
-        exp_level_id: UUID,
-        company_id: UUID,
-        work_type_id: UUID,
-        specialization_id: UUID,
+        site_name: str,
+        exp_level_name: str,
+        company_name: str,
+        work_type_name: str,
+        specialization_name: str,
         url: str,
         title: str,
         description: str,
@@ -172,15 +182,13 @@ class JobOffersService:
         
         This method handles the complete flow for scrapers:
         1. Validates all input data
-        2. Resolves technology names to IDs
-        3. Resolves location names to IDs
-        4. Creates the offer with relationships in ONE atomic transaction
+        2. Resolves all string names (site, company, etc.) to database IDs
+        3. Creates the offer with relationships in ONE atomic transaction
         
         Returns a complete JobOffer with all relationships loaded.
         
         Raises:
         - 400 if required fields are empty
-        - 404 if any technology name or location name cannot be resolved
         """
         # Validate basic required fields
         if not url or not url.strip():
@@ -205,33 +213,39 @@ class JobOffersService:
         if existing_offer:
             raise RecordAlreadyExistsError(f"Job offer with URL '{url}' already exists")
 
+        async def get_or_create(model_cls: Type[TLookup], name: str) -> TLookup:
+            if not name or not name.strip():
+                raise ValidationError(f"{model_cls.__name__} name is required")
+            try:
+                return await self.lookups_service.get_by_name(model_cls, name)
+            except RecordNotFoundError:
+                return await self.lookups_service.add(model_cls, name)
+
+        site = await get_or_create(Site, site_name)
+        exp_level = await get_or_create(ExperienceLevel, exp_level_name)
+        company = await get_or_create(Company, company_name)
+        work_type = await get_or_create(WorkType, work_type_name)
+        specialization = await get_or_create(Specialization, specialization_name)
+
         # --- Resolve Technologies (Get-or-Create) ---
         technologies = []
         for tech_name in technology_names:
-            try:
-                tech = await self.lookups_service.get_by_name(Technology, tech_name)
-                technologies.append(tech)
-            except RecordNotFoundError:
-                tech = await self.lookups_service.add(Technology, tech_name)
-                technologies.append(tech)
+            tech = await get_or_create(Technology, tech_name)
+            technologies.append(tech)
 
         # --- Resolve Locations (Get-or-Create) ---
         locations = []
         for loc_name in location_names:
-            try:
-                loc = await self.lookups_service.get_by_name(Location, loc_name)
-                locations.append(loc)
-            except RecordNotFoundError:
-                loc = await self.lookups_service.add(Location, loc_name)
-                locations.append(loc)
+            loc = await get_or_create(Location, loc_name)
+            locations.append(loc)
 
         # Create offer with all relationships in one atomic transaction
         return await self.repo.create_with_relationships(
-            site_id=site_id,
-            exp_level_id=exp_level_id,
-            company_id=company_id,
-            work_type_id=work_type_id,
-            specialization_id=specialization_id,
+            site_id=site.id,
+            exp_level_id=exp_level.id,
+            company_id=company.id,
+            work_type_id=work_type.id,
+            specialization_id=specialization.id,
             url=url,
             title=title,
             description=description,

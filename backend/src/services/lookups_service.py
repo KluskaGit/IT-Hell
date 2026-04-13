@@ -21,7 +21,7 @@ class LookupsService:
         """
         return await self.repo.get_all(model)
     
-    async def get_by_name(self, model: Type[T], name: str) -> T | None:
+    async def get_by_name(self, model: Type[T], name: str) -> T:
         """_summary_
 
         Args:
@@ -29,14 +29,14 @@ class LookupsService:
             name (str): _description_
 
         Returns:
-            T | None: _description_
+            T: _description_
         """
         record = await self.repo.get_by_name(model, name)
         if record is None:
             raise RecordNotFoundError(f"{model.__name__} with name '{name}' not found")
         return record
     
-    async def get_by_id(self, model: Type[T], lookup_id: str) -> T | None:
+    async def get_by_id(self, model: Type[T], lookup_id: str) -> T:
         """_summary_
 
         Args:
@@ -44,7 +44,7 @@ class LookupsService:
             lookup_id (str): _description_
 
         Returns:
-            T | None: _description_
+            T: _description_
         """
         record = await self.repo.get_by_id(model, lookup_id)
         if record is None:

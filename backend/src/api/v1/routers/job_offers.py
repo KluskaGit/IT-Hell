@@ -14,19 +14,20 @@ router = APIRouter(tags=["Lookup Data"])
 async def create_lookup_sample(job_offers_service: Annotated[JobOffersService, Depends(get_job_offers_service)]):
     """Create a sample job offer using test data from test_job_offers_scraper.py."""
     offer = await job_offers_service.create_from_scraper(
-        site_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
-        company_id=UUID("550e8400-e29b-41d4-a716-446655440001"),
-        work_type_id=UUID("550e8400-e29b-41d4-a716-446655440002"),
-        exp_level_id=UUID("550e8400-e29b-41d4-a716-446655440003"),
-        specialization_id=UUID("550e8400-e29b-41d4-a716-446655440004"),
-        title="Senior Java Developer",
-        url="https://pracuj.pl/job/12345",
-        description="Join our Google Poland team...",
-        technology_names=["Java", "Spring", "Docker"],
-        location_names=["Warszawa", "Remote"],
-        salary_from=12000,
+        site_name="Przykładowy Portal",
+        exp_level_name="Mid",
+        company_name="Przykładowa Firma",
+        work_type_name="B2B",
+        specialization_name="Backend",
+        url="https://example.com/job/123",
+        title="Python Developer",
+        description="Opis stanowiska...",
+        technology_names=["Python", "FastAPI"],
+        location_names=["Warszawa", "Zdalnie"],
+        salary_from=10000,
         salary_to=16000,
     )
+
 
     return {
         "id": str(offer.id),
