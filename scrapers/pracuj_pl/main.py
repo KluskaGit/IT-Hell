@@ -3,6 +3,7 @@ import json
 import asyncio
 import logging
 import queue
+import random
 
 from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
@@ -15,8 +16,8 @@ from logging import Logger
 
 
 from pracuj_pl.core.redis import redis_connect
-from pracuj_pl.lookups.lookups import extract_lookups
-from pracuj_pl.job_offers.job_offers import extract_job_offers
+from pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
+from pracuj_pl.schemas import JobOffer
 
 DATA_PATH = "pracuj_pl/data"
 
@@ -24,10 +25,14 @@ class ScraperPracujPL:
 
     def __init__(self, logger: Logger):
         self.logger = logger
+        self.min_delay = 7
+        self.max_delay = 7
 
         load_dotenv()
         self.redis_client = redis_connect()
         self.stream = os.environ["REDIS_STREAM"]
+        self.job_que: asyncio.Queue[JobOffer] = asyncio.Queue()
+        self.redis_que: asyncio.Queue[JobOffer] = asyncio.Queue()
 
     def html_to_json(self, text: str) -> Dict | None:
         try:
@@ -52,31 +57,85 @@ class ScraperPracujPL:
             loop.stop()
             raise RuntimeError(f"Fetch failed with status {response.status_code}: {text}")
         
-        # await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
+        await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
 
         return self.html_to_json(response.text)
 
-    def get_next_data(self, path: str) -> Dict:
-        with open(path, "r", encoding="utf-8") as f:
-            data = f.read()
-            next_data = json.loads(data)
+    async def redis_worker(self):
+        while True:
+            offer = await self.redis_que.get()
+            try:
+                await self.redis_client.xadd(self.stream, {"offer": offer.model_dump_json()})
+            except Exception as e:
+                self.logger.error(f"Error while pushing to Redis: {e}")
+            finally:
+                self.redis_que.task_done()
 
-        return next_data
+    async def worker(self, session: AsyncSession):
+        while True:
+            
+            offer = await self.job_que.get()
+            try:    
+                next_data = await self.fetch(session, offer.url)
+                if next_data is not None:
+                    # Parsowanie detali i przypisanie do glownego obiektu
+                    fill_out_offer(next_data, offer)
+                
+                print(offer)
+                await self.redis_que.put(offer)
 
-    async def send_lookups(self) -> None:
-        path = f"{DATA_PATH}/next_data.json"
-        next_data = self.get_next_data(path)
-        lookups = extract_lookups(next_data)
-        await self.redis_client.xadd(self.stream, {"lookups": json.dumps(lookups)})
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.error(f"Error while fetching item: {e}")
+            finally:
+                self.job_que.task_done()
 
-    async def run(self):
+    async def run(self) -> None:
         headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36'}
 
         async with AsyncSession(headers=headers, impersonate="chrome110") as session:
-            # url = "https://www.pracuj.pl/praca/administrator-sieci-warszawa-marszalkowska-58,oferta,1004748640"
-            # next_data = await self.fetch(session, url)
-            next_data = self.get_next_data(f"{DATA_PATH}/next_data.json")
-            return next_data
+            num_workers = 2
+            
+            # Startujemy workery
+            workers = [asyncio.create_task(self.worker(session)) for _ in range(num_workers)]
+            workers.append(asyncio.create_task(self.redis_worker()))
+
+            page = 1
+            while True:
+                url = f"https://it.pracuj.pl/praca?pn={page}"
+                
+                try:
+                    next_data = await self.fetch(session, url)
+                except Exception as e:
+                    self.logger.error(f"Error fetching page {page}: {e}")
+                    break
+                
+                if next_data is None:
+                    break
+
+                try:
+                    offers = extract_job_offers(next_data)
+                    if not offers:
+                        self.logger.info(f"0 offers on page {page}. Stopping pagination.")
+                        break
+
+                    for offer in offers:
+                        await self.job_que.put(offer)
+                except Exception as e:
+                    self.logger.error(f"Failed to extract offers on page {page}: {e}")
+                    break
+                
+                page += 1
+                break
+
+            self.logger.info("Finished putting pages in queue. Waiting for workers to finish.")
+            await self.job_que.join()
+            await self.redis_que.join()
+
+            self.logger.info("All tasks completed, canceling workers.")
+            for w in workers:
+                w.cancel()
 
 async def main():
 
@@ -100,16 +159,8 @@ async def main():
     logger.addHandler(que_handler)
 
     scraper = ScraperPracujPL(logger)
-    # scraper.scraper_get()
-    # scraper.scraper_cache()
-    #await scraper.send_lookups()
-    # next_data = await scraper.run()
-    # with open(f"{DATA_PATH}/next_data2.json", "w", encoding="utf-8") as out:
-    #     json.dump(next_data, out, indent=4)
-    path= f"{DATA_PATH}/next_data.json"
-    extract_job_offers(scraper.get_next_data(path))
-    pass
-
+    await scraper.run()
 
 if __name__ == "__main__":
     asyncio.run(main())
+    pass
