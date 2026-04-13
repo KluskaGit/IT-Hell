@@ -6,6 +6,7 @@ import redis.asyncio as aredis
 
 from worker.core.redis import redis_connect
 from worker.lookups import save_lookups_to_db
+from worker.job_offers import save_job_offer_to_db
 
 from src.core.settings import settings
 from src.core.db import a_sessionmaker
@@ -47,13 +48,18 @@ class Worker:
             
             if message:
                 message_id, data =  message[0][1][0]
-                lookups = data.get("lookups", None)
+                # lookups = data.get("lookups", None)
 
-                if lookups:
-                    payload = json.loads(lookups)
+                # if lookups:
+                #     payload = json.loads(lookups)
                     
-                    if payload:
-                        await save_lookups_to_db(payload)
+                #     if payload:
+                #         await save_lookups_to_db(payload)
+                offer = data.get("offer", None)
+                if offer:
+                    payload = json.loads(offer)
+                    
+                    await save_job_offer_to_db(payload)
 
 
                 await self.redis_client.xack(self.stream, self.group, message_id)
