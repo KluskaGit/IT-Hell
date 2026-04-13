@@ -144,38 +144,72 @@ class JobOffersService:
         if not success:
             raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
 
-    async def add_technology(self, offer_id: UUID, technology_id: UUID) -> JobOffer:
+    async def create_from_scraper(
+        self,
+        site_id: UUID,
+        exp_level_id: UUID,
+        company_id: UUID,
+        work_type_id: UUID,
+        specialization_id: UUID,
+        url: str,
+        title: str,
+        description: str,
+        technology_names: List[str],
+        location_names: List[str],
+        salary_from: Optional[float] = None,
+        salary_to: Optional[float] = None,
+    ) -> JobOffer:
         """
-        Add a technology to a job offer.
+        Create a job offer with technologies and locations from scraper data.
+        
+        This method handles the complete flow for scrapers:
+        1. Validates all input data
+        2. Resolves technology names to IDs
+        3. Resolves location names to IDs
+        4. Creates the offer with relationships in ONE atomic transaction
+        
+        Returns a complete JobOffer with all relationships loaded.
+        
+        Raises:
+        - 400 if required fields are empty
+        - 404 if any technology name or location name cannot be resolved
         """
-        updated_offer = await self.repo.add_technology(offer_id, technology_id)
-        if updated_offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
-        return updated_offer
+        # Validate basic required fields
+        if not url or not url.strip():
+            raise HTTPException(status_code=400, detail="URL is required")
+        if not title or not title.strip():
+            raise HTTPException(status_code=400, detail="Title is required")
+        if not description or not description.strip():
+            raise HTTPException(status_code=400, detail="Description is required")
 
-    async def remove_technology(self, offer_id: UUID, technology_id: UUID) -> JobOffer:
-        """
-        Remove a technology from a job offer.
-        """
-        updated_offer = await self.repo.remove_technology(offer_id, technology_id)
-        if updated_offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found or technology not associated")
-        return updated_offer
+        # Validate salary range if provided
+        if salary_from is not None and salary_to is not None and salary_from > salary_to:
+            raise HTTPException(status_code=400, detail="salary_from cannot be greater than salary_to")
 
-    async def add_location(self, offer_id: UUID, location_id: UUID) -> JobOffer:
-        """
-        Add a location to a job offer.
-        """
-        updated_offer = await self.repo.add_location(offer_id, location_id)
-        if updated_offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
-        return updated_offer
+        # Validate technology and location lists
+        if not technology_names or len(technology_names) == 0:
+            raise HTTPException(status_code=400, detail="At least one technology is required")
+        if not location_names or len(location_names) == 0:
+            raise HTTPException(status_code=400, detail="At least one location is required")
 
-    async def remove_location(self, offer_id: UUID, location_id: UUID) -> JobOffer:
-        """
-        Remove a location from a job offer.
-        """
-        updated_offer = await self.repo.remove_location(offer_id, location_id)
-        if updated_offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found or location not associated")
-        return updated_offer
+        # Get or create technologies (creates missing ones automatically)
+        technology_ids = await self.repo.get_or_create_technologies_by_names(technology_names)
+
+        # Get or create locations (creates missing ones automatically)
+        location_ids = await self.repo.get_or_create_locations_by_names(location_names)
+
+        # Create offer with all relationships in one atomic transaction
+        return await self.repo.create_with_relationships(
+            site_id=site_id,
+            exp_level_id=exp_level_id,
+            company_id=company_id,
+            work_type_id=work_type_id,
+            specialization_id=specialization_id,
+            url=url,
+            title=title,
+            description=description,
+            technology_ids=technology_ids,
+            location_ids=location_ids,
+            salary_from=salary_from,
+            salary_to=salary_to,
+        )

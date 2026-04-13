@@ -2,6 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 
 from src.models.job_offers import JobOffer
 from src.models.lookups import Technology, Location
@@ -157,84 +158,188 @@ class JobOffersRepository:
             return True
         return False
 
-    async def add_technology(self, offer_id: UUID, technology_id: UUID) -> Optional[JobOffer]:
+    async def get_technology_ids_by_names(self, technology_names: List[str]) -> List[UUID]:
         """
-        Add a technology to a job offer's many-to-many relationship.
+        Resolve technology names to their UUIDs.
+        Used by scrapers to convert string technology names to database IDs.
         """
-        stmt = select(JobOffer).where(JobOffer.id == offer_id)
-        result = await self.session.execute(stmt)
-        offer = result.scalars().first()
+        if not technology_names:
+            return []
 
-        if offer:
-            # Get the technology and add it
-            tech_stmt = select(Technology).where(Technology.id == technology_id)
+        stmt = select(Technology.id).where(Technology.name.in_(technology_names))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_technologies_by_names(self, technology_names: List[str]) -> List[Technology]:
+        """
+        Get Technology objects by their names.
+        Used to validate which names were found and which are missing.
+        """
+        if not technology_names:
+            return []
+
+        stmt = select(Technology).where(Technology.name.in_(technology_names))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_location_ids_by_cities(self, location_cities: List[str]) -> List[UUID]:
+        """
+        Resolve location names to their UUIDs.
+        Used by scrapers to convert string location names to database IDs.
+        """
+        if not location_cities:
+            return []
+
+        stmt = select(Location.id).where(Location.name.in_(location_cities))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_locations_by_cities(self, location_cities: List[str]) -> List[Location]:
+        """
+        Get Location objects by their names.
+        Used to validate which names were found and which are missing.
+        """
+        if not location_cities:
+            return []
+
+        stmt = select(Location).where(Location.name.in_(location_cities))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_or_create_technologies_by_names(self, technology_names: List[str]) -> List[UUID]:
+        """
+        Get technology IDs by names, creating missing technologies automatically.
+        Used by scrapers to ensure all technologies exist before attaching to offer.
+        
+        Returns list of UUIDs (both existing and newly created).
+        """
+        if not technology_names:
+            return []
+
+        # Get existing technologies
+        stmt = select(Technology).where(Technology.name.in_(technology_names))
+        result = await self.session.execute(stmt)
+        existing_techs = list(result.scalars().all())
+        existing_names = {t.name for t in existing_techs}
+
+        # Find missing names
+        missing_names = [name for name in technology_names if name not in existing_names]
+
+        # Create missing technologies
+        for name in missing_names:
+            new_tech = Technology(name=name)
+            self.session.add(new_tech)
+            existing_techs.append(new_tech)
+
+        # Commit all at once
+        if missing_names:
+            await self.session.commit()
+
+        return [t.id for t in existing_techs]
+
+    async def get_or_create_locations_by_names(self, location_names: List[str]) -> List[UUID]:
+        """
+        Get location IDs by names, creating missing locations automatically.
+        Used by scrapers to ensure all locations exist before attaching to offer.
+        
+        Returns list of UUIDs (both existing and newly created).
+        """
+        if not location_names:
+            return []
+
+        # Get existing locations
+        stmt = select(Location).where(Location.name.in_(location_names))
+        result = await self.session.execute(stmt)
+        existing_locs = list(result.scalars().all())
+        existing_names = {l.name for l in existing_locs}
+
+        # Find missing names
+        missing_names = [name for name in location_names if name not in existing_names]
+
+        # Create missing locations
+        for name in missing_names:
+            new_loc = Location(name=name)
+            self.session.add(new_loc)
+            existing_locs.append(new_loc)
+
+        # Commit all at once
+        if missing_names:
+            await self.session.commit()
+
+        return [l.id for l in existing_locs]
+
+    async def create_with_relationships(
+        self,
+        site_id: UUID,
+        exp_level_id: UUID,
+        company_id: UUID,
+        work_type_id: UUID,
+        specialization_id: UUID,
+        url: str,
+        title: str,
+        description: str,
+        technology_ids: List[UUID],
+        location_ids: List[UUID],
+        salary_from: Optional[float] = None,
+        salary_to: Optional[float] = None,
+    ) -> JobOffer:
+        """
+        Create a new job offer with technologies and locations in ONE atomic transaction.
+        This is the preferred method for scrapers - all data (offer + relationships) 
+        is inserted and committed together.
+        
+        If ANY part fails, the entire operation rolls back - no partial data in database.
+        """
+        # Create the offer instance (not committed yet)
+        job_offer = JobOffer(
+            site_id=site_id,
+            exp_level_id=exp_level_id,
+            company_id=company_id,
+            work_type_id=work_type_id,
+            specialization_id=specialization_id,
+            url=url,
+            title=title,
+            description=description,
+            salary_from=salary_from,
+            salary_to=salary_to,
+        )
+
+        # Add to session but don't commit yet
+        self.session.add(job_offer)
+
+        # Initialize collections to avoid lazy-load issues in async context
+        job_offer.technologies = []
+        job_offer.locations = []
+
+        # Fetch technologies and add them to relationship
+        if technology_ids:
+            tech_stmt = select(Technology).where(Technology.id.in_(technology_ids))
             tech_result = await self.session.execute(tech_stmt)
-            technology = tech_result.scalars().first()
+            technologies = list(tech_result.scalars().all())
+            for technology in technologies:
+                job_offer.technologies.append(technology)
 
-            if technology:
-                offer.technologies.append(technology)
-                await self.session.commit()
-                await self.session.refresh(offer)
-                return offer
-        return None
-
-    async def remove_technology(self, offer_id: UUID, technology_id: UUID) -> Optional[JobOffer]:
-        """
-        Remove a technology from a job offer's many-to-many relationship.
-        """
-        stmt = select(JobOffer).where(JobOffer.id == offer_id)
-        result = await self.session.execute(stmt)
-        offer = result.scalars().first()
-
-        if offer:
-            tech_stmt = select(Technology).where(Technology.id == technology_id)
-            tech_result = await self.session.execute(tech_stmt)
-            technology = tech_result.scalars().first()
-
-            if technology and technology in offer.technologies:
-                offer.technologies.remove(technology)
-                await self.session.commit()
-                await self.session.refresh(offer)
-                return offer
-        return None
-
-    async def add_location(self, offer_id: UUID, location_id: UUID) -> Optional[JobOffer]:
-        """
-        Add a location to a job offer's many-to-many relationship.
-        """
-        stmt = select(JobOffer).where(JobOffer.id == offer_id)
-        result = await self.session.execute(stmt)
-        offer = result.scalars().first()
-
-        if offer:
-            # Get the location and add it
-            loc_stmt = select(Location).where(Location.id == location_id)
+        # Fetch locations and add them to relationship
+        if location_ids:
+            loc_stmt = select(Location).where(Location.id.in_(location_ids))
             loc_result = await self.session.execute(loc_stmt)
-            location = loc_result.scalars().first()
+            locations = list(loc_result.scalars().all())
+            for location in locations:
+                job_offer.locations.append(location)
 
-            if location:
-                offer.locations.append(location)
-                await self.session.commit()
-                await self.session.refresh(offer)
-                return offer
-        return None
+        # ONE commit for everything: job_offers + job_offer_technology + job_offer_location
+        await self.session.commit()
 
-    async def remove_location(self, offer_id: UUID, location_id: UUID) -> Optional[JobOffer]:
-        """
-        Remove a location from a job offer's many-to-many relationship.
-        """
-        stmt = select(JobOffer).where(JobOffer.id == offer_id)
+        # Reload offer with ALL relationships using selectinload to avoid lazy-load in async
+        stmt = select(JobOffer).where(JobOffer.id == job_offer.id) \
+            .options(
+                selectinload(JobOffer.site),
+                selectinload(JobOffer.company),
+                selectinload(JobOffer.work_type),
+                selectinload(JobOffer.exp_level),
+                selectinload(JobOffer.specialization),
+                selectinload(JobOffer.technologies),
+                selectinload(JobOffer.locations)
+            )
         result = await self.session.execute(stmt)
-        offer = result.scalars().first()
-
-        if offer:
-            loc_stmt = select(Location).where(Location.id == location_id)
-            loc_result = await self.session.execute(loc_stmt)
-            location = loc_result.scalars().first()
-
-            if location and location in offer.locations:
-                offer.locations.remove(location)
-                await self.session.commit()
-                await self.session.refresh(offer)
-                return offer
-        return None
+        return result.scalar_one()
