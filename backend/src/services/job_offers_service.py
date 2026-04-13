@@ -1,11 +1,11 @@
 from typing import List, Optional
 from uuid import UUID
-from fastapi import HTTPException
 
 from src.repositories.job_offers import JobOffersRepository
 from src.models.job_offers import JobOffer
 from src.models.lookups import Technology, Location
 from src.services.lookups_service import LookupsService
+from src.core.exceptions import RecordNotFoundError, ValidationError
 
 
 class JobOffersService:
@@ -25,7 +25,7 @@ class JobOffersService:
         """
         offer = await self.repo.get_by_id(offer_id)
         if offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
+            raise RecordNotFoundError(f"Job offer with ID {offer_id} not found")
         return offer
 
     async def filter(
@@ -48,7 +48,7 @@ class JobOffersService:
         """
         # Validate salary range if provided
         if salary_from_min is not None and salary_to_max is not None and salary_from_min > salary_to_max:
-            raise HTTPException(status_code=400, detail="salary_from_min cannot be greater than salary_to_max")
+            raise ValidationError("salary_from_min cannot be greater than salary_to_max")
 
         offers = await self.repo.filter(
             skip=skip,
@@ -82,15 +82,15 @@ class JobOffersService:
         """
         # Validate inputs
         if not url or not url.strip():
-            raise HTTPException(status_code=400, detail="URL is required")
+            raise ValidationError("URL is required")
         if not title or not title.strip():
-            raise HTTPException(status_code=400, detail="Title is required")
+            raise ValidationError("Title is required")
         if not description or not description.strip():
-            raise HTTPException(status_code=400, detail="Description is required")
+            raise ValidationError("Description is required")
 
         # Validate salary range if provided
         if salary_from is not None and salary_to is not None and salary_from > salary_to:
-            raise HTTPException(status_code=400, detail="salary_from cannot be greater than salary_to")
+            raise ValidationError("salary_from cannot be greater than salary_to")
 
         return await self.repo.create(
             site_id=site_id,
@@ -121,7 +121,7 @@ class JobOffersService:
         """
         # Validate salary range if both provided
         if salary_from is not None and salary_to is not None and salary_from > salary_to:
-            raise HTTPException(status_code=400, detail="salary_from cannot be greater than salary_to")
+            raise ValidationError("salary_from cannot be greater than salary_to")
 
         updated_offer = await self.repo.update(
             offer_id=offer_id,
@@ -135,7 +135,7 @@ class JobOffersService:
         )
 
         if updated_offer is None:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
+            raise RecordNotFoundError(f"Job offer with ID {offer_id} not found")
 
         return updated_offer
 
@@ -145,7 +145,7 @@ class JobOffersService:
         """
         success = await self.repo.delete(offer_id)
         if not success:
-            raise HTTPException(status_code=404, detail=f"Job offer with ID {offer_id} not found")
+            raise RecordNotFoundError(f"Job offer with ID {offer_id} not found")
 
     async def create_from_scraper(
         self,
@@ -179,21 +179,21 @@ class JobOffersService:
         """
         # Validate basic required fields
         if not url or not url.strip():
-            raise HTTPException(status_code=400, detail="URL is required")
+            raise ValidationError("URL is required")
         if not title or not title.strip():
-            raise HTTPException(status_code=400, detail="Title is required")
+            raise ValidationError("Title is required")
         if not description or not description.strip():
-            raise HTTPException(status_code=400, detail="Description is required")
+            raise ValidationError("Description is required")
 
         # Validate salary range if provided
         if salary_from is not None and salary_to is not None and salary_from > salary_to:
-            raise HTTPException(status_code=400, detail="salary_from cannot be greater than salary_to")
+            raise ValidationError("salary_from cannot be greater than salary_to")
 
         # Validate technology and location lists
         if not technology_names or len(technology_names) == 0:
-            raise HTTPException(status_code=400, detail="At least one technology is required")
+            raise ValidationError("At least one technology is required")
         if not location_names or len(location_names) == 0:
-            raise HTTPException(status_code=400, detail="At least one location is required")
+            raise ValidationError("At least one location is required")
 
         # --- Resolve Technologies (Get-or-Create) ---
         technologies = []
@@ -201,12 +201,9 @@ class JobOffersService:
             try:
                 tech = await self.lookups_service.get_by_name(Technology, tech_name)
                 technologies.append(tech)
-            except HTTPException as e:
-                if e.status_code == 404:
-                    tech = await self.lookups_service.add(Technology, tech_name)
-                    technologies.append(tech)
-                else:
-                    raise e
+            except RecordNotFoundError:
+                tech = await self.lookups_service.add(Technology, tech_name)
+                technologies.append(tech)
 
         # --- Resolve Locations (Get-or-Create) ---
         locations = []
@@ -214,12 +211,9 @@ class JobOffersService:
             try:
                 loc = await self.lookups_service.get_by_name(Location, loc_name)
                 locations.append(loc)
-            except HTTPException as e:
-                if e.status_code == 404:
-                    loc = await self.lookups_service.add(Location, loc_name)
-                    locations.append(loc)
-                else:
-                    raise e
+            except RecordNotFoundError:
+                loc = await self.lookups_service.add(Location, loc_name)
+                locations.append(loc)
 
         # Create offer with all relationships in one atomic transaction
         return await self.repo.create_with_relationships(

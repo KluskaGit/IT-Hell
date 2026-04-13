@@ -8,3 +8,6 @@ class RecordNotFoundError(DiscardException):
 
 class RecordAlreadyExistsError(DiscardException):
     pass
+
+class ValidationError(DiscardException):
+    pass
