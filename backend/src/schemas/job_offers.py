@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from uuid import UUID
 
@@ -26,3 +26,17 @@ class JobOfferResponse(BaseModel):
     locations: List[LookupBase] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+class JobOfferFilter(BaseModel):
+    skip: int = Field(0, ge=0, description="Liczba rekordów do pominięcia (paginacja)")
+    limit: int = Field(100, ge=1, le=100, description="Maksymalna liczba zwróconych rekordów")
+    site_ids: Optional[List[UUID]] = Field(None, description="Filtruj po ID portalu (można wiele)")
+    company_ids: Optional[List[UUID]] = Field(None, description="Filtruj po ID firmy (można wiele)")
+    work_type_ids: Optional[List[UUID]] = Field(None, description="Filtruj po typie pracy (można wiele)")
+    specialization_ids: Optional[List[UUID]] = Field(None, description="Filtruj po specjalizacji (można wiele)")
+    exp_level_ids: Optional[List[UUID]] = Field(None, description="Filtruj po poziomie doświadczenia (można wiele)")
+    title: Optional[str] = Field(None, description="Filtruj po fragmencie tytułu (case-insensitive)")
+    salary_from_min: Optional[float] = Field(None, description="Minimalne dolne widełki wynagrodzenia")
+    salary_to_max: Optional[float] = Field(None, description="Maksymalne górne widełki wynagrodzenia")
+    technology_ids: Optional[List[UUID]] = Field(None, description="Filtruj po identyfikatorach technologii")
+    location_ids: Optional[List[UUID]] = Field(None, description="Filtruj po identyfikatorach lokalizacji")
