@@ -72,7 +72,7 @@ class JobOffer(Base, TimestampMixin):
         secondary="job_offer_location",
         back_populates="job_offers"
     )
-    technologies: Mapped["Technology"] = relationship(
+    technologies: Mapped[List["Technology"]] = relationship(
         secondary="job_offer_technology",
         back_populates="job_offers"
     )

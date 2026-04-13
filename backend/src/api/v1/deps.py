@@ -7,11 +7,15 @@ from src.core.db import SessionDep
 
 from src.repositories.users import UserRepository
 from src.repositories.lookups import LookupsRepository
+from src.repositories.job_offers import JobOffersRepository
 
 from src.services.auth_service import AuthService
 from src.services.lookups_service import LookupsService
+from src.services.job_offers_service import JobOffersService
 
 from src.models.users import User
+
+
 
 
 security_scheme = HTTPBearer()
@@ -23,6 +27,15 @@ def get_lookups_repo(session: SessionDep) -> LookupsRepository:
 
 def get_lookups_service(lookups_repo: Annotated[LookupsRepository, Depends(get_lookups_repo)]) -> LookupsService:
     return LookupsService(lookups_repo)
+
+def get_job_offers_repo(session: SessionDep) -> JobOffersRepository:
+    return JobOffersRepository(session)
+
+def get_job_offers_service(
+    job_offers_repo: Annotated[JobOffersRepository, Depends(get_job_offers_repo)],
+    lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]
+) -> JobOffersService:
+    return JobOffersService(job_offers_repo, lookups_service)
 
 # Auth
 
