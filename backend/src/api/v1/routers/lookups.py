@@ -11,6 +11,11 @@ from src.schemas.lookups import (
 from src.models.lookups import (
     ExperienceLevel,
     WorkType,
+    Site,
+    Company,
+    Specialization,
+    Technology,
+    Location,
 )
 
 router = APIRouter(tags=["Lookup Data"])
@@ -24,3 +29,28 @@ async def get_experience_levels(lookups_service: Annotated[LookupsService, Depen
 async def get_work_types(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
     work_types = await lookups_service.get_all(WorkType)
     return work_types
+
+@router.get("/sites", response_model=List[LookupRead])
+async def get_sites(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
+    sites = await lookups_service.get_all(Site)
+    return sites
+
+@router.get("/companies", response_model=List[LookupRead])
+async def get_companies(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
+    companies = await lookups_service.get_all(Company)
+    return companies
+
+@router.get("/specializations", response_model=List[LookupRead])
+async def get_specializations(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
+    specializations = await lookups_service.get_all(Specialization)
+    return specializations
+
+@router.get("/technologies", response_model=List[LookupRead])
+async def get_technologies(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
+    technologies = await lookups_service.get_all(Technology)
+    return technologies
+
+@router.get("/locations", response_model=List[LookupRead])
+async def get_locations(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
+    locations = await lookups_service.get_all(Location)
+    return locations
