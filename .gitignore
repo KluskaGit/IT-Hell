@@ -9,3 +9,4 @@ uv.lock
 **/node_modules/
 # Scrapers
 scrapers/pracuj_pl/data/
+*.log
