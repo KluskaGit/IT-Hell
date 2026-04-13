@@ -206,11 +206,8 @@ class JobOffersService:
         if salary_from is not None and salary_to is not None and salary_from > salary_to:
             raise ValidationError("salary_from cannot be greater than salary_to")
 
-        # Validate technology and location lists
-        if not technology_names or len(technology_names) == 0:
-            raise ValidationError("At least one technology is required")
-        if not location_names or len(location_names) == 0:
-            raise ValidationError("At least one location is required")
+        technology_names = technology_names or []
+        location_names = location_names or []
 
         # Check if URL is unique
         existing_offer = await self.repo.get_by_url(url)
