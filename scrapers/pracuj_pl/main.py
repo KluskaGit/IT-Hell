@@ -16,6 +16,7 @@ from logging import Logger
 
 from pracuj_pl.core.redis import redis_connect
 from pracuj_pl.lookups.lookups import extract_lookups
+from pracuj_pl.job_offers.job_offers import extract_job_offers
 
 DATA_PATH = "pracuj_pl/data"
 
@@ -72,8 +73,9 @@ class ScraperPracujPL:
         headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36'}
 
         async with AsyncSession(headers=headers, impersonate="chrome110") as session:
-            url = "https://www.pracuj.pl/praca/administrator-sieci-warszawa-marszalkowska-58,oferta,1004748640"
-            next_data = await self.fetch(session, url)
+            # url = "https://www.pracuj.pl/praca/administrator-sieci-warszawa-marszalkowska-58,oferta,1004748640"
+            # next_data = await self.fetch(session, url)
+            next_data = self.get_next_data(f"{DATA_PATH}/next_data.json")
             return next_data
 
 async def main():
@@ -104,8 +106,8 @@ async def main():
     # next_data = await scraper.run()
     # with open(f"{DATA_PATH}/next_data2.json", "w", encoding="utf-8") as out:
     #     json.dump(next_data, out, indent=4)
-
-    #extract_job_offers(scraper.get_next_data())
+    path= f"{DATA_PATH}/next_data.json"
+    extract_job_offers(scraper.get_next_data(path))
     pass
 
 
