@@ -4,11 +4,14 @@ from fastapi import HTTPException
 
 from src.repositories.job_offers import JobOffersRepository
 from src.models.job_offers import JobOffer
+from src.models.lookups import Technology, Location
+from src.services.lookups_service import LookupsService
 
 
 class JobOffersService:
-    def __init__(self, repo: JobOffersRepository):
+    def __init__(self, repo: JobOffersRepository, lookups_service: LookupsService):
         self.repo = repo
+        self.lookups_service = lookups_service
 
     async def get_all(self, skip: int = 0, limit: int = 100) -> List[JobOffer]:
         """
@@ -192,11 +195,31 @@ class JobOffersService:
         if not location_names or len(location_names) == 0:
             raise HTTPException(status_code=400, detail="At least one location is required")
 
-        # Get or create technologies (creates missing ones automatically)
-        technology_ids = await self.repo.get_or_create_technologies_by_names(technology_names)
+        # --- Resolve Technologies (Get-or-Create) ---
+        technologies = []
+        for tech_name in technology_names:
+            try:
+                tech = await self.lookups_service.get_by_name(Technology, tech_name)
+                technologies.append(tech)
+            except HTTPException as e:
+                if e.status_code == 404:
+                    tech = await self.lookups_service.add(Technology, tech_name)
+                    technologies.append(tech)
+                else:
+                    raise e
 
-        # Get or create locations (creates missing ones automatically)
-        location_ids = await self.repo.get_or_create_locations_by_names(location_names)
+        # --- Resolve Locations (Get-or-Create) ---
+        locations = []
+        for loc_name in location_names:
+            try:
+                loc = await self.lookups_service.get_by_name(Location, loc_name)
+                locations.append(loc)
+            except HTTPException as e:
+                if e.status_code == 404:
+                    loc = await self.lookups_service.add(Location, loc_name)
+                    locations.append(loc)
+                else:
+                    raise e
 
         # Create offer with all relationships in one atomic transaction
         return await self.repo.create_with_relationships(
@@ -208,8 +231,8 @@ class JobOffersService:
             url=url,
             title=title,
             description=description,
-            technology_ids=technology_ids,
-            location_ids=location_ids,
+            technologies=technologies,
+            locations=locations,
             salary_from=salary_from,
             salary_to=salary_to,
         )

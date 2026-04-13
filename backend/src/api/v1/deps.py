@@ -31,8 +31,11 @@ def get_lookups_service(lookups_repo: Annotated[LookupsRepository, Depends(get_l
 def get_job_offers_repo(session: SessionDep) -> JobOffersRepository:
     return JobOffersRepository(session)
 
-def get_job_offers_service(job_offers_repo: Annotated[JobOffersRepository, Depends(get_job_offers_repo)]) -> JobOffersService:
-    return JobOffersService(job_offers_repo)
+def get_job_offers_service(
+    job_offers_repo: Annotated[JobOffersRepository, Depends(get_job_offers_repo)],
+    lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]
+) -> JobOffersService:
+    return JobOffersService(job_offers_repo, lookups_service)
 
 # Auth
 
