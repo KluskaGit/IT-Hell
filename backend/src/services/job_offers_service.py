@@ -5,7 +5,7 @@ from src.repositories.job_offers import JobOffersRepository
 from src.models.job_offers import JobOffer
 from src.models.lookups import Technology, Location
 from src.services.lookups_service import LookupsService
-from src.core.exceptions import RecordNotFoundError, ValidationError
+from src.core.exceptions import RecordNotFoundError, ValidationError, RecordAlreadyExistsError
 
 
 class JobOffersService:
@@ -91,6 +91,11 @@ class JobOffersService:
         # Validate salary range if provided
         if salary_from is not None and salary_to is not None and salary_from > salary_to:
             raise ValidationError("salary_from cannot be greater than salary_to")
+
+        # Check if URL is unique
+        existing_offer = await self.repo.get_by_url(url)
+        if existing_offer:
+            raise RecordAlreadyExistsError(f"Job offer with URL '{url}' already exists")
 
         return await self.repo.create(
             site_id=site_id,
@@ -194,6 +199,11 @@ class JobOffersService:
             raise ValidationError("At least one technology is required")
         if not location_names or len(location_names) == 0:
             raise ValidationError("At least one location is required")
+
+        # Check if URL is unique
+        existing_offer = await self.repo.get_by_url(url)
+        if existing_offer:
+            raise RecordAlreadyExistsError(f"Job offer with URL '{url}' already exists")
 
         # --- Resolve Technologies (Get-or-Create) ---
         technologies = []

@@ -28,6 +28,14 @@ class JobOffersRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
+    async def get_by_url(self, url: str) -> Optional[JobOffer]:
+        """
+        Get a job offer by its URL.
+        """
+        stmt = select(JobOffer).where(JobOffer.url == url)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def filter(
         self,
         skip: int = 0,
