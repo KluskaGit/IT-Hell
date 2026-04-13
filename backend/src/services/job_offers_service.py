@@ -42,14 +42,16 @@ class JobOffersService:
         self,
         skip: int = 0,
         limit: int = 100,
-        site_id: Optional[UUID] = None,
-        company_id: Optional[UUID] = None,
-        work_type_id: Optional[UUID] = None,
-        specialization_id: Optional[UUID] = None,
-        exp_level_id: Optional[UUID] = None,
+        site_ids: Optional[List[UUID]] = None,
+        company_ids: Optional[List[UUID]] = None,
+        work_type_ids: Optional[List[UUID]] = None,
+        specialization_ids: Optional[List[UUID]] = None,
+        exp_level_ids: Optional[List[UUID]] = None,
         title: Optional[str] = None,
         salary_from_min: Optional[float] = None,
         salary_to_max: Optional[float] = None,
+        technology_ids: Optional[List[UUID]] = None,
+        location_ids: Optional[List[UUID]] = None,
     ) -> List[JobOffer]:
         """
         Filter job offers by multiple criteria.
@@ -63,14 +65,16 @@ class JobOffersService:
         offers = await self.repo.filter(
             skip=skip,
             limit=limit,
-            site_id=site_id,
-            company_id=company_id,
-            work_type_id=work_type_id,
-            specialization_id=specialization_id,
-            exp_level_id=exp_level_id,
+            site_ids=site_ids,
+            company_ids=company_ids,
+            work_type_ids=work_type_ids,
+            specialization_ids=specialization_ids,
+            exp_level_ids=exp_level_ids,
             title=title,
             salary_from_min=salary_from_min,
             salary_to_max=salary_to_max,
+            technology_ids=technology_ids,
+            location_ids=location_ids,
         )
         return offers
 

@@ -40,14 +40,16 @@ class JobOffersRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        site_id: Optional[UUID] = None,
-        company_id: Optional[UUID] = None,
-        work_type_id: Optional[UUID] = None,
-        specialization_id: Optional[UUID] = None,
-        exp_level_id: Optional[UUID] = None,
+        site_ids: Optional[List[UUID]] = None,
+        company_ids: Optional[List[UUID]] = None,
+        work_type_ids: Optional[List[UUID]] = None,
+        specialization_ids: Optional[List[UUID]] = None,
+        exp_level_ids: Optional[List[UUID]] = None,
         title: Optional[str] = None,
         salary_from_min: Optional[float] = None,
         salary_to_max: Optional[float] = None,
+        technology_ids: Optional[List[UUID]] = None,
+        location_ids: Optional[List[UUID]] = None,
     ) -> List[JobOffer]:
         """
         Filter job offers by multiple criteria.
@@ -55,27 +57,41 @@ class JobOffersRepository:
         """
         conditions = []
 
-        if site_id is not None:
-            conditions.append(JobOffer.site_id == site_id)
-        if company_id is not None:
-            conditions.append(JobOffer.company_id == company_id)
-        if work_type_id is not None:
-            conditions.append(JobOffer.work_type_id == work_type_id)
-        if specialization_id is not None:
-            conditions.append(JobOffer.specialization_id == specialization_id)
-        if exp_level_id is not None:
-            conditions.append(JobOffer.exp_level_id == exp_level_id)
+        if site_ids:
+            conditions.append(JobOffer.site_id.in_(site_ids))
+        if company_ids:
+            conditions.append(JobOffer.company_id.in_(company_ids))
+        if work_type_ids:
+            conditions.append(JobOffer.work_type_id.in_(work_type_ids))
+        if specialization_ids:
+            conditions.append(JobOffer.specialization_id.in_(specialization_ids))
+        if exp_level_ids:
+            conditions.append(JobOffer.exp_level_id.in_(exp_level_ids))
         if title is not None:
             conditions.append(JobOffer.title.ilike(f"%{title}%"))
         if salary_from_min is not None:
             conditions.append(JobOffer.salary_from >= salary_from_min)
         if salary_to_max is not None:
             conditions.append(JobOffer.salary_to <= salary_to_max)
+        if technology_ids:
+            conditions.append(JobOffer.technologies.any(Technology.id.in_(technology_ids)))
+        if location_ids:
+            conditions.append(JobOffer.locations.any(Location.id.in_(location_ids)))
 
         if conditions:
             stmt = select(JobOffer).where(and_(*conditions)).offset(skip).limit(limit)
         else:
             stmt = select(JobOffer).offset(skip).limit(limit)
+
+        stmt = stmt.options(
+            selectinload(JobOffer.site),
+            selectinload(JobOffer.company),
+            selectinload(JobOffer.work_type),
+            selectinload(JobOffer.exp_level),
+            selectinload(JobOffer.specialization),
+            selectinload(JobOffer.technologies),
+            selectinload(JobOffer.locations)
+        )
 
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
