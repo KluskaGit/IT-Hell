@@ -27,20 +27,21 @@
     <span class="badge">Dopasowane oferty</span>
     <h1>Oferty pracy dopasowane do <span class="text-gradient">Twojego profilu</span></h1>
     <p>
-      Na podstawie Twojego CV, wybranych ról, doświadczenia, technologii i preferencji
-      finansowych wyświetlamy oferty, które najlepiej pasują do Twojego profilu.
+      Zmień filtry poniżej i wyszukaj oferty najlepiej pasujące do Twojego doświadczenia,
+      technologii i preferencji zawodowych.
     </p>
   </section>
 
-  <section class="summary-card animate-up delay-1" *ngIf="filters">
-    <div class="summary-header">
-      <h2>Podsumowanie dopasowania</h2>
-      <span class="summary-count">
-        {{ matchedOffers.length }} ofert
-      </span>
+  <section class="summary-card animate-up delay-1" [formGroup]="filtersForm">
+    <div class="summary-header summary-header-collapsible">
+      <h2>Filtry</h2>
+
+      <div class="summary-header-actions">
+        <span class="summary-count">{{ previewOffersCount }} ofert</span>
+      </div>
     </div>
 
-    <div class="summary-grid">
+    <div class="summary-grid" *ngIf="!filtersCollapsed">
       <div class="summary-block">
         <h3>CV</h3>
         <p>{{ cvFileName || 'Brak nazwy pliku' }}</p>
@@ -48,43 +49,250 @@
 
       <div class="summary-block">
         <h3>Poziom doświadczenia</h3>
-        <p>{{ filters.seniority }}</p>
+        <div class="pills-container">
+          <label class="pill-card">
+            <input type="radio" formControlName="seniority" value="Stażysta / Trainee">
+            <div class="pill-content">Stażysta / Trainee</div>
+          </label>
+          <label class="pill-card">
+            <input type="radio" formControlName="seniority" value="Junior">
+            <div class="pill-content">Junior</div>
+          </label>
+          <label class="pill-card">
+            <input type="radio" formControlName="seniority" value="Mid / Regular">
+            <div class="pill-content">Mid / Regular</div>
+          </label>
+          <label class="pill-card">
+            <input type="radio" formControlName="seniority" value="Senior">
+            <div class="pill-content">Senior</div>
+          </label>
+        </div>
       </div>
 
       <div class="summary-block">
-        <h3>Kontrakt</h3>
-        <p>{{ getContractLabel(filters.contractType) }}</p>
+        <h3>Rodzaj kontraktu</h3>
+        <select class="styled-select" formControlName="contractType">
+          <option value="uop">Umowa o pracę</option>
+          <option value="b2b">B2B</option>
+          <option value="uz">UZ / UoD</option>
+        </select>
       </div>
 
       <div class="summary-block">
-        <h3>Widełki</h3>
-        <p>
-          {{ salaryFrom | number:'1.0-0' }} –
-          {{ salaryTo === 50000 ? '50 000+' : (salaryTo | number:'1.0-0') }}
-          PLN
-        </p>
+        <h3>Widełki płacowe</h3>
+
+        <div class="salary-labels">
+          <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
+          <span class="salary-badge">
+            DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}
+          </span>
+        </div>
+
+        <div class="salary-range-slider">
+          <div
+            class="salary-progress-fill"
+            [style.width.%]="getSalaryProgressPercent()"
+            [style.left.%]="getSalaryProgressLeft()">
+          </div>
+
+          <input
+            type="range"
+            formControlName="salaryFromIndex"
+            min="0"
+            [max]="salaryOptions.length - 1"
+            step="1"
+            (input)="checkSalaryRange('from')"
+            class="salary-input">
+
+          <input
+            type="range"
+            formControlName="salaryToIndex"
+            min="0"
+            [max]="salaryOptions.length - 1"
+            step="1"
+            (input)="checkSalaryRange('to')"
+            class="salary-input">
+        </div>
+
+        <div class="range-markers">
+          <span>0 PLN</span>
+          <span>50 000+ PLN</span>
+        </div>
       </div>
 
-      <div class="summary-block full-width">
+      <div class="summary-block full-width" formGroupName="itArea">
         <h3>Główne role</h3>
-        <div class="chip-list">
-          <span class="chip" *ngFor="let role of selectedRoles">{{ role }}</span>
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let role of getVisibleRoles()">
+            <input type="checkbox" [formControlName]="role">
+            <div class="pill-content">{{ formatRole(role) }}</div>
+          </label>
+
+          <button
+            type="button"
+            class="toggle-pill-btn"
+            (click)="showAllRoles = !showAllRoles">
+            {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+          </button>
         </div>
       </div>
 
-      <div class="summary-block full-width">
+      <div class="summary-block full-width" formGroupName="technologies">
         <h3>Technologie</h3>
-        <div class="chip-list">
-          <span class="chip" *ngFor="let tech of selectedTechnologies">{{ tech }}</span>
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let tech of getVisibleTechnologies()">
+            <input type="checkbox" [formControlName]="tech">
+            <div class="pill-content">{{ formatTech(tech) }}</div>
+          </label>
+
+          <button
+            type="button"
+            class="toggle-pill-btn"
+            (click)="showAllTech = !showAllTech">
+            {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+          </button>
         </div>
       </div>
 
-      <div class="summary-block full-width">
+      <div class="summary-block full-width" formGroupName="jobSites">
         <h3>Źródła ofert</h3>
-        <div class="chip-list">
-          <span class="chip" *ngFor="let source of selectedSources">{{ formatSource(source) }}</span>
+        <fieldset class="site-fieldset">
+          <div class="site-cards-grid">
+            <label class="site-card" for="site_pracuj">
+              <input id="site_pracuj" type="checkbox" formControlName="pracuj">
+              <div class="site-card-content">
+                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Pracuj.pl</span>
+              </div>
+            </label>
+
+            <label class="site-card" for="site_olx">
+              <input id="site_olx" type="checkbox" formControlName="olx">
+              <div class="site-card-content">
+                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>OLX Praca</span>
+              </div>
+            </label>
+
+            <label class="site-card" for="site_linkedin">
+              <input id="site_linkedin" type="checkbox" formControlName="linkedin">
+              <div class="site-card-content">
+                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>LinkedIn</span>
+              </div>
+            </label>
+
+            <label class="site-card" for="site_nofluff">
+              <input id="site_nofluff" type="checkbox" formControlName="nofluff">
+              <div class="site-card-content">
+                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>NoFluffJobs</span>
+              </div>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="summary-block full-width">
+        <h3>Minimalny poziom dopasowania</h3>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Wymagana precyzja ofert:</label>
+            <span
+              class="precision-badge"
+              [ngClass]="{
+                'strict': filtersForm.get('matchPrecision')?.value === 100,
+                'loose': filtersForm.get('matchPrecision')?.value === 50
+              }"
+            >
+              {{ filtersForm.get('matchPrecision')?.value }}% Zgodności
+            </span>
+          </div>
+
+          <input
+            type="range"
+            formControlName="matchPrecision"
+            min="50"
+            max="100"
+            step="25"
+            class="ai-slider">
+
+          <div class="slider-labels">
+            <span>50%<br><small>Eksploracja</small></span>
+            <span>75%<br><small>Zalecane</small></span>
+            <span>100%<br><small>Tylko idealne</small></span>
+          </div>
         </div>
       </div>
+
+      <div class="filters-footer">
+        <div class="filters-footer-left"></div>
+
+        <div class="filters-toggle-bottom">
+          <button
+            type="button"
+            class="filters-toggle-btn filters-toggle-btn-bottom"
+            (click)="filtersCollapsed = !filtersCollapsed"
+            [attr.aria-expanded]="!filtersCollapsed"
+            aria-label="Pokaż lub ukryj filtry"
+          >
+            <svg
+              class="filters-toggle-icon"
+              [class.rotated]="!filtersCollapsed"
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filters-actions">
+          <button type="button" class="btn-primary" (click)="applyFilters()">
+            Szukaj ofert ({{ previewOffersCount }})
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters-toggle-collapsed" *ngIf="filtersCollapsed">
+      <button
+        type="button"
+        class="filters-toggle-btn filters-toggle-btn-bottom"
+        (click)="filtersCollapsed = !filtersCollapsed"
+        [attr.aria-expanded]="!filtersCollapsed"
+        aria-label="Pokaż lub ukryj filtry"
+      >
+        <svg
+          class="filters-toggle-icon"
+          [class.rotated]="!filtersCollapsed"
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
     </div>
   </section>
 
@@ -133,7 +341,9 @@
       <div class="offer-section" *ngIf="offer.matchedRoles.length > 0">
         <h3>Pasujące role</h3>
         <div class="chip-list">
-          <span class="chip chip-role" *ngFor="let role of offer.matchedRoles">{{ role }}</span>
+          <span class="chip chip-role" *ngFor="let role of offer.matchedRoles">
+            {{ formatRole(role) }}
+          </span>
         </div>
       </div>
 
@@ -143,9 +353,8 @@
           <span
             class="chip"
             [ngClass]="{ 'chip-highlight': offer.matchedTech.includes(tech) }"
-            *ngFor="let tech of offer.technologies"
-          >
-            {{ tech }}
+            *ngFor="let tech of offer.technologies">
+            {{ formatTech(tech) }}
           </span>
         </div>
       </div>
@@ -162,10 +371,12 @@
       <div class="empty-icon">🔎</div>
       <h2>Brak ofert spełniających aktualne kryteria</h2>
       <p>
-        Spróbuj zmniejszyć poziom dopasowania, poszerzyć zakres wynagrodzenia
-        albo zaznaczyć więcej ról i technologii.
+        Spróbuj poszerzyć widełki, zaznaczyć więcej ról i technologii
+        albo obniżyć minimalny poziom dopasowania.
       </p>
-      <button type="button" class="btn-primary" routerLink="/">Wróć do formularza</button>
+      <button type="button" class="btn-primary" (click)="applyFilters()">
+        Odśwież wyszukiwanie
+      </button>
     </section>
   </ng-template>
 </div>
