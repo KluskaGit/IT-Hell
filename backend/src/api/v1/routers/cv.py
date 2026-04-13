@@ -29,6 +29,12 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 @router.post("/upload/{user_id}")
 async def upload_cv(user_id: str, file: UploadFile, db: SessionDep):
     # File validation
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must have a filename."
+        )
+        
     extension = file.filename.split(".")[-1].lower()
     if extension not in ["pdf","docx"]:
         raise HTTPException(
@@ -51,7 +57,7 @@ async def upload_cv(user_id: str, file: UploadFile, db: SessionDep):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Error reading file: {str:(e)}"
+            detail=f"Error reading file: {str(e)}"
         )
     
     # Writing to database

@@ -8,46 +8,22 @@ from src.core.db import SessionDep
 from src.models.job_offers import JobOffer
 from src.services.job_offers_service import JobOffersService
 from src.api.v1.deps import get_job_offers_service
-from src.schemas.job_offers import JobOfferResponse
+from src.schemas.job_offers import JobOfferResponse, JobOfferFilter
 
 
-router = APIRouter(tags=["Job Offers"])
+router = APIRouter(prefix="/job-offers", tags=["Job Offers"])
 
 
-@router.get("/", response_model=List[JobOfferResponse])
+@router.get("/get_offer_filter", response_model=List[JobOfferResponse])
 async def get_job_offers(
     job_offers_service: Annotated[JobOffersService, Depends(get_job_offers_service)],
-    skip: int = Query(0, ge=0, description="Liczba rekordów do pominięcia (paginacja)"),
-    limit: int = Query(100, ge=1, le=100, description="Maksymalna liczba zwróconych rekordów"),
-    site_ids: Optional[List[UUID]] = Query(None, description="Filtruj po ID portalu (można wiele)"),
-    company_ids: Optional[List[UUID]] = Query(None, description="Filtruj po ID firmy (można wiele)"),
-    work_type_ids: Optional[List[UUID]] = Query(None, description="Filtruj po typie pracy (można wiele)"),
-    specialization_ids: Optional[List[UUID]] = Query(None, description="Filtruj po specjalizacji (można wiele)"),
-    exp_level_ids: Optional[List[UUID]] = Query(None, description="Filtruj po poziomie doświadczenia (można wiele)"),
-    title: Optional[str] = Query(None, description="Filtruj po fragmencie tytułu (case-insensitive)"),
-    salary_from_min: Optional[float] = Query(None, description="Minimalne dolne widełki wynagrodzenia"),
-    salary_to_max: Optional[float] = Query(None, description="Maksymalne górne widełki wynagrodzenia"),
-    technology_ids: Optional[List[UUID]] = Query(None, description="Filtruj po identyfikatorach technologii"),
-    location_ids: Optional[List[UUID]] = Query(None, description="Filtruj po identyfikatorach lokalizacji"),
+    filters: Annotated[JobOfferFilter, Query()],
 ):
     """
     Pobiera listę ofert pracy na podstawie przekazanych kryteriów filtrowania.
     Wszystkie parametry są opcjonalne.
     """
-    return await job_offers_service.filter(
-        skip=skip,
-        limit=limit,
-        site_ids=site_ids,
-        company_ids=company_ids,
-        work_type_ids=work_type_ids,
-        specialization_ids=specialization_ids,
-        exp_level_ids=exp_level_ids,
-        title=title,
-        salary_from_min=salary_from_min,
-        salary_to_max=salary_to_max,
-        technology_ids=technology_ids,
-        location_ids=location_ids,
-    )
+    return await job_offers_service.filter(**filters.model_dump())
 
 
 @router.post("/seed-samples")
