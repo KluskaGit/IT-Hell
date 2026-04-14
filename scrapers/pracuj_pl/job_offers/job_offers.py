@@ -8,6 +8,7 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
     raw_lookups = extract_query(next_data, {"jobOffers"})
 
     offers = raw_lookups.get("jobOffers", {}).get("groupedOffers")
+    no_record = "Other"
 
     result = []
     for offer in offers:
@@ -18,13 +19,12 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
             url = urls[0].get("offerAbsoluteUri", "")
         else:
             url = ""
-
         entity = JobOffer(
-            title=offer.get("jobTitle", "").strip(),
-            technologies=offer.get("technologies", []),
-            company=offer.get("companyName","").strip(),
-            exp_lvl=position_levels[0].strip() if position_levels else "",
-            work_type= work_modes[0].strip() if work_modes else "",
+            title=offer.get("jobTitle", "No title").strip(),
+            technologies=offer.get("technologies", [no_record]),
+            company=offer.get("companyName",no_record).strip(),
+            exp_lvl=position_levels[0].strip() if position_levels else no_record,
+            work_type= work_modes[0].strip() if work_modes else no_record,
             url=url.strip(),
         )
         result.append(entity)
@@ -36,8 +36,9 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
     offer: Dict[str, Any] = raw_offer.get("jobOffer", {})
     attributes: Dict[str, Any] = offer.get("attributes", {})
     secondary_attributes: List[Dict[str, Any]] = offer.get("secondaryAttributes", [])
-    text_sections: Dict[str, Any] = offer.get("textSections", {})
+    #text_sections: Dict[str, Any] = offer.get("textSections", {})
 
+    no_record = "Other"
     # Locations
     workplaces: List[Dict[str, Any]] = attributes.get("workplaces", [])
     locations = []
@@ -46,14 +47,14 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
         locations.append(location_name)
 
     # Specialization
-    spec_first_attr: Dict[str, Any] = secondary_attributes[0] if secondary_attributes else {}
-    spec_items = spec_first_attr.get("model", {}).get("items", [])
-    spec_details = spec_items[0] if spec_items else {}
+    spec_details = {}
+    for attr in secondary_attributes:
+        if attr.get("code") == "it-specializations":
+            spec_items = attr.get("model", {}).get("items", [])
+            spec_details = spec_items[0] if spec_items else {}
+            break
 
-    # Description
-
-
-    job_offer.specialization = spec_details.get("name", "").strip()
+    job_offer.specialization = spec_details.get("name", "").strip() if spec_details else no_record
     job_offer.locations = locations
-    job_offer.description = "Brak"
+    job_offer.description = "None"
 
