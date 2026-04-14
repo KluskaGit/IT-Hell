@@ -1,11 +1,11 @@
 from pydantic import BaseModel
-from typing import Dict, List, Any
+from typing import List
 
 class JobOffer(BaseModel):
     site: str = "https://it.pracuj.pl/"
     title: str
     technologies: List[str]
-    specialization: str = ""
+    specialization: str = "Other"
     company: str
     exp_lvl: str
     work_type: str
