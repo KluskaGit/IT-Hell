@@ -31,6 +31,6 @@ async def save_job_offer_to_db(payload: Dict) -> None:
                 location_names=locations
             )
         except KeyError as e:
-            raise DiscardException(f"Missing required field: {e}")
+            raise KeyError(f"Missing required field: {e}")
         except DiscardException as e:
-            raise e
+            pass
