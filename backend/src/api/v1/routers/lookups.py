@@ -18,7 +18,7 @@ from src.models.lookups import (
     Location,
 )
 
-router = APIRouter(tags=["Lookup Data"])
+router = APIRouter(prefix="/lookups", tags=["Lookup Data"])
 
 @router.get("/experience-levels", response_model=List[LookupRead])
 async def get_experience_levels(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):

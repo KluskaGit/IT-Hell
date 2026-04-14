@@ -40,3 +40,17 @@ class JobOfferFilter(BaseModel):
     salary_to_max: Optional[float] = Field(None, description="Maksymalne górne widełki wynagrodzenia")
     technology_ids: Optional[List[UUID]] = Field(None, description="Filtruj po identyfikatorach technologii")
     location_ids: Optional[List[UUID]] = Field(None, description="Filtruj po identyfikatorach lokalizacji")
+
+class JobOfferScraperCreate(BaseModel):
+    site_name: str
+    exp_level_name: str
+    company_name: str
+    work_type_name: str
+    specialization_name: str
+    url: str
+    title: str
+    description: str
+    technology_names: List[str] = Field(default_factory=list)
+    location_names: List[str] = Field(default_factory=list)
+    salary_from: Optional[float] = None
+    salary_to: Optional[float] = None
