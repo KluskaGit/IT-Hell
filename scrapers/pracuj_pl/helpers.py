@@ -1,4 +1,7 @@
+import json
+
 from typing import Dict, List
+from bs4 import BeautifulSoup
 
 
 def extract_query(next_data: Dict, search_queries: set[str]) -> Dict:
@@ -15,6 +18,18 @@ def extract_query(next_data: Dict, search_queries: set[str]) -> Dict:
                 results[match_query] = query.get("state", {}).get("data", {})
     
     return results
+
+def html_to_json(text: str) -> Dict | None:
+    try:
+        html = text
+        soup = BeautifulSoup(html, 'html.parser')
+        next_data_script = soup.find('script', id='__NEXT_DATA__')
+        if next_data_script:
+            return json.loads(next_data_script.string) # type: ignore
+        return None
+    
+    except Exception as e:
+        raise
 
 
 
