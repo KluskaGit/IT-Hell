@@ -1,15 +1,11 @@
 import os
 import asyncio
-import logging
-import queue
 import random
-import json
 
 from dotenv import load_dotenv
 from typing import Dict
 
 from logging import Logger
-from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
 from curl_cffi.requests import AsyncSession
 
@@ -128,30 +124,3 @@ class ScraperPracujPL:
             for w in workers:
                 w.cancel()
 
-async def main():
-
-    # Logger
-    log_que = queue.Queue()
-    que_handler = QueueHandler(log_que)
-    
-    handler = RotatingFileHandler(
-        'Scrapers.log',
-        maxBytes=5*1024*1024,  # 5 MB per file
-        backupCount=3          # Keep last 3 backups
-    )
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-
-    listener = QueueListener(log_que, handler)
-    listener.start()
-
-    logger = logging.getLogger("TradeitScraper")
-    logger.setLevel(logging.INFO)
-    logger.addHandler(que_handler)
-
-    scraper = ScraperPracujPL(logger)
-    await scraper.run()
-
-if __name__ == "__main__":
-    asyncio.run(main())
-    pass
