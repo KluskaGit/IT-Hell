@@ -15,6 +15,7 @@ from src.models.lookups import (
 )
 from src.services.lookups_service import LookupsService
 from src.core.exceptions import RecordNotFoundError, ValidationError, RecordAlreadyExistsError
+from src.schemas.job_offers import JobOfferScraperCreate
 
 TLookup = TypeVar("TLookup", bound=Lookup)
 
@@ -168,18 +169,7 @@ class JobOffersService:
 
     async def create_from_scraper(
         self,
-        site_name: str,
-        exp_level_name: str,
-        company_name: str,
-        work_type_name: str,
-        specialization_name: str,
-        url: str,
-        title: str,
-        description: str,
-        technology_names: List[str],
-        location_names: List[str],
-        salary_from: Optional[float] = None,
-        salary_to: Optional[float] = None,
+        offer_data: JobOfferScraperCreate
     ) -> JobOffer:
         """
         Create a job offer with technologies and locations from scraper data.
@@ -195,24 +185,24 @@ class JobOffersService:
         - 400 if required fields are empty
         """
         # Validate basic required fields
-        if not url or not url.strip():
+        if not offer_data.url or not offer_data.url.strip():
             raise ValidationError("URL is required")
-        if not title or not title.strip():
+        if not offer_data.title or not offer_data.title.strip():
             raise ValidationError("Title is required")
-        if not description or not description.strip():
+        if not offer_data.description or not offer_data.description.strip():
             raise ValidationError("Description is required")
 
         # Validate salary range if provided
-        if salary_from is not None and salary_to is not None and salary_from > salary_to:
+        if offer_data.salary_from is not None and offer_data.salary_to is not None and offer_data.salary_from > offer_data.salary_to:
             raise ValidationError("salary_from cannot be greater than salary_to")
 
-        technology_names = technology_names or []
-        location_names = location_names or []
+        technology_names = offer_data.technology_names or []
+        location_names = offer_data.location_names or []
 
         # Check if URL is unique
-        existing_offer = await self.repo.get_by_url(url)
+        existing_offer = await self.repo.get_by_url(offer_data.url)
         if existing_offer:
-            raise RecordAlreadyExistsError(f"Job offer with URL '{url}' already exists")
+            raise RecordAlreadyExistsError(f"Job offer with URL '{offer_data.url}' already exists")
 
         async def get_or_create(model_cls: Type[TLookup], name: str) -> TLookup:
             if not name or not name.strip():
@@ -222,11 +212,11 @@ class JobOffersService:
             except RecordNotFoundError:
                 return await self.lookups_service.add(model_cls, name)
 
-        site = await get_or_create(Site, site_name)
-        exp_level = await get_or_create(ExperienceLevel, exp_level_name)
-        company = await get_or_create(Company, company_name)
-        work_type = await get_or_create(WorkType, work_type_name)
-        specialization = await get_or_create(Specialization, specialization_name)
+        site = await get_or_create(Site, offer_data.site_name)
+        exp_level = await get_or_create(ExperienceLevel, offer_data.exp_level_name)
+        company = await get_or_create(Company, offer_data.company_name)
+        work_type = await get_or_create(WorkType, offer_data.work_type_name)
+        specialization = await get_or_create(Specialization, offer_data.specialization_name)
 
         # --- Resolve Technologies (Get-or-Create) ---
         technologies = []
@@ -247,11 +237,11 @@ class JobOffersService:
             company_id=company.id,
             work_type_id=work_type.id,
             specialization_id=specialization.id,
-            url=url,
-            title=title,
-            description=description,
+            url=offer_data.url,
+            title=offer_data.title,
+            description=offer_data.description,
             technologies=technologies,
             locations=locations,
-            salary_from=salary_from,
-            salary_to=salary_to,
+            salary_from=offer_data.salary_from,
+            salary_to=offer_data.salary_to,
         )
