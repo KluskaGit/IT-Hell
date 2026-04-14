@@ -1,7 +1,9 @@
-from typing import Dict, Type
+from typing import Dict
 from worker.core.deps import get_job_offers_service
 
 from src.core.exceptions import DiscardException
+
+from src.schemas.job_offers import JobOfferScraperCreate
 
 
 async def save_job_offer_to_db(payload: Dict) -> None:
@@ -18,7 +20,7 @@ async def save_job_offer_to_db(payload: Dict) -> None:
             locations = payload["locations"]
             description = payload["description"]
 
-            await service.create_from_scraper(
+            offer = JobOfferScraperCreate(
                 site_name=site,
                 title=title,
                 technology_names=technologies,
@@ -30,6 +32,7 @@ async def save_job_offer_to_db(payload: Dict) -> None:
                 description=description,
                 location_names=locations
             )
+            await service.create_from_scraper(offer)
         except KeyError as e:
             raise KeyError(f"Missing required field: {e}")
         except DiscardException as e:
