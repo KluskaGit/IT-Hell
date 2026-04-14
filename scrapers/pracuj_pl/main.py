@@ -1,23 +1,22 @@
 import os
-import json
 import asyncio
 import logging
 import queue
 import random
-
-from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
+import json
 
 from dotenv import load_dotenv
 from typing import Dict
 
-from bs4 import BeautifulSoup
-from curl_cffi.requests import AsyncSession
 from logging import Logger
+from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
+from curl_cffi.requests import AsyncSession
 
 from pracuj_pl.core.redis import redis_connect
 from pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
 from pracuj_pl.schemas import JobOffer
+from pracuj_pl.helpers import html_to_json
 
 DATA_PATH = "pracuj_pl/data"
 
@@ -25,7 +24,7 @@ class ScraperPracujPL:
 
     def __init__(self, logger: Logger):
         self.logger = logger
-        self.min_delay = 7
+        self.min_delay = 4
         self.max_delay = 7
 
         load_dotenv()
@@ -33,18 +32,6 @@ class ScraperPracujPL:
         self.stream = os.environ["REDIS_STREAM"]
         self.job_que: asyncio.Queue[JobOffer] = asyncio.Queue()
         self.redis_que: asyncio.Queue[JobOffer] = asyncio.Queue()
-
-    def html_to_json(self, text: str) -> Dict | None:
-        try:
-            html = text
-            soup = BeautifulSoup(html, 'html.parser')
-            next_data_script = soup.find('script', id='__NEXT_DATA__')
-            if next_data_script:
-                return json.loads(next_data_script.string) # type: ignore
-            return None
-        
-        except Exception as e:
-            raise
 
     async def fetch(self, session: AsyncSession, url: str) -> Dict | None:
         response = await session.get(url)
@@ -59,7 +46,7 @@ class ScraperPracujPL:
         
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
 
-        return self.html_to_json(response.text)
+        return html_to_json(response.text)
 
     async def redis_worker(self):
         while True:
@@ -75,10 +62,12 @@ class ScraperPracujPL:
         while True:
             
             offer = await self.job_que.get()
-            try:    
+            try:
                 next_data = await self.fetch(session, offer.url)
+                # with open(f"{DATA_PATH}/next_data2.json", "w", encoding="utf-8") as f:
+                #     f.write(json.dumps(next_data, ensure_ascii=False, indent=4))
+                    #next_data = json.loads(f.read())
                 if next_data is not None:
-                    # Parsowanie detali i przypisanie do glownego obiektu
                     fill_out_offer(next_data, offer)
                 
                 print(offer)
@@ -87,7 +76,7 @@ class ScraperPracujPL:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error while fetching item: {e}")
+                self.logger.error(f"Error while fetching item: {e}, {offer}")
             finally:
                 self.job_que.task_done()
 
@@ -97,7 +86,6 @@ class ScraperPracujPL:
         async with AsyncSession(headers=headers, impersonate="chrome110") as session:
             num_workers = 2
             
-            # Startujemy workery
             workers = [asyncio.create_task(self.worker(session)) for _ in range(num_workers)]
             workers.append(asyncio.create_task(self.redis_worker()))
 
@@ -107,6 +95,8 @@ class ScraperPracujPL:
                 
                 try:
                     next_data = await self.fetch(session, url)
+                    # with open(f"{DATA_PATH}/next_data.json", "r", encoding="utf-8") as f:
+                    #     next_data = json.loads(f.read())
                 except Exception as e:
                     self.logger.error(f"Error fetching page {page}: {e}")
                     break
@@ -122,6 +112,7 @@ class ScraperPracujPL:
 
                     for offer in offers:
                         await self.job_que.put(offer)
+                        #break
                 except Exception as e:
                     self.logger.error(f"Failed to extract offers on page {page}: {e}")
                     break
