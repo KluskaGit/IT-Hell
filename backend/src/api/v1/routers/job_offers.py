@@ -8,7 +8,7 @@ from src.core.db import SessionDep
 from src.models.job_offers import JobOffer
 from src.services.job_offers_service import JobOffersService
 from src.api.v1.deps import get_job_offers_service
-from src.schemas.job_offers import JobOfferResponse, JobOfferFilter
+from src.schemas.job_offers import JobOfferResponse, JobOfferFilter, JobOfferScraperCreate
 
 
 router = APIRouter(prefix="/job-offers", tags=["Job Offers"])
@@ -97,6 +97,7 @@ async def seed_sample_offers(
     ]
 
     for sample in samples:
-        await job_offers_service.create_from_scraper(**sample)
+        offer_data = JobOfferScraperCreate(**sample)
+        await job_offers_service.create_from_scraper(offer_data)
 
     return {"message": f"Wyczyszczono bazę i dodano {len(samples)} różnorodnych ofert."}
