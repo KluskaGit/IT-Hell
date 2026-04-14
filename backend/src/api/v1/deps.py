@@ -5,13 +5,14 @@ from fastapi import Depends
 
 from src.core.db import SessionDep
 
-from src.repositories.users import UserRepository
+from src.repositories.users import UserRepository, UserProfileRepository
 from src.repositories.lookups import LookupsRepository
 from src.repositories.job_offers import JobOffersRepository
 
 from src.services.auth_service import AuthService
 from src.services.lookups_service import LookupsService
 from src.services.job_offers_service import JobOffersService
+from src.services.user_profiles_service import UserProfileService
 
 from src.models.users import User
 
@@ -44,6 +45,15 @@ def get_user_repo(session: SessionDep) -> UserRepository:
 
 def get_auth_service(user_repo: Annotated[UserRepository, Depends(get_user_repo)]) -> AuthService:
     return AuthService(user_repo)
+
+def get_user_profile_repo(session: SessionDep) -> UserProfileRepository:
+    return UserProfileRepository(session)
+
+def get_user_profile_service(
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repo)],
+    lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]
+) -> UserProfileService:
+    return UserProfileService(profile_repo, lookups_service)
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
