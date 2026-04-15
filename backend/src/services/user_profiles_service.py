@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 from src.repositories.users import UserProfileRepository
 from src.services.lookups_service import LookupsService
@@ -65,17 +65,20 @@ class UserProfileService:
             raise RecordNotFoundError("User profile not found after update")
         return updated_profile
 
-    async def update_cv(self, user_id: uuid.UUID, raw_cv: str) -> UserProfile:
+    async def update_cv(self, user_id: uuid.UUID, raw_cv: str, technologies: Optional[List[Technology]] = None) -> UserProfile:
         existing_profile = await self.repo.get_profile_by_user_id(user_id)
         if not existing_profile:
             raise RecordNotFoundError("User profile not found")
 
-        # Używamy istniejącej metody repozytorium, nadpisując tylko wybrane pole
+        # If no technologies provided, use empty list (maintain raw_cv only)
+        tech_to_apply = technologies if technologies is not None else []
+
+        # Update profile: replace all technologies with provided list
         updated_profile = await self.repo.update_profile(
             user_id=user_id,
             raw_cv=raw_cv,
             exp_level_id=None,
-            technologies=None,
+            technologies=tech_to_apply,
         )
         
         if updated_profile is None:

@@ -36,7 +36,7 @@ async def upload_cv(
 
     try:
         file_bytes = await file.read()
-        chars_extracted = await cv_service.process_and_update_cv(user_id, file_bytes, extension)
+        chars_extracted, technologies_extracted = await cv_service.process_and_update_cv(user_id, file_bytes, extension)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -53,5 +53,6 @@ async def upload_cv(
     return {
         "message": "CV has been submitted and processed successfully",
         "user_id": str(user_id),
-        "chars_extracted": chars_extracted
+        "chars_extracted": chars_extracted,
+        "technologies_extracted": technologies_extracted
     }
