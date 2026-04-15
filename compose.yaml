@@ -26,7 +26,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./scrapers/Scrapers.log:/app/Scrapers.log
+      - ./scrapers/logs:/logs
     networks:
       - app-network
     depends_on:

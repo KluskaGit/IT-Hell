@@ -14,7 +14,7 @@ async def main():
     que_handler = QueueHandler(log_que)
     
     handler = RotatingFileHandler(
-        'Scrapers.log',
+        '/logs/Scrapers.log',
         maxBytes=5*1024*1024,  # 5 MB per file
         backupCount=3          # Keep last 3 backups
     )
