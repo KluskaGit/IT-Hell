@@ -65,6 +65,23 @@ class UserProfileService:
             raise RecordNotFoundError("User profile not found after update")
         return updated_profile
 
+    async def update_cv(self, user_id: uuid.UUID, raw_cv: str) -> UserProfile:
+        existing_profile = await self.repo.get_profile_by_user_id(user_id)
+        if not existing_profile:
+            raise RecordNotFoundError("User profile not found")
+
+        # Używamy istniejącej metody repozytorium, nadpisując tylko wybrane pole
+        updated_profile = await self.repo.update_profile(
+            user_id=user_id,
+            raw_cv=raw_cv,
+            exp_level_id=None,
+            technologies=None,
+        )
+        
+        if updated_profile is None:
+            raise RecordNotFoundError("User profile not found after update")
+        return updated_profile
+
     async def delete_profile(self, user_id: uuid.UUID) -> None:
         success = await self.repo.delete_profile(user_id)
         if not success:

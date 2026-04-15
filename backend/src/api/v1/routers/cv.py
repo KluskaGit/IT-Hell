@@ -1,33 +1,25 @@
-import io
-import pdfplumber
+import uuid
+from typing import Annotated
 
-from docx import Document
-from fastapi import APIRouter, UploadFile, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 
-from src.core.db import SessionDep
-from src.models.users import UserProfile
+from src.services.cv_service import CVService
+from src.services.user_profiles_service import UserProfileService
+from src.api.v1.deps import get_user_profile_service, get_cv_service
+from src.core.exceptions import RecordNotFoundError
 
 router = APIRouter(prefix="/cv", tags=["CV Analysis"])
 
-# Functions to convert PDF and DOCX files to text 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    text = ""
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
-    return text
 
-def extract_text_from_docx(file_bytes: bytes) -> str:
-    doc = Document(io.BytesIO(file_bytes))
-    return "\n".join([para.text for para in doc.paragraphs])
 
 # Endpoint
 
 @router.post("/upload/{user_id}")
-async def upload_cv(user_id: str, file: UploadFile, db: SessionDep):
+async def upload_cv(
+    user_id: uuid.UUID,
+    file: UploadFile,
+    cv_service: Annotated[CVService, Depends(get_cv_service)]
+):
     # File validation
     if not file.filename:
         raise HTTPException(
@@ -41,44 +33,25 @@ async def upload_cv(user_id: str, file: UploadFile, db: SessionDep):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Supported formats are only PDF and DOCX."
         )
-    # Reading a binary file from the forntend
+
     try:
-        content = await file.read()
-
-        # Selecting a parser based on the extention 
-        if extension == "pdf":
-            extracted_text = extract_text_from_pdf(content)
-        else:
-            extracted_text = extract_text_from_docx(content)
-
-        if not extracted_text.strip():
-            raise ValueError("Could not extract text from file.")
-        
-    except Exception as e:
+        file_bytes = await file.read()
+        chars_extracted = await cv_service.process_and_update_cv(user_id, file_bytes, extension)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Error reading file: {str(e)}"
+            detail=str(e)
+        )
+    except RecordNotFoundError:
+        raise HTTPException(status_code=404, detail="User profile not found.")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing file: {str(e)}"
         )
     
-    # Writing to database
-
-    # Once we split users into registered and quests,
-    # we will implement teature to send guest CVs to Redis (or sth. similar)
-    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
-    profile = result.scalar_one_or_none()
-
-    if not profile:
-        raise HTTPException(status_code=404, detail="User profile not found.")
-    
-    # Updating the raw_cv fild in the model
-    profile.raw_cv = extracted_text
-
-    await db.commit()
-    await db.refresh(profile)
-
-    #for frontend
     return {
         "message": "CV has been submitted and processed successfully",
-        "user_id": user_id,
-        "chars_extracted": len(extracted_text)
+        "user_id": str(user_id),
+        "chars_extracted": chars_extracted
     }
