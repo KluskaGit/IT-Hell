@@ -1,12 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from uuid import UUID
+from src.schemas.lookups import LookupRead
 
-class LookupBase(BaseModel):
-    id: UUID
-    name: str
-    
-    model_config = ConfigDict(from_attributes=True)
+
 
 class JobOfferResponse(BaseModel):
     id: UUID
@@ -16,14 +13,14 @@ class JobOfferResponse(BaseModel):
     salary_from: Optional[float] = None
     salary_to: Optional[float] = None
     
-    site: Optional[LookupBase] = None
-    company: Optional[LookupBase] = None
-    work_type: Optional[LookupBase] = None
-    exp_level: Optional[LookupBase] = None
-    specialization: Optional[LookupBase] = None
+    site: Optional[LookupRead] = None
+    company: Optional[LookupRead] = None
+    work_type: Optional[LookupRead] = None
+    exp_level: Optional[LookupRead] = None
+    specialization: Optional[LookupRead] = None
     
-    technologies: List[LookupBase] = []
-    locations: List[LookupBase] = []
+    technologies: List[LookupRead] = []
+    locations: List[LookupRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 
