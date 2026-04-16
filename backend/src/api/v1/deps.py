@@ -13,6 +13,8 @@ from src.services.auth_service import AuthService
 from src.services.lookups_service import LookupsService
 from src.services.job_offers_service import JobOffersService
 from src.services.user_profiles_service import UserProfileService
+from src.services.cv_service import CVService
+from src.services.tech_extractor import TechExtractorService
 
 from src.models.users import User
 
@@ -61,3 +63,14 @@ async def get_current_user(
 ) -> User:
     
     return await auth_service.authorize(credentials)
+
+def get_tech_extractor_service(
+    lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]
+) -> TechExtractorService:
+    return TechExtractorService(lookups_service)
+
+def get_cv_service(
+    user_profiles_service: Annotated[UserProfileService, Depends(get_user_profile_service)],
+    tech_extractor_service: Annotated[TechExtractorService, Depends(get_tech_extractor_service)]
+) -> CVService:
+    return CVService(user_profiles_service, tech_extractor_service)
