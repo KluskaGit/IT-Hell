@@ -1,12 +1,12 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, UploadFile, HTTPException, status, Depends
 
 from src.services.cv_service import CVService
-from src.services.user_profiles_service import UserProfileService
-from src.api.v1.deps import get_user_profile_service, get_cv_service
+from src.api.v1.deps import get_cv_service
 from src.core.exceptions import RecordNotFoundError
+from src.schemas.lookups import LookupRead
 
 router = APIRouter(prefix="/cv", tags=["CV Analysis"])
 
@@ -14,29 +14,23 @@ router = APIRouter(prefix="/cv", tags=["CV Analysis"])
 
 # Endpoint
 
-@router.post("/upload/{user_id}")
+@router.post("/upload/{user_id}", response_model=List[LookupRead])
 async def upload_cv(
     user_id: uuid.UUID,
     file: UploadFile,
     cv_service: Annotated[CVService, Depends(get_cv_service)]
 ):
-    # File validation
-    if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must have a filename."
-        )
-        
-    extension = file.filename.split(".")[-1].lower()
-    if extension not in ["pdf","docx"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Supported formats are only PDF and DOCX."
-        )
-
+    """Upload CV and extract technologies.
+    
+    Returns extracted technologies from CV text.
+    User confirms selection via PUT /users/me/profile with technology_ids.
+    """
     try:
         file_bytes = await file.read()
-        chars_extracted, technologies_extracted = await cv_service.process_and_update_cv(user_id, file_bytes, extension)
+        extension = file.filename.split(".")[-1].lower() if file.filename else ""
+        raw_cv_text, extracted_technologies = await cv_service.process_and_update_cv(
+            user_id, file_bytes, extension, filename=file.filename
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -50,9 +44,8 @@ async def upload_cv(
             detail=f"Error processing file: {str(e)}"
         )
     
-    return {
-        "message": "CV has been submitted and processed successfully",
-        "user_id": str(user_id),
-        "chars_extracted": chars_extracted,
-        "technologies_extracted": technologies_extracted
-    }
+    # Convert Technology ORM objects to LookupRead schema
+    return [
+        LookupRead.model_validate(tech)
+        for tech in extracted_technologies
+    ]
