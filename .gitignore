@@ -1,5 +1,17 @@
+# Python and uv
+__pycache__/
+.python-version
+.venv/
+uv.lock
+# Environments variables
+.env
+# Angular 22k files stuff
+**/node_modules/
+# Scrapers
+scrapers/pracuj_pl/data/
+*.log
+
 node_modules/
 .angular/
 dist/
 .vscode/
-.DS_Store
