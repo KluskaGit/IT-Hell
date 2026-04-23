@@ -1,0 +1,93 @@
+services:
+  message-broker:
+    image: redis:8.4-alpine
+    container_name: message-broker
+    env_file: 
+      - .env
+    entrypoint: ["redis-server", "--port", "${REDIS_PORT}", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - app-network
+
+  database:
+    image: postgres:18-alpine
+    container_name: database
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/postgresql
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    networks:
+      - app-network
+
+  scrapers:
+    build: ./scrapers
+    container_name: scrapers
+    env_file:
+      - .env
+    volumes:
+      - ./scrapers/logs:/logs
+    networks:
+      - app-network
+    depends_on:
+      - worker
+
+  worker:
+    build: ./backend
+    container_name: worker
+    entrypoint: ["uv", "run", "python", "-m", "worker.main"]
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - message-broker
+      - migrations
+  migrations:
+    build: ./backend
+    container_name: migrations
+    env_file:
+      - .env
+    entrypoint: ["uv", "run", "alembic", "upgrade", "head"]
+    networks:
+      - app-network
+    depends_on:
+      - database
+
+  backend:
+    build: ./backend
+    container_name: backend
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - database
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.0
+    container_name: keycloak-dev
+    command: start-dev
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+
+
+volumes:
+  db-data:
+    driver: local
+  keycloak-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
