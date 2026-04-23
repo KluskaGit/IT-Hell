@@ -8,10 +8,17 @@
       <a href="#features">Jak to działa</a>
       <a href="#about">O nas</a>
     </div>
-    <div class="nav-auth">
-      <button class="btn-text" routerLink="/login">Masz już konto?</button>
+    <div class="nav-auth" *ngIf="!isAuthenticated(); else loggedUserBlock">
+      <button class="btn-text">Masz już konto?</button>
       <button class="btn-primary" routerLink="/login">Zaloguj się</button>
     </div>
+
+    <ng-template #loggedUserBlock>
+      <div class="nav-auth nav-auth-logged">
+        <span class="user-badge">Cześć, {{ username() || 'Użytkownik' }}</span>
+        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
+      </div>
+    </ng-template>
   </div>
 </nav>
 
@@ -296,4 +303,12 @@
       <p>Otrzymujesz tylko te oferty, które realnie Cię zainteresują i w których masz szanse.</p>
     </div>
   </section>
+
+
+  <! -- Temporary test button for private endpoint (remove or comment out in production) --> 
+  <button type="button" class="btn-primary" (click)="testPrivateEndpoint()">
+    Test prywatnego endpointu
+  </button>
+
+
 </div>

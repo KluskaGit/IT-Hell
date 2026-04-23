@@ -31,6 +31,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router'; 
 import { constants } from 'node:fs/promises';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -39,7 +40,8 @@ import { constants } from 'node:fs/promises';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit 
+{
   candidateForm!: FormGroup;
   selectedFile: File | null = null;
   isDragging = false;
@@ -49,6 +51,7 @@ export class HomeComponent implements OnInit {
   scanComplete = false;
   showAllSpecs = false;
   showAllTech = false;
+  
 
   salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 
@@ -57,7 +60,10 @@ export class HomeComponent implements OnInit {
   ];
   maxSalaryIndex = this.salaryOptions.length - 1;
 
-  constructor(private readonly fb: FormBuilder, private readonly router: Router) {}
+  constructor(private readonly fb: FormBuilder,
+    private readonly router: Router,
+    private readonly authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -147,8 +153,8 @@ export class HomeComponent implements OnInit {
     }, 2800);
   }
 
-private autoFillForm() : void 
-  {
+  private autoFillForm() : void 
+    {
     this.candidateForm.patchValue(
     {
       itArea: 
@@ -191,7 +197,7 @@ private autoFillForm() : void
       cvFileName: this.selectedFile?.name ?? null
     }
   });
-}
+  }
 
   private setupStudentValidation(): void {
     this.candidateForm.get('isStudent')?.valueChanges.subscribe((isStudent: boolean) => {
@@ -219,5 +225,38 @@ private autoFillForm() : void
       this.handleFile(input.files[0]); 
       }
       
+  }
+
+  get isAuthenticated() {
+  return this.authService.isAuthenticated;
+}
+
+  get username() {
+  return this.authService.username;
+  }
+
+  async logout(): Promise<void> {
+    await this.authService.logout();
+  }
+  /*Temporary test method for private endpoint (remove or comment out in production)*/
+  async testPrivateEndpoint(): Promise<void> {
+    const refreshed = await this.authService.refreshToken(30);
+    console.log('REFRESH RESULT:', refreshed);
+
+    const token = this.authService.getToken();
+    console.log('CURRENT ACCESS TOKEN:', token);
+
+    const response = await fetch('http://localhost:8000/v1/users/me', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    console.log('STATUS:', response.status);
+    console.log('DATA:', data);
   }
 }

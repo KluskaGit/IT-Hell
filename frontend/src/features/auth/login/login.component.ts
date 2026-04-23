@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +14,14 @@ import { Router, RouterModule } from '@angular/router';
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
 
-  constructor(private readonly fb: FormBuilder, private readonly router: Router) {}
+  constructor(private readonly fb: FormBuilder,
+  private readonly router: Router,
+  private readonly authService: AuthService
+  ) {}
+
+  async loginWithKeycloak(): Promise<void> {
+  await this.authService.login();
+  }
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
