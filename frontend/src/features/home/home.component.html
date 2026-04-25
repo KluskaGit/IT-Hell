@@ -310,5 +310,19 @@
     Test prywatnego endpointu
   </button>
 
-
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo-icon"></div>
+        <span>CV<span class="footer-logo-accent">_ANALIZER</span></span>
+      </div>
+      <div class="footer-links">
+        <a routerLink="/about">O nas</a>
+        <a routerLink="/legal" [queryParams]="{tab: 'how'}">Jak to działa</a>
+        <a routerLink="/legal" [queryParams]="{tab: 'terms'}">Regulamin</a>
+        <a routerLink="/legal" [queryParams]="{tab: 'privacy'}">Polityka Prywatności</a>
+      </div>
+      <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER</span>
+    </div>
+  </footer>
 </div>

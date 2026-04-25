@@ -263,3 +263,30 @@ input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #ef444
   font-size: 0.9rem;
   white-space: nowrap;
 }
+.site-footer {
+  margin-top: 4rem;
+  border-top: 1px solid #e2e8f0;
+  padding: 1.75rem 2rem;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 800; font-size: 1rem; color: var(--text-main);
+}
+.footer-logo-icon {
+  width: 24px; height: 24px;
+  background: var(--primary); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+}
+.footer-logo-accent { color: var(--primary); }
+.footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.footer-links a {
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--text-sub); text-decoration: none; transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--primary); }
+.footer-copy { font-size: 0.8rem; color: #94a3b8; }

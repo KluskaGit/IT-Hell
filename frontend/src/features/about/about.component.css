@@ -1,0 +1,42 @@
+:host {
+  display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1e293b;
+}
+* { box-sizing: border-box; }
+
+.background-glow { position: fixed; inset: 0; z-index: -1; background: #f8fafc; overflow: hidden; }
+.glow-1 { position: absolute; top: -10%; right: -5%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%); }
+.glow-2 { position: absolute; bottom: -10%; left: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(79,70,229,0.07) 0%, transparent 70%); }
+
+.about-wrapper { max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+.about-header { display: flex; justify-content: center; padding: 1rem 0 2rem; }
+.logo-link { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 800; font-size: 1.3rem; color: #1e293b; letter-spacing: -0.5px; }
+.logo-icon { width: 32px; height: 32px; background: #6366f1; border-radius: 8px; box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+.logo-accent { color: #6366f1; }
+
+.about-card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 20px; padding: 2.5rem;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06);
+}
+.about-card h1 { font-size: 1.75rem; font-weight: 900; margin: 0 0 0.4rem; letter-spacing: -0.5px; }
+.subtitle { font-size: 0.95rem; color: #64748b; margin: 0 0 2rem; }
+
+.placeholder-block {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: #f8fafc; border: 1px dashed #cbd5e1;
+  border-radius: 14px; padding: 1.5rem;
+}
+.placeholder-icon { font-size: 1.75rem; flex-shrink: 0; }
+.placeholder-block p { margin: 0; font-size: 0.95rem; color: #64748b; line-height: 1.65; }
+
+.about-footer { text-align: center; margin-top: 2rem; }
+.about-footer a {
+  color: #6366f1; text-decoration: none; font-size: 0.9rem; font-weight: 700;
+  padding: 0.6rem 1.2rem; border-radius: 10px;
+  background: #eef2ff; border: 1px solid #e0e7ff;
+  display: inline-block; transition: all 0.2s;
+}
+.about-footer a:hover { background: #6366f1; color: #fff; transform: translateY(-1px); }
