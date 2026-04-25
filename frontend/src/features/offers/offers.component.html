@@ -22,6 +22,13 @@
   <div class="glow-2"></div>
 </div>
 
+<div *ngIf="isLoading" class="loading-state">
+  <p>Ładowanie ofert...</p>
+</div>
+<div *ngIf="loadError" class="error-state">
+  <p>{{ loadError }}</p>
+</div>
+
 <div class="offers-page">
   <section class="hero-section animate-up">
     <span class="badge">Dopasowane oferty</span>
@@ -32,6 +39,7 @@
     </p>
   </section>
 
+  @if (filtersForm) {
   <section class="summary-card animate-up delay-1" [formGroup]="filtersForm">
     <div class="summary-header summary-header-collapsible">
       <h2>Filtry</h2>
@@ -295,6 +303,7 @@
       </button>
     </div>
   </section>
+  } <!-- @if filtersForm -->
 
   <section class="offers-list animate-up delay-2" *ngIf="matchedOffers.length > 0; else emptyState">
     <article class="offer-card" *ngFor="let offer of matchedOffers">
