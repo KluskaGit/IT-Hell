@@ -1,13 +1,11 @@
 import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
-import { JobOffersApiService, MappedOffer } from '../../app/core/services/job-offers-api.service';
+import { JobOffersApiService, MappedOffer, techNameToKey, specNameToKey } from '../../app/core/services/job-offers-api.service';
+import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 
 type WorkMode = 'remote' | 'hybrid' | 'onsite';
 type ContractType = 'uop' | 'b2b' | 'uz';
@@ -48,6 +46,7 @@ export class OffersComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
+  private readonly lookupsApi = inject(LookupsApiService);
 
   readonly salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
@@ -55,7 +54,8 @@ export class OffersComponent implements OnInit {
     25000, 30000, 35000, 40000, 45000, 50000
   ];
 
-  readonly roleLabels: Record<string, string> = {
+  // Fallback gdy backend lookups niedostępne
+  private readonly roleLabels: Record<string, string> = {
     backend: 'Backend', frontend: 'Frontend', fullstack: 'Full-stack', mobile: 'Mobile',
     architecture: 'Architecture', devops: 'DevOps', gamedev: 'Game dev',
     data: 'Data analytics & BI', bigdata: 'Big Data / Data Science', embedded: 'Embedded',
@@ -64,12 +64,15 @@ export class OffersComponent implements OnInit {
     system: 'System analytics', sap: 'SAP&ERP', admin: 'IT admin', ai: 'AI/ML',
   };
 
-  readonly techLabels: Record<string, string> = {
+  private readonly techLabels: Record<string, string> = {
     javascript: 'JavaScript', html: 'HTML', sql: 'SQL', python: 'Python', java: 'Java',
     csharp: 'C#', php: 'PHP', cpp: 'C++', typescript: 'TypeScript', go: 'Go', c: 'C',
     dotnet: '.NET', react: 'React.js', angular: 'Angular', android: 'Android', aws: 'AWS',
     ios: 'iOS', rust: 'Rust', r: 'R', nodejs: 'Node.js', ruby: 'Ruby on Rails', hibernate: 'Hibernate',
   };
+
+  availableRoles: { key: string; label: string }[] = [];
+  availableTechs: { key: string; label: string }[] = [];
 
   cvFileName: string | null = null;
   filtersForm!: FormGroup;
@@ -89,16 +92,29 @@ export class OffersComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return;
 
     const navState = history.state as { filters?: CandidateFilters; cvFileName?: string | null };
-
-    if (!navState?.filters) {
-      this.router.navigate(['/']);
-      return;
-    }
+    if (!navState?.filters) { this.router.navigate(['/']); return; }
 
     this.cvFileName = navState.cvFileName ?? null;
-    this.filtersForm = this.buildFiltersForm(navState.filters);
     this.isLoading = true;
-    this.loadOffersFromApi();
+
+    forkJoin({
+      techs: this.lookupsApi.getTechnologies(),
+      specs: this.lookupsApi.getSpecializations(),
+    }).subscribe({
+      next: ({ techs, specs }) => {
+        this.availableTechs = this.jobOffersApi.buildLookupItems(techs, techNameToKey);
+        this.availableRoles = this.jobOffersApi.buildLookupItems(specs, specNameToKey);
+        this.filtersForm = this.buildFiltersForm(navState.filters!);
+        this.loadOffersFromApi();
+      },
+      error: () => {
+        // Fallback na hardkodowane wartości gdy lookups endpoint niedostępny
+        this.availableRoles = Object.entries(this.roleLabels).map(([key, label]) => ({ key, label }));
+        this.availableTechs = Object.entries(this.techLabels).map(([key, label]) => ({ key, label }));
+        this.filtersForm = this.buildFiltersForm(navState.filters!);
+        this.loadOffersFromApi();
+      },
+    });
   }
 
   private loadOffersFromApi(): void {
@@ -125,10 +141,20 @@ export class OffersComponent implements OnInit {
   }
 
   private buildFiltersForm(filters: CandidateFilters): FormGroup {
+    const itAreaGroup: Record<string, boolean> = {};
+    for (const { key } of this.availableRoles) {
+      itAreaGroup[key] = filters.itArea?.[key] ?? false;
+    }
+
+    const techGroup: Record<string, boolean> = {};
+    for (const { key } of this.availableTechs) {
+      techGroup[key] = filters.technologies?.[key] ?? false;
+    }
+
     return this.fb.group({
-      itArea: this.fb.group({ ...filters.itArea }),
+      itArea: this.fb.group(itAreaGroup),
       seniority: [filters.seniority],
-      technologies: this.fb.group({ ...filters.technologies }),
+      technologies: this.fb.group(techGroup),
       salaryFromIndex: [filters.salaryFromIndex],
       salaryToIndex: [filters.salaryToIndex],
       contractType: [filters.contractType],
@@ -246,17 +272,22 @@ export class OffersComponent implements OnInit {
     return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
   }
 
-  formatRole(role: string): string { return this.roleLabels[role] ?? role; }
-  formatTech(tech: string): string { return this.techLabels[tech] ?? tech; }
+  formatRole(role: string): string {
+    return this.availableRoles.find(r => r.key === role)?.label ?? this.roleLabels[role] ?? role;
+  }
+
+  formatTech(tech: string): string {
+    return this.availableTechs.find(t => t.key === tech)?.label ?? this.techLabels[tech] ?? tech;
+  }
 
   getVisibleRoles(): string[] {
-    const roles = Object.keys(this.roleLabels);
-    return this.showAllRoles ? roles : roles.slice(0, 8);
+    const keys = this.availableRoles.map(r => r.key);
+    return this.showAllRoles ? keys : keys.slice(0, 8);
   }
 
   getVisibleTechnologies(): string[] {
-    const tech = Object.keys(this.techLabels);
-    return this.showAllTech ? tech : tech.slice(0, 10);
+    const keys = this.availableTechs.map(t => t.key);
+    return this.showAllTech ? keys : keys.slice(0, 10);
   }
 
   isSourceAllowed(source: string): boolean {
