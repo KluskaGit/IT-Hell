@@ -50,7 +50,7 @@
         </button>
       </div>
 
-      <div class="hero-info" *ngIf="profileForm; else loadingHero" [formGroup]="profileForm">
+      <div class="hero-info" [formGroup]="profileForm">
         <div class="form-row">
           <div class="input-group">
             <label>Imię</label>
@@ -68,10 +68,8 @@
       </div>
     </div>
 
-    <ng-template #loadingHero><div class="hero-info"></div></ng-template>
-
     <!-- Student Badge -->
-    <div class="student-box" *ngIf="profileForm" [formGroup]="profileForm">
+    <div class="student-box" [formGroup]="profileForm">
       <label class="checkbox-container">
         <input type="checkbox" formControlName="isStudent">
         Posiadam status studenta
@@ -125,58 +123,13 @@
         </button>
       </section>
 
-      <!-- SALARY GAP ANALYTICS -->
-      <section class="glass-card animate-up delay-2">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Salary Gap
-        </h3>
-        <div class="salary-gap-card">
-          <div class="gap-row">
-            <div class="gap-item">
-              <span class="gap-label">Twoje oczekiwania</span>
-              <span class="gap-value primary">{{ salaryGap.userExpected | number:'1.0-0' }} PLN</span>
-            </div>
-            <div class="gap-divider">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-            <div class="gap-item">
-              <span class="gap-label">Średnia rynkowa</span>
-              <span class="gap-value">{{ salaryGap.marketAverage | number:'1.0-0' }} PLN</span>
-            </div>
-          </div>
-          <div class="gap-badge up">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            {{ salaryGap.difference }} powyżej rynku
-          </div>
-        </div>
-      </section>
-
-      <!-- ACTIVITY LOG -->
-      <section class="glass-card animate-up delay-3">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Ostatnie analizy
-        </h3>
-        <div class="activity-list">
-          <div class="activity-item" *ngFor="let item of activityLog">
-            <div class="activity-info">
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.date }}</span>
-            </div>
-            <div class="activity-score" [ngClass]="getMatchScoreClass(item.matchScore)">
-              {{ item.matchScore }}%
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
 
     <!-- RIGHT COLUMN -->
     <div class="grid-col">
 
       <!-- PREFERENCES -->
-      <section class="glass-card animate-up delay-1" *ngIf="profileForm; else loadingSection" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-1" [formGroup]="profileForm">
         <h3 class="section-title">1. Doświadczenie i Rola</h3>
 
         <!-- Roles -->
@@ -235,12 +188,9 @@
           </select>
         </div>
       </section>
-      <ng-template #loadingSection>
-        <section class="glass-card animate-up delay-1"><p style="padding:1rem">Ładowanie formularza...</p></section>
-      </ng-template>
 
       <!-- FINANCE -->
-      <section class="glass-card animate-up delay-2" *ngIf="profileForm" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-2" [formGroup]="profileForm">
         <h3 class="section-title">2. Finanse i Kontrakt</h3>
 
         <!-- Salary Dual Slider -->
@@ -281,7 +231,7 @@
       </section>
 
       <!-- AI PRECISION -->
-      <section class="glass-card animate-up delay-3" *ngIf="profileForm" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-3" [formGroup]="profileForm">
         <h3 class="section-title ai-accent">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Inteligentne Dopasowanie

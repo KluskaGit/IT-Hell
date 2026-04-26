@@ -2,6 +2,7 @@ import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { LocationPickerComponent, LocationItem } from '../../app/shared/location-picker/location-picker.component';
 import { forkJoin } from 'rxjs';
 
 import { JobOffersApiService, MappedOffer, techNameToKey, specNameToKey, Seniority, SENIORITY_OPTIONS, WorkMode, WORK_MODE_OPTIONS, SITE_OPTIONS } from '../../app/core/services/job-offers-api.service';
@@ -27,6 +28,7 @@ interface CandidateFilters {
   noticePeriod: string;
   jobSites: Record<string, boolean>;
   matchPrecision: number;
+  selectedLocations?: LocationItem[];
 }
 
 interface OfferViewModel extends JobOffer {
@@ -38,7 +40,7 @@ interface OfferViewModel extends JobOffer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LocationPickerComponent],
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.css']
 })
@@ -83,6 +85,8 @@ export class OffersComponent implements OnInit {
   private specializationIds: string[] = [];
   private technologyIds: string[] = [];
   private workTypeIds: string[] = [];
+  availableLocations: LocationItem[] = [];
+  selectedLocations: LocationItem[] = [];
   filtersForm!: FormGroup;
   filtersCollapsed = true;
 
@@ -105,13 +109,18 @@ export class OffersComponent implements OnInit {
     this.cvFileName = navState.cvFileName ?? null;
     this.expLevelIds = navState.filters.expLevelIds ?? [];
     this.workTypeIds = navState.filters.workTypeIds ?? [];
+    this.selectedLocations = navState.filters.selectedLocations ?? [];
     this.isLoading = true;
 
     forkJoin({
       techs: this.lookupsApi.getTechnologies(),
       specs: this.lookupsApi.getSpecializations(),
+      locations: this.lookupsApi.getLocations(),
     }).subscribe({
-      next: ({ techs, specs }) => {
+      next: ({ techs, specs, locations }) => {
+        this.availableLocations = locations
+          .map(l => ({ id: l.id, name: l.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
         this.availableTechs = this.jobOffersApi.buildLookupItems(techs, techNameToKey);
         this.availableRoles = this.jobOffersApi.buildLookupItems(specs, specNameToKey);
         this.filtersForm = this.buildFiltersForm(navState.filters!);
@@ -207,9 +216,19 @@ export class OffersComponent implements OnInit {
     this.previewOffersCount = this.matchedOffers.length;
   }
 
+  private isLocationMatch(offer: JobOffer): boolean {
+    if (this.selectedLocations.length === 0) return true;
+    const offerCities = offer.location.split(', ').map(c => c.toLowerCase());
+    return this.selectedLocations.some(loc => {
+      const name = loc.name.toLowerCase();
+      if (name === 'zdalnie') return offer.workMode === 'remote' || offerCities.includes('zdalnie');
+      return offerCities.some(city => city.includes(name));
+    });
+  }
+
   private getFilteredOffers(): OfferViewModel[] {
     return this.allOffers
-      .filter((offer) => this.isSalaryInRange(offer) && this.isSourceAllowed(offer.source))
+      .filter((offer) => this.isSalaryInRange(offer) && this.isSourceAllowed(offer.source) && this.isLocationMatch(offer))
       .map((offer) => this.toOfferViewModel(offer))
       .filter((offer) => {
         const minScore = Number(this.filtersForm.get('matchPrecision')?.value ?? 75);

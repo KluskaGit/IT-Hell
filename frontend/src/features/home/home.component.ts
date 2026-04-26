@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { LocationPickerComponent, LocationItem } from '../../app/shared/location-picker/location-picker.component';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 import {
   SENIORITY_OPTIONS, EXP_LEVEL_TO_SENIORITY, Seniority,
   WORK_MODE_OPTIONS, WORK_TYPE_TO_MODE, WorkMode,
-  SITE_OPTIONS, techNameToKey, specNameToKey
+  SITE_OPTIONS, techNameToKey, specNameToKey, POPULAR_TECH_KEYS
 } from '../../app/core/services/job-offers-api.service';
 
 type LookupItem = { key: string; label: string; id: string };
@@ -27,14 +28,33 @@ const FALLBACK_ROLES: LookupItem[] = [
 ];
 
 const FALLBACK_TECHS: LookupItem[] = [
-  { key: 'javascript', label: 'JavaScript', id: '' }, { key: 'html', label: 'HTML', id: '' },
-  { key: 'sql', label: 'SQL', id: '' }, { key: 'python', label: 'Python', id: '' }, { key: 'java', label: 'Java', id: '' },
-  { key: 'csharp', label: 'C#', id: '' }, { key: 'php', label: 'PHP', id: '' }, { key: 'cpp', label: 'C++', id: '' },
-  { key: 'typescript', label: 'TypeScript', id: '' }, { key: 'go', label: 'Go', id: '' }, { key: 'c', label: 'C', id: '' },
-  { key: 'dotnet', label: '.NET', id: '' }, { key: 'react', label: 'React.js', id: '' }, { key: 'angular', label: 'Angular', id: '' },
-  { key: 'android', label: 'Android', id: '' }, { key: 'aws', label: 'AWS', id: '' }, { key: 'ios', label: 'iOS', id: '' },
-  { key: 'rust', label: 'Rust', id: '' }, { key: 'r', label: 'R', id: '' }, { key: 'nodejs', label: 'Node.js', id: '' },
-  { key: 'ruby', label: 'Ruby on Rails', id: '' }, { key: 'hibernate', label: 'Hibernate', id: '' },
+  { key: 'javascript', label: 'JavaScript', id: '' }, { key: 'typescript', label: 'TypeScript', id: '' },
+  { key: 'html', label: 'HTML', id: '' }, { key: 'css', label: 'CSS', id: '' },
+  { key: 'python', label: 'Python', id: '' }, { key: 'java', label: 'Java', id: '' },
+  { key: 'csharp', label: 'C#', id: '' }, { key: 'php', label: 'PHP', id: '' },
+  { key: 'cpp', label: 'C++', id: '' }, { key: 'c', label: 'C', id: '' },
+  { key: 'kotlin', label: 'Kotlin', id: '' }, { key: 'swift', label: 'Swift', id: '' },
+  { key: 'go', label: 'Go', id: '' }, { key: 'rust', label: 'Rust', id: '' },
+  { key: 'scala', label: 'Scala', id: '' }, { key: 'r', label: 'R', id: '' },
+  { key: 'sql', label: 'SQL', id: '' }, { key: 'dotnet', label: '.NET', id: '' },
+  { key: 'nodejs', label: 'Node.js', id: '' }, { key: 'react', label: 'React.js', id: '' },
+  { key: 'angular', label: 'Angular', id: '' }, { key: 'vuejs', label: 'Vue.js', id: '' },
+  { key: 'nextjs', label: 'Next.js', id: '' }, { key: 'nestjs', label: 'NestJS', id: '' },
+  { key: 'spring', label: 'Spring', id: '' }, { key: 'django', label: 'Django', id: '' },
+  { key: 'fastapi', label: 'FastAPI', id: '' }, { key: 'ruby', label: 'Ruby on Rails', id: '' },
+  { key: 'android', label: 'Android', id: '' }, { key: 'ios', label: 'iOS', id: '' },
+  { key: 'aws', label: 'AWS', id: '' }, { key: 'azure', label: 'Azure', id: '' },
+  { key: 'gcp', label: 'Google Cloud', id: '' }, { key: 'docker', label: 'Docker', id: '' },
+  { key: 'kubernetes', label: 'Kubernetes', id: '' }, { key: 'postgresql', label: 'PostgreSQL', id: '' },
+  { key: 'mysql', label: 'MySQL', id: '' }, { key: 'mongodb', label: 'MongoDB', id: '' },
+  { key: 'redis', label: 'Redis', id: '' }, { key: 'elasticsearch', label: 'Elasticsearch', id: '' },
+  { key: 'linux', label: 'Linux', id: '' }, { key: 'git', label: 'Git', id: '' },
+  { key: 'bash', label: 'Bash', id: '' }, { key: 'terraform', label: 'Terraform', id: '' },
+  { key: 'ansible', label: 'Ansible', id: '' }, { key: 'jenkins', label: 'Jenkins', id: '' },
+  { key: 'graphql', label: 'GraphQL', id: '' }, { key: 'figma', label: 'Figma', id: '' },
+  { key: 'pytorch', label: 'PyTorch', id: '' }, { key: 'tensorflow', label: 'TensorFlow', id: '' },
+  { key: 'sass', label: 'Sass', id: '' }, { key: 'svelte', label: 'Svelte', id: '' },
+  { key: 'hibernate', label: 'Hibernate', id: '' },
 ];
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
@@ -42,7 +62,7 @@ const STORAGE_KEY = 'cv_analizer_candidate_filters';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LocationPickerComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
@@ -56,10 +76,11 @@ export class HomeComponent implements OnInit {
   scanComplete = false;
   showAllSpecs = false;
   showAllTech = false;
-  isLoadingLookups = true;
 
   availableRoles: LookupItem[] = [];
   availableTechs: LookupItem[] = [];
+  availableLocations: LocationItem[] = [];
+  selectedLocations: LocationItem[] = [];
 
   salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
@@ -73,17 +94,33 @@ export class HomeComponent implements OnInit {
   readonly siteOptions = SITE_OPTIONS;
 
   readonly techIconClass: Record<string, string> = {
-    javascript: 'devicon-javascript-plain colored', html: 'devicon-html5-plain colored',
-    sql: 'devicon-azuresqldatabase-plain colored', python: 'devicon-python-plain colored',
-    java: 'devicon-java-plain colored', csharp: 'devicon-csharp-plain colored',
-    php: 'devicon-php-plain colored', cpp: 'devicon-cplusplus-plain colored',
-    typescript: 'devicon-typescript-plain colored', go: 'devicon-go-original-wordmark colored',
-    c: 'devicon-c-plain colored', dotnet: 'devicon-dot-net-plain colored',
+    javascript: 'devicon-javascript-plain colored', typescript: 'devicon-typescript-plain colored',
+    html: 'devicon-html5-plain colored', css: 'devicon-css3-plain colored',
+    sass: 'devicon-sass-plain colored', svelte: 'devicon-svelte-plain colored',
+    python: 'devicon-python-plain colored', java: 'devicon-java-plain colored',
+    csharp: 'devicon-csharp-plain colored', php: 'devicon-php-plain colored',
+    cpp: 'devicon-cplusplus-plain colored', c: 'devicon-c-plain colored',
+    kotlin: 'devicon-kotlin-plain colored', swift: 'devicon-swift-plain colored',
+    scala: 'devicon-scala-plain colored', go: 'devicon-go-original-wordmark colored',
+    rust: 'devicon-rust-plain', sql: 'devicon-azuresqldatabase-plain colored',
+    dotnet: 'devicon-dot-net-plain colored', nodejs: 'devicon-nodejs-plain colored',
     react: 'devicon-react-original colored', angular: 'devicon-angularjs-plain colored',
-    android: 'devicon-android-plain colored', aws: 'devicon-amazonwebservices-plain-wordmark colored',
-    ios: 'devicon-apple-original', rust: 'devicon-rust-plain',
-    nodejs: 'devicon-nodejs-plain colored', ruby: 'devicon-rails-plain colored',
-    hibernate: 'devicon-hibernate-plain colored',
+    vuejs: 'devicon-vuejs-plain colored', nextjs: 'devicon-nextjs-plain',
+    nestjs: 'devicon-nestjs-plain colored', spring: 'devicon-spring-plain colored',
+    django: 'devicon-django-plain colored', fastapi: 'devicon-fastapi-plain colored',
+    ruby: 'devicon-rails-plain colored', hibernate: 'devicon-hibernate-plain colored',
+    android: 'devicon-android-plain colored', ios: 'devicon-apple-original',
+    aws: 'devicon-amazonwebservices-plain-wordmark colored',
+    azure: 'devicon-azure-plain colored', gcp: 'devicon-googlecloud-plain colored',
+    docker: 'devicon-docker-plain colored', kubernetes: 'devicon-kubernetes-plain colored',
+    postgresql: 'devicon-postgresql-plain colored', mysql: 'devicon-mysql-plain colored',
+    mongodb: 'devicon-mongodb-plain colored', redis: 'devicon-redis-plain colored',
+    elasticsearch: 'devicon-elasticsearch-plain colored',
+    linux: 'devicon-linux-plain colored', git: 'devicon-git-plain colored',
+    bash: 'devicon-bash-plain colored', terraform: 'devicon-terraform-plain colored',
+    ansible: 'devicon-ansible-plain colored', jenkins: 'devicon-jenkins-line colored',
+    graphql: 'devicon-graphql-plain colored', figma: 'devicon-figma-plain colored',
+    pytorch: 'devicon-pytorch-plain colored', tensorflow: 'devicon-tensorflow-original colored',
   };
 
   private expLevelIdsBySeniority: Partial<Record<Seniority, string[]>> = {};
@@ -97,6 +134,12 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.availableRoles = FALLBACK_ROLES;
+    this.availableTechs = FALLBACK_TECHS;
+    this.initForm();
+    this.setupStudentValidation();
+    const saved = this.loadSavedFilters();
+    if (saved?._selectedLocations) this.selectedLocations = saved._selectedLocations;
     this.loadLookups();
   }
 
@@ -106,9 +149,9 @@ export class HomeComponent implements OnInit {
       workTypes: this.lookupsApi.getWorkTypes(),
       specs: this.lookupsApi.getSpecializations(),
       techs: this.lookupsApi.getTechnologies(),
+      locations: this.lookupsApi.getLocations(),
     }).subscribe({
-      next: ({ expLevels, workTypes, specs, techs }) => {
-        this.expLevelIdsBySeniority = {};
+      next: ({ expLevels, workTypes, specs, techs, locations }) => {
         for (const level of expLevels) {
           const seniority = EXP_LEVEL_TO_SENIORITY[level.name];
           if (seniority) {
@@ -117,7 +160,6 @@ export class HomeComponent implements OnInit {
             this.expLevelIdsBySeniority[seniority] = arr;
           }
         }
-        this.workTypeIdsByMode = {};
         for (const wt of workTypes) {
           const mode = WORK_TYPE_TO_MODE[wt.name];
           if (mode) {
@@ -133,19 +175,34 @@ export class HomeComponent implements OnInit {
         const seenTech = new Set<string>();
         this.availableTechs = techs
           .map(t => ({ key: techNameToKey(t.name), label: t.name, id: t.id }))
-          .filter(t => { if (seenTech.has(t.key)) return false; seenTech.add(t.key); return true; });
-        this.isLoadingLookups = false;
-        this.initForm();
-        this.setupStudentValidation();
+          .filter(t => {
+            if (!POPULAR_TECH_KEYS.has(t.key)) return false;
+            if (seenTech.has(t.key)) return false;
+            seenTech.add(t.key);
+            return true;
+          });
+        this.availableLocations = locations
+          .map(l => ({ id: l.id, name: l.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
+        this.patchFormWithNewLookups();
       },
-      error: () => {
-        this.availableRoles = FALLBACK_ROLES;
-        this.availableTechs = FALLBACK_TECHS;
-        this.isLoadingLookups = false;
-        this.initForm();
-        this.setupStudentValidation();
-      },
+      error: () => { /* fallback already set in ngOnInit */ },
     });
+  }
+
+  private patchFormWithNewLookups(): void {
+    const itAreaFg = this.candidateForm.get('itArea') as FormGroup;
+    const techFg = this.candidateForm.get('technologies') as FormGroup;
+    for (const role of this.availableRoles) {
+      if (!itAreaFg.contains(role.key)) {
+        itAreaFg.addControl(role.key, this.fb.control(false));
+      }
+    }
+    for (const tech of this.availableTechs) {
+      if (!techFg.contains(tech.key)) {
+        techFg.addControl(tech.key, this.fb.control(false));
+      }
+    }
   }
 
   private initForm(): void {
@@ -197,7 +254,10 @@ export class HomeComponent implements OnInit {
 
   private saveFilters(): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.candidateForm.getRawValue()));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...this.candidateForm.getRawValue(),
+        _selectedLocations: this.selectedLocations,
+      }));
     } catch { /* ignore */ }
   }
 
@@ -310,7 +370,7 @@ export class HomeComponent implements OnInit {
 
     this.router.navigate(['/offers'], {
       state: {
-        filters: { ...formValue, expLevelIds, workTypeIds },
+        filters: { ...formValue, expLevelIds, workTypeIds, selectedLocations: this.selectedLocations },
         cvFileName: this.selectedFile?.name ?? null,
       },
     });

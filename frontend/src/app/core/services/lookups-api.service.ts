@@ -28,4 +28,8 @@ export class LookupsApiService {
   getSites(): Observable<LookupDto[]> {
     return this.http.get<LookupDto[]>(`${this.base}/sites`);
   }
+
+  getLocations(): Observable<LookupDto[]> {
+    return this.http.get<LookupDto[]>(`${this.base}/locations`);
+  }
 }

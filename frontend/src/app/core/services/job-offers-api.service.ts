@@ -52,14 +52,46 @@ export const EXP_LEVEL_TO_SENIORITY: Record<string, Seniority> = {
   'Asystent / Asystentka': 'Stażysta / Trainee',
 };
 
+export const POPULAR_TECH_KEYS = new Set<string>([
+  'javascript', 'typescript', 'html', 'css', 'sass', 'svelte',
+  'python', 'java', 'csharp', 'php', 'cpp', 'c', 'kotlin', 'swift', 'scala', 'rust', 'go', 'r',
+  'sql', 'dotnet', 'nodejs', 'ruby', 'hibernate',
+  'react', 'angular', 'vuejs', 'nextjs', 'nestjs',
+  'android', 'ios',
+  'aws', 'azure', 'gcp',
+  'docker', 'kubernetes',
+  'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch',
+  'linux', 'git', 'bash',
+  'spring', 'django', 'fastapi',
+  'terraform', 'ansible', 'jenkins',
+  'graphql', 'figma',
+  'pytorch', 'tensorflow',
+]);
+
 export function techNameToKey(name: string): string {
   const OVERRIDES: Record<string, string> = {
-    'JavaScript': 'javascript', 'TypeScript': 'typescript', 'HTML': 'html', 'CSS': 'css',
+    'JavaScript': 'javascript', 'TypeScript': 'typescript',
+    'HTML': 'html', 'HTML5': 'html', 'CSS': 'css', 'CSS3': 'css', 'Sass': 'sass',
     'SQL': 'sql', 'Python': 'python', 'Java': 'java', 'C#': 'csharp', 'PHP': 'php',
     'C++': 'cpp', 'C': 'c', '.NET': 'dotnet', 'React.js': 'react', 'React': 'react',
     'Angular': 'angular', 'Android': 'android', 'AWS': 'aws', 'iOS': 'ios',
     'Rust': 'rust', 'R': 'r', 'Node.js': 'nodejs', 'Ruby on Rails': 'ruby',
-    'Hibernate': 'hibernate', 'Go': 'go',
+    'Hibernate': 'hibernate', 'Go': 'go', 'Kotlin': 'kotlin', 'Swift': 'swift',
+    'Scala': 'scala', 'Svelte': 'svelte',
+    'Vue.js': 'vuejs', 'Vue': 'vuejs',
+    'Next.js': 'nextjs', 'NextJS': 'nextjs',
+    'NestJS': 'nestjs', 'Nest.js': 'nestjs',
+    'Spring': 'spring', 'Spring Boot': 'spring', 'Spring Framework': 'spring',
+    'Django': 'django', 'FastAPI': 'fastapi',
+    'Docker': 'docker', 'Kubernetes': 'kubernetes',
+    'PostgreSQL': 'postgresql', 'MySQL': 'mysql', 'MongoDB': 'mongodb',
+    'Redis': 'redis', 'Elasticsearch': 'elasticsearch',
+    'Linux': 'linux', 'Git': 'git', 'Bash': 'bash', 'Shell': 'bash',
+    'Microsoft Azure': 'azure', 'Azure': 'azure',
+    'Google Cloud Platform': 'gcp', 'Google Cloud': 'gcp', 'GCP': 'gcp',
+    'Terraform': 'terraform', 'Ansible': 'ansible', 'Jenkins': 'jenkins',
+    'GraphQL': 'graphql', 'Figma': 'figma',
+    'PyTorch': 'pytorch', 'TensorFlow': 'tensorflow',
   };
   return OVERRIDES[name] ?? name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }

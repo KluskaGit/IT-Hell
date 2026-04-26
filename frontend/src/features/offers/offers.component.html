@@ -55,6 +55,15 @@
         <p>{{ cvFileName || 'Brak nazwy pliku' }}</p>
       </div>
 
+      <div class="summary-block full-width">
+        <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
+        <app-location-picker
+          [locations]="availableLocations"
+          [selected]="selectedLocations"
+          (selectedChange)="selectedLocations = $event; applyFilters()">
+        </app-location-picker>
+      </div>
+
       <div class="summary-block">
         <h3>Poziom doświadczenia</h3>
         <div class="pills-container">

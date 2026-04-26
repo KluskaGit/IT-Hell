@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 import {
-  SENIORITY_OPTIONS, techNameToKey, specNameToKey, SITE_OPTIONS
+  SENIORITY_OPTIONS, techNameToKey, specNameToKey, SITE_OPTIONS, POPULAR_TECH_KEYS
 } from '../../app/core/services/job-offers-api.service';
 
 type LookupItem = { key: string; label: string; id: string };
@@ -24,14 +24,33 @@ const FALLBACK_ROLES: LookupItem[] = [
 ];
 
 const FALLBACK_TECHS: LookupItem[] = [
-  { key: 'javascript', label: 'JavaScript', id: '' }, { key: 'html', label: 'HTML', id: '' },
-  { key: 'sql', label: 'SQL', id: '' }, { key: 'python', label: 'Python', id: '' }, { key: 'java', label: 'Java', id: '' },
-  { key: 'csharp', label: 'C#', id: '' }, { key: 'php', label: 'PHP', id: '' }, { key: 'cpp', label: 'C++', id: '' },
-  { key: 'typescript', label: 'TypeScript', id: '' }, { key: 'go', label: 'Go', id: '' }, { key: 'c', label: 'C', id: '' },
-  { key: 'dotnet', label: '.NET', id: '' }, { key: 'react', label: 'React.js', id: '' }, { key: 'angular', label: 'Angular', id: '' },
-  { key: 'android', label: 'Android', id: '' }, { key: 'aws', label: 'AWS', id: '' }, { key: 'ios', label: 'iOS', id: '' },
-  { key: 'rust', label: 'Rust', id: '' }, { key: 'r', label: 'R', id: '' }, { key: 'nodejs', label: 'Node.js', id: '' },
-  { key: 'ruby', label: 'Ruby on Rails', id: '' }, { key: 'hibernate', label: 'Hibernate', id: '' },
+  { key: 'javascript', label: 'JavaScript', id: '' }, { key: 'typescript', label: 'TypeScript', id: '' },
+  { key: 'html', label: 'HTML', id: '' }, { key: 'css', label: 'CSS', id: '' },
+  { key: 'python', label: 'Python', id: '' }, { key: 'java', label: 'Java', id: '' },
+  { key: 'csharp', label: 'C#', id: '' }, { key: 'php', label: 'PHP', id: '' },
+  { key: 'cpp', label: 'C++', id: '' }, { key: 'c', label: 'C', id: '' },
+  { key: 'kotlin', label: 'Kotlin', id: '' }, { key: 'swift', label: 'Swift', id: '' },
+  { key: 'go', label: 'Go', id: '' }, { key: 'rust', label: 'Rust', id: '' },
+  { key: 'scala', label: 'Scala', id: '' }, { key: 'r', label: 'R', id: '' },
+  { key: 'sql', label: 'SQL', id: '' }, { key: 'dotnet', label: '.NET', id: '' },
+  { key: 'nodejs', label: 'Node.js', id: '' }, { key: 'react', label: 'React.js', id: '' },
+  { key: 'angular', label: 'Angular', id: '' }, { key: 'vuejs', label: 'Vue.js', id: '' },
+  { key: 'nextjs', label: 'Next.js', id: '' }, { key: 'nestjs', label: 'NestJS', id: '' },
+  { key: 'spring', label: 'Spring', id: '' }, { key: 'django', label: 'Django', id: '' },
+  { key: 'fastapi', label: 'FastAPI', id: '' }, { key: 'ruby', label: 'Ruby on Rails', id: '' },
+  { key: 'android', label: 'Android', id: '' }, { key: 'ios', label: 'iOS', id: '' },
+  { key: 'aws', label: 'AWS', id: '' }, { key: 'azure', label: 'Azure', id: '' },
+  { key: 'gcp', label: 'Google Cloud', id: '' }, { key: 'docker', label: 'Docker', id: '' },
+  { key: 'kubernetes', label: 'Kubernetes', id: '' }, { key: 'postgresql', label: 'PostgreSQL', id: '' },
+  { key: 'mysql', label: 'MySQL', id: '' }, { key: 'mongodb', label: 'MongoDB', id: '' },
+  { key: 'redis', label: 'Redis', id: '' }, { key: 'elasticsearch', label: 'Elasticsearch', id: '' },
+  { key: 'linux', label: 'Linux', id: '' }, { key: 'git', label: 'Git', id: '' },
+  { key: 'bash', label: 'Bash', id: '' }, { key: 'terraform', label: 'Terraform', id: '' },
+  { key: 'ansible', label: 'Ansible', id: '' }, { key: 'jenkins', label: 'Jenkins', id: '' },
+  { key: 'graphql', label: 'GraphQL', id: '' }, { key: 'figma', label: 'Figma', id: '' },
+  { key: 'pytorch', label: 'PyTorch', id: '' }, { key: 'tensorflow', label: 'TensorFlow', id: '' },
+  { key: 'sass', label: 'Sass', id: '' }, { key: 'svelte', label: 'Svelte', id: '' },
+  { key: 'hibernate', label: 'Hibernate', id: '' },
 ];
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
@@ -49,7 +68,6 @@ export class ProfileComponent implements OnInit {
 
   availableRoles: LookupItem[] = [];
   availableTechs: LookupItem[] = [];
-  isLoadingLookups = true;
   showAllSpecs = false;
   showAllTech = false;
 
@@ -75,18 +93,6 @@ export class ProfileComponent implements OnInit {
   ];
   maxSalaryIndex = this.salaryOptions.length - 1;
 
-  salaryGap = {
-    userExpected: 20000,
-    marketAverage: 18500,
-    difference: '+8.1%',
-    trend: 'up' as 'up' | 'down' | 'neutral'
-  };
-
-  activityLog = [
-    { title: 'Java Backend Developer', matchScore: 92, date: '2024-01-15', status: 'excellent' },
-    { title: 'Senior Full-Stack Engineer', matchScore: 85, date: '2024-01-14', status: 'good' },
-    { title: 'Python Data Engineer', matchScore: 67, date: '2024-01-13', status: 'fair' },
-  ];
 
   constructor(
     private readonly fb: FormBuilder,
@@ -95,6 +101,10 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.availableRoles = FALLBACK_ROLES;
+    this.availableTechs = FALLBACK_TECHS;
+    this.initForm();
+    this.setupStudentValidation();
     this.loadLookups();
   }
 
@@ -111,19 +121,31 @@ export class ProfileComponent implements OnInit {
         const seenTech = new Set<string>();
         this.availableTechs = techs
           .map(t => ({ key: techNameToKey(t.name), label: t.name, id: t.id }))
-          .filter(t => { if (seenTech.has(t.key)) return false; seenTech.add(t.key); return true; });
-        this.isLoadingLookups = false;
-        this.initForm();
-        this.setupStudentValidation();
+          .filter(t => {
+            if (!POPULAR_TECH_KEYS.has(t.key)) return false;
+            if (seenTech.has(t.key)) return false;
+            seenTech.add(t.key);
+            return true;
+          });
+        this.patchFormWithNewLookups();
       },
-      error: () => {
-        this.availableRoles = FALLBACK_ROLES;
-        this.availableTechs = FALLBACK_TECHS;
-        this.isLoadingLookups = false;
-        this.initForm();
-        this.setupStudentValidation();
-      },
+      error: () => { /* fallback already set in ngOnInit */ },
     });
+  }
+
+  private patchFormWithNewLookups(): void {
+    const itAreaFg = this.profileForm.get('itArea') as FormGroup;
+    const techFg = this.profileForm.get('technologies') as FormGroup;
+    for (const role of this.availableRoles) {
+      if (!itAreaFg.contains(role.key)) {
+        itAreaFg.addControl(role.key, this.fb.control(false));
+      }
+    }
+    for (const tech of this.availableTechs) {
+      if (!techFg.contains(tech.key)) {
+        techFg.addControl(tech.key, this.fb.control(false));
+      }
+    }
   }
 
   private initForm(): void {
@@ -285,9 +307,4 @@ export class ProfileComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  getMatchScoreClass(score: number): string {
-    if (score >= 85) return 'score-excellent';
-    if (score >= 70) return 'score-good';
-    return 'score-fair';
-  }
 }

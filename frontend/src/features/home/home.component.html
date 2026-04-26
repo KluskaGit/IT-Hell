@@ -15,7 +15,7 @@
 
     <ng-template #loggedUserBlock>
       <div class="nav-auth nav-auth-logged">
-        <span class="user-badge">Cześć, {{ username() || 'Użytkownik' }}</span>
+        <a class="user-badge" routerLink="/profile">Cześć, {{ username() || 'Użytkownik' }}</a>
         <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
       </div>
     </ng-template>
@@ -72,9 +72,7 @@
 
     <div class="divider"><span>DANE KANDYDATA</span></div>
 
-    <div *ngIf="isLoadingLookups" class="loading-placeholder">Ładowanie formularza...</div>
-
-    <form *ngIf="candidateForm" [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
 
       <h3 class="form-section-title">1. Doświadczenie i Rola</h3>
 
@@ -112,6 +110,15 @@
             <label class="pill-card"><input type="checkbox" formControlName="onsite"><div class="pill-content">Stacjonarnie</div></label>
           </div>
         </fieldset>
+      </div>
+
+      <div class="input-group full-width" style="margin-bottom: 2rem;">
+        <label>Lokalizacja <small style="opacity:0.5">(opcjonalne — domyślnie wszystkie)</small></label>
+        <app-location-picker
+          [locations]="availableLocations"
+          [selected]="selectedLocations"
+          (selectedChange)="selectedLocations = $event">
+        </app-location-picker>
       </div>
 
       <h4 class="sub-section-title">Umiejętności</h4>
