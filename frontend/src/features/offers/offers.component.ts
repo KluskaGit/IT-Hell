@@ -140,7 +140,8 @@ export class OffersComponent implements OnInit {
 
   private setupPreviewListener(): void {
     this.filtersForm.valueChanges.subscribe(() => {
-      this.previewOffersCount = this.getFilteredOffers().length;
+      this.matchedOffers = this.getFilteredOffers();
+      this.previewOffersCount = this.matchedOffers.length;
     });
   }
 
