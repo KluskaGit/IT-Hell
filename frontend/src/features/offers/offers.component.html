@@ -81,8 +81,7 @@
         <h3>Rodzaj kontraktu</h3>
         <select class="styled-select" formControlName="contractType">
           <option value="uop">Umowa o pracę</option>
-          <option value="b2b">B2B</option>
-          <option value="uz">UZ / UoD</option>
+          <!-- B2B i UZ/UoD ukryte — backend nie zwraca jeszcze pola contract_type w /job-offers/get_offer_filter (do odkrycia gdy backend doda) -->
         </select>
       </div>
 
@@ -336,9 +335,10 @@
         </div>
 
         <div class="offer-salary-box">
-          <strong>
+          <strong *ngIf="hasSalary(offer); else noSalary">
             {{ offer.salaryMin | number:'1.0-0' }} – {{ offer.salaryMax | number:'1.0-0' }} PLN
           </strong>
+          <ng-template #noSalary><strong>Nie podano</strong></ng-template>
           <span>{{ offer.postedLabel }}</span>
         </div>
       </div>
@@ -362,15 +362,15 @@
           <span
             class="chip"
             [ngClass]="{ 'chip-highlight': offer.matchedTech.includes(tech) }"
-            *ngFor="let tech of offer.technologies">
-            {{ formatTech(tech) }}
+            *ngFor="let tech of offer.technologies; let i = index">
+            {{ offer.technologyNames[i] || formatTech(tech) }}
           </span>
         </div>
       </div>
 
       <div class="offer-actions">
         <button type="button" class="btn-outline">Zapisz ofertę</button>
-        <button type="button" class="btn-primary">Zobacz ofertę</button>
+        <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">Zobacz ofertę</button>
       </div>
     </article>
   </section>

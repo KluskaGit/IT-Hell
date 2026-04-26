@@ -65,6 +65,7 @@ export interface MappedOffer {
   salaryMin: number;
   salaryMax: number;
   technologies: string[];
+  technologyNames: string[];
   roles: string[];
   seniority: Seniority;
   source: string;
@@ -102,21 +103,26 @@ export class JobOffersApiService {
   }
 
   mapToOffer(api: JobOfferApiResponse): MappedOffer {
+    const locations = api.locations ?? [];
+    const technologies = api.technologies ?? [];
+    const rawDesc = api.description;
+    const description = (rawDesc && rawDesc !== 'None') ? rawDesc : '';
     return {
       id: api.id,
-      title: api.title,
+      title: api.title ?? '',
       company: api.company?.name ?? 'Nieznana firma',
-      location: api.locations.map(l => l.name).join(', ') || 'Zdalnie',
+      location: locations.map(l => l.name).join(', ') || 'Zdalnie',
       workMode: WORK_TYPE_TO_MODE[api.work_type?.name ?? ''] ?? 'remote',
       contractType: 'uop',
       salaryMin: api.salary_from ?? 0,
       salaryMax: api.salary_to ?? 0,
-      technologies: api.technologies.map(t => techNameToKey(t.name)),
+      technologies: technologies.map(t => techNameToKey(t.name)),
+      technologyNames: technologies.map(t => t.name),
       roles: api.specialization ? [specNameToKey(api.specialization.name)] : [],
       seniority: EXP_LEVEL_TO_SENIORITY[api.exp_level?.name ?? ''] ?? 'Mid / Regular',
       source: siteNameToKey(api.site?.name ?? ''),
       postedLabel: '',
-      description: api.description ?? '',
+      description,
       url: api.url,
     };
   }
@@ -127,8 +133,11 @@ export class JobOffersApiService {
 }
 
 function siteNameToKey(name: string): string {
-  if (name.includes('pracuj')) return 'pracuj';
-  if (name.toLowerCase().includes('nofluff')) return 'nofluff';
-  if (name.toLowerCase().includes('justjoin')) return 'justjoin';
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const lower = name.toLowerCase();
+  if (lower.includes('pracuj')) return 'pracuj';
+  if (lower.includes('nofluff')) return 'nofluff';
+  if (lower.includes('justjoin')) return 'justjoin';
+  if (lower.includes('linkedin')) return 'linkedin';
+  if (lower.includes('olx')) return 'olx';
+  return lower.replace(/[^a-z0-9]/g, '');
 }

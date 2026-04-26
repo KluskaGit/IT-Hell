@@ -117,13 +117,18 @@ export class AuthService {
         return;
     }
 
+    // ===================== zmiana Marka =====================
+    // bez tego guarda interval pruł błędem co 20s nawet gdy nikt nie był zalogowany
     this.refreshIntervalId = window.setInterval(async () => {
+        if (!this.isLoggedIn()) return;
+
         const refreshed = await this.refreshToken(30);
 
         if (!refreshed && !this.isLoggedIn()) {
         this.username.set(null);
         }
     }, 20000);
+    // ===================== zmiana Marka =====================
     }
 
     private stopTokenRefresh(): void {

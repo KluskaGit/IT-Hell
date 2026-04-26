@@ -29,8 +29,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router'; 
-import { constants } from 'node:fs/promises';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 
 @Component({
@@ -145,12 +144,12 @@ export class HomeComponent implements OnInit
 
   private simulateScanning() {
     this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
-    setTimeout(() => { this.scanProgress = 35; }, 800);
-    setTimeout(() => { this.scanProgress = 70; }, 1800);
-    setTimeout(() => { 
-      this.scanProgress = 100; this.scanStatus = 'Zakończono!'; 
-      setTimeout(() => { this.isScanning = false; this.scanComplete = true; this.autoFillForm(); }, 800); 
-    }, 2800);
+    setTimeout(() => { this.scanProgress = 35; }, 200);
+    setTimeout(() => { this.scanProgress = 70; }, 500);
+    setTimeout(() => {
+      this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+      setTimeout(() => { this.isScanning = false; this.scanComplete = true; this.autoFillForm(); }, 150);
+    }, 800);
   }
 
   private autoFillForm() : void 
@@ -237,26 +236,5 @@ export class HomeComponent implements OnInit
 
   async logout(): Promise<void> {
     await this.authService.logout();
-  }
-  /*Temporary test method for private endpoint (remove or comment out in production)*/
-  async testPrivateEndpoint(): Promise<void> {
-    const refreshed = await this.authService.refreshToken(30);
-    console.log('REFRESH RESULT:', refreshed);
-
-    const token = this.authService.getToken();
-    console.log('CURRENT ACCESS TOKEN:', token);
-
-    const response = await fetch('http://localhost:8000/v1/users/me', {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    const data = await response.json();
-
-    console.log('STATUS:', response.status);
-    console.log('DATA:', data);
   }
 }

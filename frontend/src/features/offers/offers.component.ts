@@ -6,10 +6,8 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
 
 import { JobOffersApiService, MappedOffer } from '../../app/core/services/job-offers-api.service';
-import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 
 type WorkMode = 'remote' | 'hybrid' | 'onsite';
 type ContractType = 'uop' | 'b2b' | 'uz';
@@ -50,7 +48,6 @@ export class OffersComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
-  private readonly lookupsApi = inject(LookupsApiService);
 
   readonly salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
@@ -101,21 +98,11 @@ export class OffersComponent implements OnInit {
     this.cvFileName = navState.cvFileName ?? null;
     this.filtersForm = this.buildFiltersForm(navState.filters);
     this.isLoading = true;
-
-    forkJoin({
-      technologies: this.lookupsApi.getTechnologies(),
-      specializations: this.lookupsApi.getSpecializations(),
-    }).subscribe({
-      next: () => this.loadOffersFromApi(),
-      error: () => this.loadOffersFromApi(),
-    });
+    this.loadOffersFromApi();
   }
 
   private loadOffersFromApi(): void {
-    const salaryMin = this.salaryFromValue > 0 ? this.salaryFromValue : undefined;
-    const salaryMax = this.salaryToValue < 50000 ? this.salaryToValue : undefined;
-
-    this.jobOffersApi.getOffers({ salary_from_min: salaryMin, salary_to_max: salaryMax, limit: 100 }).subscribe({
+    this.jobOffersApi.getOffers({ limit: 100 }).subscribe({
       next: (apiOffers) => {
         this.allOffers = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
         this.isLoading = false;
@@ -128,6 +115,13 @@ export class OffersComponent implements OnInit {
         this.setupPreviewListener();
       },
     });
+  }
+
+  private isSalaryInRange(offer: JobOffer): boolean {
+    const min = this.salaryFromValue;
+    const max = this.salaryToValue;
+    if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;
+    return offer.salaryMax >= min && offer.salaryMin <= max;
   }
 
   private buildFiltersForm(filters: CandidateFilters): FormGroup {
@@ -158,12 +152,23 @@ export class OffersComponent implements OnInit {
 
   private getFilteredOffers(): OfferViewModel[] {
     return this.allOffers
+      .filter((offer) => this.isSalaryInRange(offer) && this.isSourceAllowed(offer.source))
       .map((offer) => this.toOfferViewModel(offer))
       .filter((offer) => {
         const minScore = Number(this.filtersForm.get('matchPrecision')?.value ?? 75);
         return offer.matchScore >= minScore;
       })
       .sort((a, b) => b.matchScore - a.matchScore);
+  }
+
+  openOffer(offer: OfferViewModel): void {
+    if (offer.url && isPlatformBrowser(this.platformId)) {
+      window.open(offer.url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  hasSalary(offer: OfferViewModel): boolean {
+    return offer.salaryMin > 0 || offer.salaryMax > 0;
   }
 
   private toOfferViewModel(offer: JobOffer): OfferViewModel {
