@@ -4,19 +4,40 @@ import { Observable } from 'rxjs';
 import { JobOfferApiResponse, LookupDto } from '../models/offers.models';
 import { environment } from '../../../environments/environment';
 
-type WorkMode = 'remote' | 'hybrid' | 'onsite';
-type Seniority = 'Stażysta / Trainee' | 'Junior' | 'Mid / Regular' | 'Senior';
+export type WorkMode = 'remote' | 'hybrid' | 'onsite';
+export type SiteKey = 'pracuj' | 'justjoin' | 'nofluff';
+export type Seniority = 'Stażysta / Trainee' | 'Junior' | 'Mid / Regular' | 'Senior';
 
-const WORK_TYPE_TO_MODE: Record<string, WorkMode> = {
+export const WORK_MODE_OPTIONS: { value: WorkMode; label: string }[] = [
+  { value: 'remote', label: 'Zdalnie' },
+  { value: 'hybrid', label: 'Hybrydowo' },
+  { value: 'onsite', label: 'Stacjonarnie' },
+];
+
+export const SENIORITY_OPTIONS: { value: Seniority; label: string }[] = [
+  { value: 'Stażysta / Trainee', label: 'Stażysta / Trainee' },
+  { value: 'Junior', label: 'Junior' },
+  { value: 'Mid / Regular', label: 'Mid / Regular' },
+  { value: 'Senior', label: 'Senior' },
+];
+
+export const SITE_OPTIONS: { value: SiteKey; label: string }[] = [
+  { value: 'pracuj', label: 'Pracuj.pl' },
+  { value: 'justjoin', label: 'JustJoin IT' },
+  { value: 'nofluff', label: 'NoFluffJobs' },
+];
+
+export const WORK_TYPE_TO_MODE: Record<string, WorkMode> = {
   'Praca zdalna': 'remote',
   'Praca hybrydowa': 'hybrid',
   'Praca stacjonarna': 'onsite',
   'Zdalnie': 'remote',
   'Hybrydowo': 'hybrid',
   'Stacjonarnie': 'onsite',
+  'Praca mobilna': 'onsite',
 };
 
-const EXP_LEVEL_TO_SENIORITY: Record<string, Seniority> = {
+export const EXP_LEVEL_TO_SENIORITY: Record<string, Seniority> = {
   'Praktykant / Praktykantka - stażysta / Stażystka': 'Stażysta / Trainee',
   'Młodszy specjalista / Młodsza specjalistka (junior)': 'Junior',
   'Junior': 'Junior',
@@ -27,6 +48,8 @@ const EXP_LEVEL_TO_SENIORITY: Record<string, Seniority> = {
   'Ekspert / Ekspertka': 'Senior',
   'Kierownik / Kierowniczka - koordynator / Koordynatorka': 'Senior',
   'Menedżer / Menedżerka': 'Senior',
+  'Dyrektor / Dyrektorka': 'Senior',
+  'Asystent / Asystentka': 'Stażysta / Trainee',
 };
 
 export function techNameToKey(name: string): string {
@@ -127,12 +150,12 @@ export class JobOffersApiService {
     };
   }
 
-  buildLookupItems(lookups: LookupDto[], nameFn: (name: string) => string): { key: string; label: string }[] {
-    return lookups.map(l => ({ key: nameFn(l.name), label: l.name }));
+  buildLookupItems(lookups: LookupDto[], nameFn: (name: string) => string): { key: string; label: string; id: string }[] {
+    return lookups.map(l => ({ key: nameFn(l.name), label: l.name, id: l.id }));
   }
 }
 
-function siteNameToKey(name: string): string {
+export function siteNameToKey(name: string): string {
   const lower = name.toLowerCase();
   if (lower.includes('pracuj')) return 'pracuj';
   if (lower.includes('nofluff')) return 'nofluff';

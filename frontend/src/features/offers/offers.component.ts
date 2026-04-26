@@ -4,19 +4,20 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { JobOffersApiService, MappedOffer, techNameToKey, specNameToKey } from '../../app/core/services/job-offers-api.service';
+import { JobOffersApiService, MappedOffer, techNameToKey, specNameToKey, Seniority, SENIORITY_OPTIONS, WorkMode, WORK_MODE_OPTIONS, SITE_OPTIONS } from '../../app/core/services/job-offers-api.service';
 import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 
-type WorkMode = 'remote' | 'hybrid' | 'onsite';
 type ContractType = 'uop' | 'b2b' | 'uz';
-type Seniority = 'Stażysta / Trainee' | 'Junior' | 'Mid / Regular' | 'Senior';
 
 type JobOffer = MappedOffer & { contractType: ContractType };
 
 interface CandidateFilters {
   itArea: Record<string, boolean>;
   seniority: Seniority;
+  expLevelIds?: string[];
   technologies: Record<string, boolean>;
+  workMode?: Record<string, boolean>;
+  workTypeIds?: string[];
   englishLevel: string;
   isStudent: boolean;
   studyYear: number | null;
@@ -48,6 +49,9 @@ export class OffersComponent implements OnInit {
   private readonly jobOffersApi = inject(JobOffersApiService);
   private readonly lookupsApi = inject(LookupsApiService);
 
+  readonly seniorityOptions = SENIORITY_OPTIONS;
+  readonly workModeOptions = WORK_MODE_OPTIONS;
+  readonly siteOptions = SITE_OPTIONS;
   readonly salaryOptions = [
     0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
     13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000,
@@ -71,10 +75,14 @@ export class OffersComponent implements OnInit {
     ios: 'iOS', rust: 'Rust', r: 'R', nodejs: 'Node.js', ruby: 'Ruby on Rails', hibernate: 'Hibernate',
   };
 
-  availableRoles: { key: string; label: string }[] = [];
-  availableTechs: { key: string; label: string }[] = [];
+  availableRoles: { key: string; label: string; id: string }[] = [];
+  availableTechs: { key: string; label: string; id: string }[] = [];
 
   cvFileName: string | null = null;
+  private expLevelIds: string[] = [];
+  private specializationIds: string[] = [];
+  private technologyIds: string[] = [];
+  private workTypeIds: string[] = [];
   filtersForm!: FormGroup;
   filtersCollapsed = true;
 
@@ -95,6 +103,8 @@ export class OffersComponent implements OnInit {
     if (!navState?.filters) { this.router.navigate(['/']); return; }
 
     this.cvFileName = navState.cvFileName ?? null;
+    this.expLevelIds = navState.filters.expLevelIds ?? [];
+    this.workTypeIds = navState.filters.workTypeIds ?? [];
     this.isLoading = true;
 
     forkJoin({
@@ -105,20 +115,38 @@ export class OffersComponent implements OnInit {
         this.availableTechs = this.jobOffersApi.buildLookupItems(techs, techNameToKey);
         this.availableRoles = this.jobOffersApi.buildLookupItems(specs, specNameToKey);
         this.filtersForm = this.buildFiltersForm(navState.filters!);
+        this.specializationIds = this.resolveSelectedIds('itArea', this.availableRoles, navState.filters!);
+        this.technologyIds = this.resolveSelectedIds('technologies', this.availableTechs, navState.filters!);
         this.loadOffersFromApi();
       },
       error: () => {
-        // Fallback na hardkodowane wartości gdy lookups endpoint niedostępny
-        this.availableRoles = Object.entries(this.roleLabels).map(([key, label]) => ({ key, label }));
-        this.availableTechs = Object.entries(this.techLabels).map(([key, label]) => ({ key, label }));
+        this.availableRoles = Object.entries(this.roleLabels).map(([key, label]) => ({ key, label, id: '' }));
+        this.availableTechs = Object.entries(this.techLabels).map(([key, label]) => ({ key, label, id: '' }));
         this.filtersForm = this.buildFiltersForm(navState.filters!);
         this.loadOffersFromApi();
       },
     });
   }
 
+  private resolveSelectedIds(
+    groupKey: 'itArea' | 'technologies',
+    lookup: { key: string; id: string }[],
+    filters: CandidateFilters
+  ): string[] {
+    const group = (groupKey === 'itArea' ? filters.itArea : filters.technologies) as Record<string, boolean>;
+    const selectedKeys = Object.entries(group).filter(([, v]) => v).map(([k]) => k);
+    return lookup
+      .filter(item => selectedKeys.includes(item.key) && item.id !== '')
+      .map(item => item.id);
+  }
+
   private loadOffersFromApi(): void {
-    this.jobOffersApi.getOffers({ limit: 100 }).subscribe({
+    const params: Parameters<typeof this.jobOffersApi.getOffers>[0] = { limit: 100 };
+    if (this.expLevelIds.length > 0) params.exp_level_ids = this.expLevelIds;
+    if (this.specializationIds.length > 0) params.specialization_ids = this.specializationIds;
+    if (this.technologyIds.length > 0) params.technology_ids = this.technologyIds;
+    if (this.workTypeIds.length > 0) params.work_type_ids = this.workTypeIds;
+    this.jobOffersApi.getOffers(params).subscribe({
       next: (apiOffers) => {
         this.allOffers = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
         this.isLoading = false;
@@ -159,7 +187,9 @@ export class OffersComponent implements OnInit {
       salaryToIndex: [filters.salaryToIndex],
       contractType: [filters.contractType],
       noticePeriod: [filters.noticePeriod],
-      jobSites: this.fb.group({ ...filters.jobSites }),
+      jobSites: this.fb.group(
+        Object.fromEntries(SITE_OPTIONS.map(s => [s.value, filters.jobSites?.[s.value as keyof typeof filters.jobSites] ?? true]))
+      ),
       matchPrecision: [filters.matchPrecision]
     });
   }
@@ -296,8 +326,7 @@ export class OffersComponent implements OnInit {
   }
 
   getWorkModeLabel(mode: WorkMode): string {
-    const labels: Record<WorkMode, string> = { remote: 'Zdalnie', hybrid: 'Hybrydowo', onsite: 'Stacjonarnie' };
-    return labels[mode];
+    return WORK_MODE_OPTIONS.find(o => o.value === mode)?.label ?? mode;
   }
 
   getContractLabel(contract: ContractType): string {
@@ -306,8 +335,7 @@ export class OffersComponent implements OnInit {
   }
 
   formatSource(source: string): string {
-    const labels: Record<string, string> = { pracuj: 'Pracuj.pl', olx: 'OLX Praca', linkedin: 'LinkedIn', nofluff: 'NoFluffJobs' };
-    return labels[source] ?? source;
+    return SITE_OPTIONS.find(s => s.value === source)?.label ?? source;
   }
 
   getMatchClass(score: number): string {

@@ -50,7 +50,7 @@
         </button>
       </div>
 
-      <div class="hero-info" [formGroup]="profileForm">
+      <div class="hero-info" *ngIf="profileForm; else loadingHero" [formGroup]="profileForm">
         <div class="form-row">
           <div class="input-group">
             <label>Imię</label>
@@ -68,8 +68,10 @@
       </div>
     </div>
 
+    <ng-template #loadingHero><div class="hero-info"></div></ng-template>
+
     <!-- Student Badge -->
-    <div class="student-box" [formGroup]="profileForm">
+    <div class="student-box" *ngIf="profileForm" [formGroup]="profileForm">
       <label class="checkbox-container">
         <input type="checkbox" formControlName="isStudent">
         Posiadam status studenta
@@ -174,7 +176,7 @@
     <div class="grid-col">
 
       <!-- PREFERENCES -->
-      <section class="glass-card animate-up delay-1" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-1" *ngIf="profileForm; else loadingSection" [formGroup]="profileForm">
         <h3 class="section-title">1. Doświadczenie i Rola</h3>
 
         <!-- Roles -->
@@ -182,33 +184,11 @@
           <label class="field-label">Główna rola</label>
           <fieldset formGroupName="itArea" class="pills-fieldset">
             <div class="pills-container">
-              <label class="pill-card"><input type="checkbox" formControlName="backend"><div class="pill-content">Backend</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="frontend"><div class="pill-content">Frontend</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="fullstack"><div class="pill-content">Full-stack</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="mobile"><div class="pill-content">Mobile</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="architecture"><div class="pill-content">Architecture</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="devops"><div class="pill-content">DevOps</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="gamedev"><div class="pill-content">Game dev</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="data"><div class="pill-content">Data analytics & BI</div></label>
-
-              <ng-container *ngIf="showAllSpecs">
-                <label class="pill-card"><input type="checkbox" formControlName="bigdata"><div class="pill-content">Big Data / Data Science</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="embedded"><div class="pill-content">Embedded</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="qa"><div class="pill-content">QA/Testing</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="security"><div class="pill-content">Security</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="helpdesk"><div class="pill-content">Helpdesk</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="product"><div class="pill-content">Product Management</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="project"><div class="pill-content">Project Management</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="agile"><div class="pill-content">Agile</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="ux"><div class="pill-content">UX/UI</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="business"><div class="pill-content">Business analytics</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="system"><div class="pill-content">System analytics</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="sap"><div class="pill-content">SAP&ERP</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="admin"><div class="pill-content">IT admin</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="ai"><div class="pill-content">AI/ML</div></label>
-              </ng-container>
-
-              <button type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
+              <label class="pill-card" *ngFor="let role of getVisibleRoles()">
+                <input type="checkbox" [formControlName]="role.key">
+                <div class="pill-content">{{ role.label }}</div>
+              </label>
+              <button *ngIf="availableRoles.length > 8" type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
                 {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
               </button>
             </div>
@@ -219,10 +199,10 @@
         <div class="field-block">
           <label class="field-label">Poziom doświadczenia</label>
           <div class="pills-container">
-            <label class="pill-card"><input type="radio" formControlName="seniority" value="Stażysta / Trainee"><div class="pill-content">Stażysta / Trainee</div></label>
-            <label class="pill-card"><input type="radio" formControlName="seniority" value="Junior"><div class="pill-content">Junior</div></label>
-            <label class="pill-card"><input type="radio" formControlName="seniority" value="Mid / Regular"><div class="pill-content">Mid / Regular</div></label>
-            <label class="pill-card"><input type="radio" formControlName="seniority" value="Senior"><div class="pill-content">Senior</div></label>
+            <label class="pill-card" *ngFor="let option of seniorityOptions">
+              <input type="radio" formControlName="seniority" [value]="option.value">
+              <div class="pill-content">{{ option.label }}</div>
+            </label>
           </div>
         </div>
 
@@ -231,33 +211,11 @@
           <label class="field-label">Popularne technologie</label>
           <fieldset formGroupName="technologies" class="pills-fieldset">
             <div class="pills-container">
-              <label class="pill-card"><input type="checkbox" formControlName="javascript"><div class="pill-content">JavaScript</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="html"><div class="pill-content">HTML</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="sql"><div class="pill-content">SQL</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="python"><div class="pill-content">Python</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="java"><div class="pill-content">Java</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="csharp"><div class="pill-content">C#</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="php"><div class="pill-content">PHP</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="cpp"><div class="pill-content">C++</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="typescript"><div class="pill-content">TypeScript</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="go"><div class="pill-content">Go</div></label>
-
-              <ng-container *ngIf="showAllTech">
-                <label class="pill-card"><input type="checkbox" formControlName="c"><div class="pill-content">C</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="dotnet"><div class="pill-content">.NET</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="react"><div class="pill-content">React.js</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="angular"><div class="pill-content">Angular</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="android"><div class="pill-content">Android</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="aws"><div class="pill-content">AWS</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="ios"><div class="pill-content">iOS</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="rust"><div class="pill-content">Rust</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="r"><div class="pill-content">R</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="nodejs"><div class="pill-content">Node.js</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="ruby"><div class="pill-content">Ruby on Rails</div></label>
-                <label class="pill-card"><input type="checkbox" formControlName="hibernate"><div class="pill-content">Hibernate</div></label>
-              </ng-container>
-
-              <button type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
+              <label class="pill-card" *ngFor="let tech of getVisibleTechs()">
+                <input type="checkbox" [formControlName]="tech.key">
+                <div class="pill-content">{{ tech.label }}</div>
+              </label>
+              <button *ngIf="availableTechs.length > 10" type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
                 {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
               </button>
             </div>
@@ -277,9 +235,12 @@
           </select>
         </div>
       </section>
+      <ng-template #loadingSection>
+        <section class="glass-card animate-up delay-1"><p style="padding:1rem">Ładowanie formularza...</p></section>
+      </ng-template>
 
       <!-- FINANCE -->
-      <section class="glass-card animate-up delay-2" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-2" *ngIf="profileForm" [formGroup]="profileForm">
         <h3 class="section-title">2. Finanse i Kontrakt</h3>
 
         <!-- Salary Dual Slider -->
@@ -320,7 +281,7 @@
       </section>
 
       <!-- AI PRECISION -->
-      <section class="glass-card animate-up delay-3" [formGroup]="profileForm">
+      <section class="glass-card animate-up delay-3" *ngIf="profileForm" [formGroup]="profileForm">
         <h3 class="section-title ai-accent">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Inteligentne Dopasowanie

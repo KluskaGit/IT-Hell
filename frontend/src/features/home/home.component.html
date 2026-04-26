@@ -72,41 +72,21 @@
 
     <div class="divider"><span>DANE KANDYDATA</span></div>
 
-    <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
-      
+    <div *ngIf="isLoadingLookups" class="loading-placeholder">Ładowanie formularza...</div>
+
+    <form *ngIf="candidateForm" [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
+
       <h3 class="form-section-title">1. Doświadczenie i Rola</h3>
-      
+
       <div class="input-group full-width" style="margin-bottom: 1.5rem;">
         <label>Główna rola (Możesz wybrać kilka) *</label>
         <fieldset formGroupName="itArea" class="site-fieldset">
           <div class="pills-container">
-            <label class="pill-card"><input type="checkbox" formControlName="backend"><div class="pill-content">Backend</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="frontend"><div class="pill-content">Frontend</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="fullstack"><div class="pill-content">Full-stack</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="mobile"><div class="pill-content">Mobile</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="architecture"><div class="pill-content">Architecture</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="devops"><div class="pill-content">DevOps</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="gamedev"><div class="pill-content">Game dev</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="data"><div class="pill-content">Data analytics & BI</div></label>
-    
-            <ng-container *ngIf="showAllSpecs">
-              <label class="pill-card"><input type="checkbox" formControlName="bigdata"><div class="pill-content">Big Data / Data Science</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="embedded"><div class="pill-content">Embedded</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="qa"><div class="pill-content">QA/Testing</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="security"><div class="pill-content">Security</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="helpdesk"><div class="pill-content">Helpdesk</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="product"><div class="pill-content">Product Management</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="project"><div class="pill-content">Project Management</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="agile"><div class="pill-content">Agile</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="ux"><div class="pill-content">UX/UI</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="business"><div class="pill-content">Business analytics</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="system"><div class="pill-content">System analytics</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="sap"><div class="pill-content">SAP&ERP</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="admin"><div class="pill-content">IT admin</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="ai"><div class="pill-content">AI/ML</div></label>
-            </ng-container>
-    
-            <button type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
+            <label class="pill-card" *ngFor="let role of getVisibleRoles()">
+              <input type="checkbox" [formControlName]="role.key">
+              <div class="pill-content">{{ role.label }}</div>
+            </label>
+            <button *ngIf="availableRoles.length > 8" type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
               {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
             </button>
           </div>
@@ -116,11 +96,22 @@
       <div class="input-group full-width" style="margin-bottom: 2rem;">
         <label>Poziom doświadczenia</label>
         <div class="pills-container">
-          <label class="pill-card"><input type="radio" formControlName="seniority" value="Stażysta / Trainee"><div class="pill-content">Stażysta / Trainee</div></label>
-          <label class="pill-card"><input type="radio" formControlName="seniority" value="Junior"><div class="pill-content">Junior</div></label>
-          <label class="pill-card"><input type="radio" formControlName="seniority" value="Mid / Regular"><div class="pill-content">Mid / Regular</div></label>
-          <label class="pill-card"><input type="radio" formControlName="seniority" value="Senior"><div class="pill-content">Senior</div></label>
+          <label class="pill-card" *ngFor="let option of seniorityOptions">
+            <input type="radio" formControlName="seniority" [value]="option.value">
+            <div class="pill-content">{{ option.label }}</div>
+          </label>
         </div>
+      </div>
+
+      <div class="input-group full-width" style="margin-bottom: 2rem;">
+        <label>Preferowany tryb pracy</label>
+        <fieldset formGroupName="workMode" class="site-fieldset">
+          <div class="pills-container">
+            <label class="pill-card"><input type="checkbox" formControlName="remote"><div class="pill-content">Zdalnie</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="hybrid"><div class="pill-content">Hybrydowo</div></label>
+            <label class="pill-card"><input type="checkbox" formControlName="onsite"><div class="pill-content">Stacjonarnie</div></label>
+          </div>
+        </fieldset>
       </div>
 
       <h4 class="sub-section-title">Umiejętności</h4>
@@ -128,33 +119,17 @@
         <label>Popularne technologie *</label>
         <fieldset formGroupName="technologies" class="site-fieldset">
           <div class="pills-container">
-            <label class="pill-card"><input type="checkbox" formControlName="javascript"><div class="pill-content"><i class="devicon-javascript-plain colored"></i> JavaScript</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="html"><div class="pill-content"><i class="devicon-html5-plain colored"></i> HTML</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="sql"><div class="pill-content"><i class="devicon-azuresqldatabase-plain colored"></i> SQL</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="python"><div class="pill-content"><i class="devicon-python-plain colored"></i> Python</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="java"><div class="pill-content"><i class="devicon-java-plain colored"></i> Java</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="csharp"><div class="pill-content"><i class="devicon-csharp-plain colored"></i> C#</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="php"><div class="pill-content"><i class="devicon-php-plain colored"></i> PHP</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="cpp"><div class="pill-content"><i class="devicon-cplusplus-plain colored"></i> C++</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="typescript"><div class="pill-content"><i class="devicon-typescript-plain colored"></i> TypeScript</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="go"><div class="pill-content"><i class="devicon-go-original-wordmark colored"></i> Go</div></label>
-            
-            <ng-container *ngIf="showAllTech">
-              <label class="pill-card"><input type="checkbox" formControlName="c"><div class="pill-content"><i class="devicon-c-plain colored"></i> C</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="dotnet"><div class="pill-content"><i class="devicon-dot-net-plain colored"></i> .NET</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="react"><div class="pill-content"><i class="devicon-react-original colored"></i> React.js</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="angular"><div class="pill-content"><i class="devicon-angularjs-plain colored"></i> Angular</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="android"><div class="pill-content"><i class="devicon-android-plain colored"></i> Android</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="aws"><div class="pill-content"><i class="devicon-amazonwebservices-plain-wordmark colored"></i> AWS</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="ios"><div class="pill-content"><i class="devicon-apple-original"></i> iOS</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="rust"><div class="pill-content"><i class="devicon-rust-plain"></i> Rust</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="r"><div class="pill-content"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg" width="18" height="18" alt="R logo" style="margin-right: -2px;"> R</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="nodejs"><div class="pill-content"><i class="devicon-nodejs-plain colored"></i> Node.js</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="ruby"><div class="pill-content"><i class="devicon-rails-plain colored"></i> Ruby on Rails</div></label>
-              <label class="pill-card"><input type="checkbox" formControlName="hibernate"><div class="pill-content"><i class="devicon-hibernate-plain colored"></i> Hibernate</div></label>
-            </ng-container>
-  
-            <button type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
+            <label class="pill-card" *ngFor="let tech of getVisibleTechs()">
+              <input type="checkbox" [formControlName]="tech.key">
+              <div class="pill-content">
+                <ng-container *ngIf="getTechIcon(tech.key) as iconClass">
+                  <i [class]="iconClass"></i>
+                </ng-container>
+                <img *ngIf="tech.key === 'r'" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg" width="18" height="18" [alt]="tech.label" style="margin-right: -2px;">
+                {{ tech.label }}
+              </div>
+            </label>
+            <button *ngIf="availableTechs.length > 10" type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
               {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
             </button>
           </div>
@@ -239,21 +214,9 @@
           <fieldset formGroupName="jobSites" class="site-fieldset" aria-labelledby="jobSitesLegend">
             <legend id="jobSitesLegend" class="sr-only">Skąd pobierać oferty</legend>
             <div class="site-cards-grid">
-              <label class="site-card" for="job_pracuj">
-                <input id="job_pracuj" type="checkbox" formControlName="pracuj">
-                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Pracuj.pl</span></div>
-              </label>
-              <label class="site-card" for="job_olx">
-                <input id="job_olx" type="checkbox" formControlName="olx">
-                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>OLX Praca</span></div>
-              </label>
-              <label class="site-card" for="job_linkedin">
-                <input id="job_linkedin" type="checkbox" formControlName="linkedin">
-                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>LinkedIn</span></div>
-              </label>
-              <label class="site-card" for="job_nofluff">
-                <input id="job_nofluff" type="checkbox" formControlName="nofluff">
-                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>NoFluffJobs</span></div>
+              <label class="site-card" *ngFor="let site of siteOptions" [for]="'job_' + site.value">
+                <input [id]="'job_' + site.value" type="checkbox" [formControlName]="site.value">
+                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>{{ site.label }}</span></div>
               </label>
             </div>
           </fieldset>

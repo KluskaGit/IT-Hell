@@ -24,4 +24,8 @@ export class LookupsApiService {
   getExperienceLevels(): Observable<LookupDto[]> {
     return this.http.get<LookupDto[]>(`${this.base}/experience-levels`);
   }
+
+  getSites(): Observable<LookupDto[]> {
+    return this.http.get<LookupDto[]>(`${this.base}/sites`);
+  }
 }

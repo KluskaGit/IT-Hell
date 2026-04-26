@@ -58,21 +58,9 @@
       <div class="summary-block">
         <h3>Poziom doświadczenia</h3>
         <div class="pills-container">
-          <label class="pill-card">
-            <input type="radio" formControlName="seniority" value="Stażysta / Trainee">
-            <div class="pill-content">Stażysta / Trainee</div>
-          </label>
-          <label class="pill-card">
-            <input type="radio" formControlName="seniority" value="Junior">
-            <div class="pill-content">Junior</div>
-          </label>
-          <label class="pill-card">
-            <input type="radio" formControlName="seniority" value="Mid / Regular">
-            <div class="pill-content">Mid / Regular</div>
-          </label>
-          <label class="pill-card">
-            <input type="radio" formControlName="seniority" value="Senior">
-            <div class="pill-content">Senior</div>
+          <label class="pill-card" *ngFor="let option of seniorityOptions">
+            <input type="radio" formControlName="seniority" [value]="option.value">
+            <div class="pill-content">{{ option.label }}</div>
           </label>
         </div>
       </div>
@@ -165,43 +153,13 @@
         <h3>Źródła ofert</h3>
         <fieldset class="site-fieldset">
           <div class="site-cards-grid">
-            <label class="site-card" for="site_pracuj">
-              <input id="site_pracuj" type="checkbox" formControlName="pracuj">
+            <label class="site-card" *ngFor="let site of siteOptions" [for]="'site_' + site.value">
+              <input [id]="'site_' + site.value" type="checkbox" [formControlName]="site.value">
               <div class="site-card-content">
                 <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <span>Pracuj.pl</span>
-              </div>
-            </label>
-
-            <label class="site-card" for="site_olx">
-              <input id="site_olx" type="checkbox" formControlName="olx">
-              <div class="site-card-content">
-                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>OLX Praca</span>
-              </div>
-            </label>
-
-            <label class="site-card" for="site_linkedin">
-              <input id="site_linkedin" type="checkbox" formControlName="linkedin">
-              <div class="site-card-content">
-                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>LinkedIn</span>
-              </div>
-            </label>
-
-            <label class="site-card" for="site_nofluff">
-              <input id="site_nofluff" type="checkbox" formControlName="nofluff">
-              <div class="site-card-content">
-                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>NoFluffJobs</span>
+                <span>{{ site.label }}</span>
               </div>
             </label>
           </div>
