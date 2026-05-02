@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../../core/services/api.service';
 import { JobBoardService } from '../../services/job-board.service';
 import { LookupRead } from '../../models/lookup.model';
@@ -96,6 +97,8 @@ export class FiltersComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private apiService = inject(ApiService);
   private jobBoardService = inject(JobBoardService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   constructor(private fb: FormBuilder) {
     this.filterForm = this.fb.group({
@@ -114,14 +117,57 @@ export class FiltersComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadDropdownData();
 
-    // Reaguj na zmiany formularza z opóźnieniem, żeby nie spamować backendu co każdą literkę
+    // 1. Inicjalizacja formularza na podstawie URL (Source of Truth)
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const parsedValues = {
+          title: params['title'] || '',
+          salary_from_min: params['salary_from_min'] ? Number(params['salary_from_min']) : null,
+          salary_to_max: params['salary_to_max'] ? Number(params['salary_to_max']) : null,
+          technology_ids: this.parseArrayParam(params['technology_ids']),
+          location_ids: this.parseArrayParam(params['location_ids']),
+          exp_level_ids: this.parseArrayParam(params['exp_level_ids']),
+          work_type_ids: this.parseArrayParam(params['work_type_ids']),
+          specialization_ids: this.parseArrayParam(params['specialization_ids']),
+          site_ids: this.parseArrayParam(params['site_ids'])
+        };
+
+        // Zaktualizuj formularz BEZ wywoływania eventów zmiany (emitEvent: false), aby uniknąć pętli
+        this.filterForm.patchValue(parsedValues, { emitEvent: false });
+        
+        // Zaktualizuj i pobierz oferty z serwisu
+        this.jobBoardService.updateFilters(parsedValues);
+      });
+
+    // 2. Reaguj na zmiany formularza z opóźnieniem i aktualizuj URL
     this.filterForm.valueChanges
       .pipe(
         debounceTime(400),
         takeUntil(this.destroy$)
       )
       .subscribe(values => {
-        this.jobBoardService.updateFilters(values);
+        const queryParams: any = {};
+        
+        Object.keys(values).forEach(key => {
+          const val = values[key];
+          if (val !== null && val !== undefined && val !== '') {
+            if (Array.isArray(val)) {
+              if (val.length > 0) {
+                queryParams[key] = val;
+              }
+            } else {
+              queryParams[key] = val;
+            }
+          }
+        });
+
+        // Wypchnij zmiany do paska URL, co automatycznie odświeży subskrypcję queryParams powyżej
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: queryParams,
+          replaceUrl: true // Zapobiega tworzeniu setek wpisów w historii podczas pisania
+        });
       });
   }
 
@@ -144,6 +190,12 @@ export class FiltersComponent implements OnInit, OnDestroy {
       specialization_ids: [],
       site_ids: []
     });
+  }
+
+  private parseArrayParam(param: string | string[] | undefined): string[] {
+    if (!param) return [];
+    if (Array.isArray(param)) return param;
+    return [param];
   }
 
   ngOnDestroy() {
