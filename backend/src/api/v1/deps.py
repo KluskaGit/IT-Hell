@@ -70,7 +70,6 @@ def get_tech_extractor_service(
     return TechExtractorService(lookups_service)
 
 def get_cv_service(
-    user_profiles_service: Annotated[UserProfileService, Depends(get_user_profile_service)],
     tech_extractor_service: Annotated[TechExtractorService, Depends(get_tech_extractor_service)]
 ) -> CVService:
-    return CVService(user_profiles_service, tech_extractor_service)
+    return CVService(tech_extractor_service)

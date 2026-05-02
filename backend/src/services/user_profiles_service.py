@@ -65,46 +65,7 @@ class UserProfileService:
             raise RecordNotFoundError("User profile not found after update")
         return updated_profile
 
-    async def update_cv(self, user_id: uuid.UUID, raw_cv: str, technologies: Optional[List[Technology]] = None) -> UserProfile:
-        existing_profile = await self.repo.get_profile_by_user_id(user_id)
-        if not existing_profile:
-            raise RecordNotFoundError("User profile not found")
 
-        # If no technologies provided, use empty list (maintain raw_cv only)
-        tech_to_apply = technologies if technologies is not None else []
-
-        # Update profile: replace all technologies with provided list
-        updated_profile = await self.repo.update_profile(
-            user_id=user_id,
-            raw_cv=raw_cv,
-            exp_level_id=None,
-            technologies=tech_to_apply,
-        )
-        
-        if updated_profile is None:
-            raise RecordNotFoundError("User profile not found after update")
-        return updated_profile
-
-    async def update_cv_text_only(self, user_id: uuid.UUID, raw_cv: str) -> UserProfile:
-        """
-        Zapisuje TYLKO tekst CV bez zmiany technologii.
-        Używane po wgraniu CV - technologie będą zatwierdzone osobno przez użytkownika.
-        """
-        existing_profile = await self.repo.get_profile_by_user_id(user_id)
-        if not existing_profile:
-            raise RecordNotFoundError("User profile not found")
-
-        # Update ONLY raw_cv, leave technologies unchanged (technologies=None)
-        updated_profile = await self.repo.update_profile(
-            user_id=user_id,
-            raw_cv=raw_cv,
-            exp_level_id=None,
-            technologies=None,  # Bez zmian technologii!
-        )
-        
-        if updated_profile is None:
-            raise RecordNotFoundError("User profile not found after update")
-        return updated_profile
 
     async def delete_profile(self, user_id: uuid.UUID) -> None:
         success = await self.repo.delete_profile(user_id)
