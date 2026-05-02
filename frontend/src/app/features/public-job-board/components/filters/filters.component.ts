@@ -7,6 +7,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../../core/services/api.service';
 import { JobBoardService } from '../../services/job-board.service';
 import { LookupRead } from '../../models/lookup.model';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { ProfileApiService } from '../../../../core/services/profile-api.service';
 
 @Component({
   selector: 'app-filters',
@@ -80,6 +82,18 @@ import { LookupRead } from '../../models/lookup.model';
           Zresetuj filtry
         </button>
 
+        @if (authService.hasValidToken()) {
+          <button type="button" (click)="fillFromProfile()" [disabled]="isProfileLoading" class="w-full mt-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-md transition-colors text-sm flex justify-center items-center gap-2 disabled:opacity-50">
+            @if (isProfileLoading) {
+              <svg class="animate-spin h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            }
+            Dopasuj do mojego profilu
+          </button>
+        }
+
       </form>
     </div>
   `
@@ -99,6 +113,11 @@ export class FiltersComponent implements OnInit, OnDestroy {
   private jobBoardService = inject(JobBoardService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  
+  authService = inject(AuthService);
+  private profileService = inject(ProfileApiService);
+  
+  isProfileLoading = false;
 
   constructor(private fb: FormBuilder) {
     this.filterForm = this.fb.group({
@@ -189,6 +208,28 @@ export class FiltersComponent implements OnInit, OnDestroy {
       work_type_ids: [],
       specialization_ids: [],
       site_ids: []
+    });
+  }
+
+  fillFromProfile() {
+    this.isProfileLoading = true;
+    this.profileService.getMyProfile().subscribe({
+      next: (profile) => {
+        const expIds = profile.exp_level ? [profile.exp_level.id] : [];
+        const techIds = profile.technologies ? profile.technologies.map(t => t.id) : [];
+        
+        this.filterForm.patchValue({
+          exp_level_ids: expIds,
+          technology_ids: techIds
+        });
+        this.isProfileLoading = false;
+      },
+      error: (err) => {
+        this.isProfileLoading = false;
+        if (err.status !== 404) {
+          console.error('Błąd pobierania profilu', err);
+        }
+      }
     });
   }
 
