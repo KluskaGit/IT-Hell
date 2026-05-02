@@ -61,13 +61,14 @@ import { NgSelectModule } from '@ng-select/ng-select';
               <div class="mb-4">
                 <label for="expLevel" class="block text-sm font-medium text-gray-700">Poziom Doświadczenia</label>
                 <div class="mt-1">
-                  <select id="expLevel" formControlName="exp_level_id"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    <option [ngValue]="null">--- Wybierz ---</option>
-                    @for (level of experienceLevels(); track level.id) {
-                      <option [ngValue]="level.id">{{ level.name }}</option>
-                    }
-                  </select>
+                  <ng-select
+                    id="expLevel"
+                    [items]="experienceLevels()"
+                    bindLabel="name"
+                    bindValue="id"
+                    placeholder="Wybierz poziom doświadczenia..."
+                    formControlName="exp_level_id">
+                  </ng-select>
                 </div>
               </div>
 
