@@ -44,8 +44,6 @@ class UserProfileService:
         self, user_id: uuid.UUID, profile_data: UserProfileUpdate
     ) -> UserProfile:
         existing_profile = await self.repo.get_profile_by_user_id(user_id)
-        if not existing_profile:
-            raise RecordNotFoundError("User profile not found")
 
         technologies = None
         if profile_data.technology_ids is not None:
@@ -53,6 +51,15 @@ class UserProfileService:
             for tech_id in profile_data.technology_ids:
                 tech = await self.lookups_service.get_by_id(Technology, str(tech_id))
                 technologies.append(tech)
+
+        if not existing_profile:
+            # Mechanizm UPSERT - jeśli profil nie istnieje, tworzymy go w locie
+            return await self.repo.create_profile(
+                user_id=user_id,
+                raw_cv=profile_data.raw_cv,
+                exp_level_id=profile_data.exp_level_id,
+                technologies=technologies if technologies is not None else [],
+            )
 
         updated_profile = await self.repo.update_profile(
             user_id=user_id,
