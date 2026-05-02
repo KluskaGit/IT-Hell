@@ -87,15 +87,23 @@ import { NgSelectModule } from '@ng-select/ng-select';
                 </div>
               </div>
 
-              <!-- Raw CV Text Area -->
+              <!-- CV Upload instead of Raw Text -->
               <div class="mb-4 mt-6">
-                <label for="rawCv" class="block text-sm font-medium text-gray-700">Treść CV (Raw Text)</label>
-                <div class="mt-1">
-                  <textarea id="rawCv" rows="8" formControlName="raw_cv"
-                    placeholder="Wklej tutaj treść swojego CV dla lepszego dopasowania..."
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                <label class="block text-sm font-medium text-gray-700">Prześlij CV (Analiza technologii)</label>
+                <div class="mt-2 flex items-center space-x-4">
+                  <input type="file" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx,.txt"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                  @if (isAnalyzingCv()) {
+                    <div class="flex items-center text-sm text-blue-600">
+                      <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Analizowanie...
+                    </div>
+                  }
                 </div>
-                <p class="mt-2 text-sm text-gray-500">Nasz system zanalizuje te treści w celu rekomendacji ofert.</p>
+                <p class="mt-2 text-sm text-gray-500">Nasz system automatycznie wyodrębni technologie z Twojego pliku CV i zaznaczy je powyżej.</p>
               </div>
 
             </div>
@@ -134,6 +142,7 @@ export class ProfileComponent implements OnInit {
   // State
   isLoading = signal<boolean>(true);
   isSaving = signal<boolean>(false);
+  isAnalyzingCv = signal<boolean>(false);
   successMessage = signal<string>('');
   errorMessage = signal<string>('');
 
@@ -147,9 +156,8 @@ export class ProfileComponent implements OnInit {
 
   // Form
   profileForm = this.fb.group({
-    exp_level_id: this.fb.control<number | null>(null),
-    technology_ids: this.fb.control<number[]>([]),
-    raw_cv: this.fb.control<string>('')
+    exp_level_id: this.fb.control<string | null>(null),
+    technology_ids: this.fb.control<string[]>([]),
   });
 
   ngOnInit(): void {
@@ -164,23 +172,30 @@ export class ProfileComponent implements OnInit {
 
   private loadUserData() {
     this.isLoading.set(true);
-    
+
     // Potrzebujemy obu endpointów: /me oraz /me/profile
     this.profileService.getMe().subscribe({
       next: (userData: UserRead) => {
         this.user.set(userData);
-        
+
         this.profileService.getMyProfile().subscribe({
           next: (profileData: UserProfileResponse) => {
             this.profile.set(profileData);
             this.profileForm.patchValue({
-              exp_level_id: profileData.exp_level_id,
-              technology_ids: profileData.technology_ids || [],
-              raw_cv: profileData.raw_cv || ''
+              exp_level_id: profileData.exp_level?.id ?? null,
+              technology_ids: profileData.technologies?.map(t => t.id) ?? []
             });
             this.isLoading.set(false);
           },
-          error: () => this.isLoading.set(false)
+          error: (err) => {
+            if (err.status === 404) {
+              // Profil jeszcze nie istnieje - to normalne dla nowego użytkownika
+              this.isLoading.set(false);
+            } else {
+              this.errorMessage.set('Nie udało się załadować szczegółów profilu.');
+              this.isLoading.set(false);
+            }
+          }
         });
       },
       error: () => {
@@ -188,6 +203,34 @@ export class ProfileComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.isAnalyzingCv.set(true);
+      this.successMessage.set('');
+      this.errorMessage.set('');
+
+      this.profileService.analyzeCv(file).subscribe({
+        next: (techs: LookupRead[]) => {
+          const techIds = techs.map(t => t.id);
+          const currentTechIds = this.profileForm.get('technology_ids')?.value || [];
+          // Łączymy obecne i nowe technologie, usuwając duplikaty
+          const combinedIds = Array.from(new Set([...currentTechIds, ...techIds]));
+
+          this.profileForm.patchValue({ technology_ids: combinedIds });
+          this.isAnalyzingCv.set(false);
+          this.successMessage.set('CV przeanalizowane pomyślnie! Wykryte technologie zostały zaznaczone.');
+          setTimeout(() => this.successMessage.set(''), 5000);
+        },
+        error: (err) => {
+          console.error('Błąd analizy CV:', err);
+          this.errorMessage.set('Wystąpił błąd podczas analizy pliku CV.');
+          this.isAnalyzingCv.set(false);
+        }
+      });
+    }
   }
 
   onSubmit() {
@@ -200,9 +243,8 @@ export class ProfileComponent implements OnInit {
     const formValue = this.profileForm.getRawValue();
 
     this.profileService.updateMyProfile({
-      exp_level_id: formValue.exp_level_id ?? null,
-      technology_ids: formValue.technology_ids,
-      raw_cv: formValue.raw_cv
+      exp_level_id: formValue.exp_level_id,
+      technology_ids: formValue.technology_ids
     }).subscribe({
       next: (res: UserProfileResponse) => {
         this.profile.set(res);
