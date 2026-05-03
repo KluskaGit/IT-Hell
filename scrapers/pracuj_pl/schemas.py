@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List
 
 class JobOffer(BaseModel):
-    site: str = "https://it.pracuj.pl/"
+    site: str = "Pracuj.pl"
     title: str
     technologies: List[str]
     specialization: str = "Other"

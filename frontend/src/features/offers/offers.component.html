@@ -39,237 +39,18 @@
     </p>
   </section>
 
-  @if (filtersForm) {
-  <section class="summary-card animate-up delay-1" [formGroup]="filtersForm">
-    <div class="summary-header summary-header-collapsible">
-      <h2>Filtry</h2>
-
-      <div class="summary-header-actions">
-        <span class="summary-count">{{ previewOffersCount }} ofert</span>
-      </div>
-    </div>
-
-    <div class="summary-grid" *ngIf="!filtersCollapsed">
-      <div class="summary-block">
-        <h3>CV</h3>
-        <p>{{ cvFileName || 'Brak nazwy pliku' }}</p>
-      </div>
-
-      <div class="summary-block full-width">
-        <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
-        <app-location-picker
-          [locations]="availableLocations"
-          [selected]="selectedLocations"
-          (selectedChange)="selectedLocations = $event; applyFilters()">
-        </app-location-picker>
-      </div>
-
-      <div class="summary-block">
-        <h3>Poziom doświadczenia</h3>
-        <div class="pills-container">
-          <label class="pill-card" *ngFor="let option of seniorityOptions">
-            <input type="radio" formControlName="seniority" [value]="option.value">
-            <div class="pill-content">{{ option.label }}</div>
-          </label>
-        </div>
-      </div>
-
-      <div class="summary-block">
-        <h3>Rodzaj kontraktu</h3>
-        <select class="styled-select" formControlName="contractType">
-          <option value="uop">Umowa o pracę</option>
-          <!-- B2B i UZ/UoD ukryte — backend nie zwraca jeszcze pola contract_type w /job-offers/get_offer_filter (do odkrycia gdy backend doda) -->
-        </select>
-      </div>
-
-      <div class="summary-block">
-        <h3>Widełki płacowe</h3>
-
-        <div class="salary-labels">
-          <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
-          <span class="salary-badge">
-            DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}
-          </span>
-        </div>
-
-        <div class="salary-range-slider">
-          <div
-            class="salary-progress-fill"
-            [style.width.%]="getSalaryProgressPercent()"
-            [style.left.%]="getSalaryProgressLeft()">
-          </div>
-
-          <input
-            type="range"
-            formControlName="salaryFromIndex"
-            min="0"
-            [max]="salaryOptions.length - 1"
-            step="1"
-            (input)="checkSalaryRange('from')"
-            class="salary-input">
-
-          <input
-            type="range"
-            formControlName="salaryToIndex"
-            min="0"
-            [max]="salaryOptions.length - 1"
-            step="1"
-            (input)="checkSalaryRange('to')"
-            class="salary-input">
-        </div>
-
-        <div class="range-markers">
-          <span>0 PLN</span>
-          <span>50 000+ PLN</span>
-        </div>
-      </div>
-
-      <div class="summary-block full-width" formGroupName="itArea">
-        <h3>Główne role</h3>
-        <div class="pills-container">
-          <label class="pill-card" *ngFor="let role of getVisibleRoles()">
-            <input type="checkbox" [formControlName]="role">
-            <div class="pill-content">{{ formatRole(role) }}</div>
-          </label>
-
-          <button
-            type="button"
-            class="toggle-pill-btn"
-            (click)="showAllRoles = !showAllRoles">
-            {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="summary-block full-width" formGroupName="technologies">
-        <h3>Technologie</h3>
-        <div class="pills-container">
-          <label class="pill-card" *ngFor="let tech of getVisibleTechnologies()">
-            <input type="checkbox" [formControlName]="tech">
-            <div class="pill-content">{{ formatTech(tech) }}</div>
-          </label>
-
-          <button
-            type="button"
-            class="toggle-pill-btn"
-            (click)="showAllTech = !showAllTech">
-            {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="summary-block full-width" formGroupName="jobSites">
-        <h3>Źródła ofert</h3>
-        <fieldset class="site-fieldset">
-          <div class="site-cards-grid">
-            <label class="site-card" *ngFor="let site of siteOptions" [for]="'site_' + site.value">
-              <input [id]="'site_' + site.value" type="checkbox" [formControlName]="site.value">
-              <div class="site-card-content">
-                <svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>{{ site.label }}</span>
-              </div>
-            </label>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="summary-block full-width">
-        <h3>Minimalny poziom dopasowania</h3>
-
-        <div class="slider-group">
-          <div class="slider-header">
-            <label>Wymagana precyzja ofert:</label>
-            <span
-              class="precision-badge"
-              [ngClass]="{
-                'strict': filtersForm.get('matchPrecision')?.value === 100,
-                'loose': filtersForm.get('matchPrecision')?.value === 50
-              }"
-            >
-              {{ filtersForm.get('matchPrecision')?.value }}% Zgodności
-            </span>
-          </div>
-
-          <input
-            type="range"
-            formControlName="matchPrecision"
-            min="50"
-            max="100"
-            step="25"
-            class="ai-slider">
-
-          <div class="slider-labels">
-            <span>50%<br><small>Eksploracja</small></span>
-            <span>75%<br><small>Zalecane</small></span>
-            <span>100%<br><small>Tylko idealne</small></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="filters-footer">
-        <div class="filters-footer-left"></div>
-
-        <div class="filters-toggle-bottom">
-          <button
-            type="button"
-            class="filters-toggle-btn filters-toggle-btn-bottom"
-            (click)="filtersCollapsed = !filtersCollapsed"
-            [attr.aria-expanded]="!filtersCollapsed"
-            aria-label="Pokaż lub ukryj filtry"
-          >
-            <svg
-              class="filters-toggle-icon"
-              [class.rotated]="!filtersCollapsed"
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-        </div>
-
-        <div class="filters-actions">
-          <button type="button" class="btn-primary" (click)="applyFilters()">
-            Szukaj ofert ({{ previewOffersCount }})
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="filters-toggle-collapsed" *ngIf="filtersCollapsed">
-      <button
-        type="button"
-        class="filters-toggle-btn filters-toggle-btn-bottom"
-        (click)="filtersCollapsed = !filtersCollapsed"
-        [attr.aria-expanded]="!filtersCollapsed"
-        aria-label="Pokaż lub ukryj filtry"
-      >
-        <svg
-          class="filters-toggle-icon"
-          [class.rotated]="!filtersCollapsed"
-          viewBox="0 0 24 24"
-          width="22"
-          height="22"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-    </div>
-  </section>
-  } <!-- @if filtersForm -->
+  <app-filters-form
+    class="animate-up delay-1"
+    [initialFilters]="initialFilters"
+    [collapsible]="true"
+    [showSummaryHeader]="true"
+    summaryHeading="Filtry"
+    [previewCount]="previewOffersCount"
+    applyButtonLabel="Szukaj ofert"
+    (ready)="onFiltersReady($event)"
+    (filtersChange)="onFiltersChange($event)"
+    (applyClicked)="onApplyClicked($event)">
+  </app-filters-form>
 
   <section class="offers-list animate-up delay-2" *ngIf="matchedOffers.length > 0; else emptyState">
     <article class="offer-card" *ngFor="let offer of matchedOffers">
@@ -282,9 +63,6 @@
           <div class="offer-heading">
             <div class="offer-title-row">
               <h2>{{ offer.title }}</h2>
-              <span class="match-badge" [ngClass]="getMatchClass(offer.matchScore)">
-                {{ offer.matchScore }}% match
-              </span>
             </div>
 
             <div class="offer-meta">
@@ -293,8 +71,6 @@
               <span>{{ offer.location }}</span>
               <span>•</span>
               <span>{{ getWorkModeLabel(offer.workMode) }}</span>
-              <span>•</span>
-              <span>{{ getContractLabel(offer.contractType) }}</span>
               <span>•</span>
               <span>{{ formatSource(offer.source) }}</span>
             </div>
@@ -340,19 +116,25 @@
         <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">Zobacz ofertę</button>
       </div>
     </article>
+
+    <div class="load-more-row" *ngIf="hasMore || isLoadingMore">
+      <button
+        type="button"
+        class="btn-primary load-more-btn"
+        (click)="loadMore()"
+        [disabled]="isLoadingMore || isLoading">
+        {{ isLoadingMore ? 'Ładowanie...' : 'Załaduj więcej ofert' }}
+      </button>
+    </div>
   </section>
 
   <ng-template #emptyState>
-    <section class="empty-state animate-up delay-2">
+    <section class="empty-state animate-up delay-2" *ngIf="!isLoading">
       <div class="empty-icon">🔎</div>
       <h2>Brak ofert spełniających aktualne kryteria</h2>
       <p>
-        Spróbuj poszerzyć widełki, zaznaczyć więcej ról i technologii
-        albo obniżyć minimalny poziom dopasowania.
+        Spróbuj poszerzyć widełki, zaznaczyć więcej ról i technologii.
       </p>
-      <button type="button" class="btn-primary" (click)="applyFilters()">
-        Odśwież wyszukiwanie
-      </button>
     </section>
   </ng-template>
 </div>

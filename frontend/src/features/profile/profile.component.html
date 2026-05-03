@@ -1,13 +1,3 @@
-<!-- ============================================================================
-  PROJEKT: CV_ANALIZER — User Profile Dashboard
-  PLIK: profile.component.html
-  ============================================================================
-  OPIS: Template dashboardu profilu z sekcjami: Hero, CV Upload, Career Analytics,
-  Preferencje Zawodowe, Finanse, AI Precision, Activity Log.
-  Layout: Mobile-first grid (1 col → 2 col @ 768px+).
-  ============================================================================ -->
-
-<!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-container">
     <a routerLink="/" class="logo">
@@ -25,17 +15,15 @@
   </div>
 </nav>
 
-<!-- BACKGROUND GLOWS -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
   <div class="glow-3"></div>
 </div>
 
-<!-- MAIN CONTENT -->
 <div class="profile-container">
 
-  <!-- ═══ HERO SECTION ═══ -->
+  <!-- HERO: personal info + student badge -->
   <section class="glass-card hero-card animate-up">
     <div class="hero-layout">
       <div class="avatar-container">
@@ -63,12 +51,11 @@
         </div>
         <div class="input-group">
           <label>E-mail</label>
-          <input [value]="user.email" readonly class="input-readonly">
+          <input [value]="email" readonly class="input-readonly">
         </div>
       </div>
     </div>
 
-    <!-- Student Badge -->
     <div class="student-box" [formGroup]="profileForm">
       <label class="checkbox-container">
         <input type="checkbox" formControlName="isStudent">
@@ -86,20 +73,14 @@
     </div>
   </section>
 
-  <!-- ═══ TWO-COLUMN GRID ═══ -->
+  <!-- CV upload + English level -->
   <div class="dashboard-grid">
-
-    <!-- LEFT COLUMN -->
     <div class="grid-col">
-
-      <!-- CV UPLOAD -->
       <section class="glass-card animate-up delay-1">
         <h3 class="section-title">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Moje CV
         </h3>
-
-        <!-- Current file -->
         <div class="cv-current" *ngIf="currentCvFile">
           <div class="cv-file-icon">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -112,8 +93,6 @@
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
-
-        <!-- Dropzone -->
         <input type="file" #fileInput hidden accept=".pdf,.doc,.docx" (change)="onFileSelected($event)">
         <button type="button" class="dropzone" [class.dragging]="isDragging"
           (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
@@ -122,60 +101,11 @@
           <span>{{ currentCvFile ? 'Aktualizuj CV' : 'Wgraj CV (PDF, DOC)' }}</span>
         </button>
       </section>
-
     </div>
 
-    <!-- RIGHT COLUMN -->
     <div class="grid-col">
-
-      <!-- PREFERENCES -->
       <section class="glass-card animate-up delay-1" [formGroup]="profileForm">
-        <h3 class="section-title">1. Doświadczenie i Rola</h3>
-
-        <!-- Roles -->
-        <div class="field-block">
-          <label class="field-label">Główna rola</label>
-          <fieldset formGroupName="itArea" class="pills-fieldset">
-            <div class="pills-container">
-              <label class="pill-card" *ngFor="let role of getVisibleRoles()">
-                <input type="checkbox" [formControlName]="role.key">
-                <div class="pill-content">{{ role.label }}</div>
-              </label>
-              <button *ngIf="availableRoles.length > 8" type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
-                {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-              </button>
-            </div>
-          </fieldset>
-        </div>
-
-        <!-- Seniority -->
-        <div class="field-block">
-          <label class="field-label">Poziom doświadczenia</label>
-          <div class="pills-container">
-            <label class="pill-card" *ngFor="let option of seniorityOptions">
-              <input type="radio" formControlName="seniority" [value]="option.value">
-              <div class="pill-content">{{ option.label }}</div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Technologies -->
-        <div class="field-block">
-          <label class="field-label">Popularne technologie</label>
-          <fieldset formGroupName="technologies" class="pills-fieldset">
-            <div class="pills-container">
-              <label class="pill-card" *ngFor="let tech of getVisibleTechs()">
-                <input type="checkbox" [formControlName]="tech.key">
-                <div class="pill-content">{{ tech.label }}</div>
-              </label>
-              <button *ngIf="availableTechs.length > 10" type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
-                {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-              </button>
-            </div>
-          </fieldset>
-        </div>
-
-        <!-- English -->
+        <h3 class="section-title">Język angielski</h3>
         <div class="field-block">
           <label class="field-label">Poziom j. angielskiego</label>
           <select formControlName="englishLevel" class="styled-select">
@@ -188,78 +118,20 @@
           </select>
         </div>
       </section>
-
-      <!-- FINANCE -->
-      <section class="glass-card animate-up delay-2" [formGroup]="profileForm">
-        <h3 class="section-title">2. Finanse i Kontrakt</h3>
-
-        <!-- Salary Dual Slider -->
-        <div class="salary-slider-group">
-          <label class="field-label">Widełki płacowe (PLN / m-c)</label>
-          <div class="salary-labels">
-            <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
-            <span class="salary-badge">DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}</span>
-          </div>
-          <div class="salary-range-slider">
-            <div class="salary-progress-fill" [style.width.%]="getSalaryProgressPercent()" [style.left.%]="getSalaryProgressLeft()"></div>
-            <input type="range" formControlName="salaryFromIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('from')" class="salary-input">
-            <input type="range" formControlName="salaryToIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('to')" class="salary-input">
-          </div>
-          <div class="range-markers"><span>0 PLN</span><span>50 000+ PLN</span></div>
-        </div>
-
-        <!-- Contract & Notice -->
-        <div class="form-row" style="margin-top: 1.5rem;">
-          <div class="input-group">
-            <label>Rodzaj kontraktu</label>
-            <select formControlName="contractType" class="styled-select">
-              <option value="uop">Umowa o Pracę</option>
-              <option value="b2b">B2B (Faktura)</option>
-              <option value="uz">Zlecenie / Dzieło</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label>Okres wypowiedzenia</label>
-            <select formControlName="noticePeriod" class="styled-select">
-              <option value="immediate">Dostępny od zaraz</option>
-              <option value="2_weeks">2 tygodnie</option>
-              <option value="1_month">1 miesiąc</option>
-              <option value="3_months">3 miesiące</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <!-- AI PRECISION -->
-      <section class="glass-card animate-up delay-3" [formGroup]="profileForm">
-        <h3 class="section-title ai-accent">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          Inteligentne Dopasowanie
-        </h3>
-        <div class="ai-slider-group">
-          <div class="slider-header">
-            <label class="field-label">Wymagana precyzja ofert:</label>
-            <span class="precision-badge"
-              [ngClass]="{
-                'strict': profileForm.get('matchPrecision')?.value === 100,
-                'loose': profileForm.get('matchPrecision')?.value === 50
-              }">
-              {{ profileForm.get('matchPrecision')?.value }}% Zgodności
-            </span>
-          </div>
-          <input type="range" formControlName="matchPrecision" min="50" max="100" step="25" class="ai-slider">
-          <div class="slider-labels">
-            <span>50%<br><small>Eksploracja</small></span>
-            <span>75%<br><small>Zalecane</small></span>
-            <span>100%<br><small>Tylko idealne</small></span>
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 
-  <!-- ═══ ACTION BUTTONS ═══ -->
-  <div class="actions-row animate-up delay-4">
+  <!-- Shared filter form: roles, seniority, technologies, work mode, salary, etc. -->
+  <app-filters-form
+    class="animate-up delay-2"
+    [initialFilters]="savedFilters"
+    [showApplyButton]="false"
+    summaryHeading="Preferencje zawodowe"
+    [showSummaryHeader]="true"
+    (filtersChange)="onFiltersChange($event)">
+  </app-filters-form>
+
+  <div class="actions-row animate-up delay-3">
     <button type="button" class="submit-button" (click)="onSave()">
       <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Zapisz zmiany

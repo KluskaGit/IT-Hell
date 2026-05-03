@@ -1,38 +1,18 @@
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { LocationPickerComponent, LocationItem } from '../../app/shared/location-picker/location-picker.component';
-import { forkJoin } from 'rxjs';
 
-import { JobOffersApiService, MappedOffer, techNameToKey, specNameToKey, Seniority, SENIORITY_OPTIONS, WorkMode, WORK_MODE_OPTIONS, SITE_OPTIONS } from '../../app/core/services/job-offers-api.service';
-import { LookupsApiService } from '../../app/core/services/lookups-api.service';
+import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
+import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
+import {
+  JobOffersApiService, MappedOffer,
+} from '../../app/core/services/job-offers-api.service';
 
-type ContractType = 'uop' | 'b2b' | 'uz';
+const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
-type JobOffer = MappedOffer & { contractType: ContractType };
-
-interface CandidateFilters {
-  itArea: Record<string, boolean>;
-  seniority: Seniority;
-  expLevelIds?: string[];
-  technologies: Record<string, boolean>;
-  workMode?: Record<string, boolean>;
-  workTypeIds?: string[];
-  englishLevel: string;
-  isStudent: boolean;
-  studyYear: number | null;
-  salaryFromIndex: number;
-  salaryToIndex: number;
-  contractType: ContractType;
-  noticePeriod: string;
-  jobSites: Record<string, boolean>;
-  matchPrecision: number;
-  selectedLocations?: LocationItem[];
-}
+type JobOffer = MappedOffer;
 
 interface OfferViewModel extends JobOffer {
-  matchScore: number;
   matchedTech: string[];
   matchedRoles: string[];
 }
@@ -40,201 +20,160 @@ interface OfferViewModel extends JobOffer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, LocationPickerComponent],
+  imports: [CommonModule, RouterModule, FiltersFormComponent],
   templateUrl: './offers.component.html',
-  styleUrls: ['./offers.component.css']
+  styleUrls: ['./offers.component.css'],
 })
 export class OffersComponent implements OnInit {
-  private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
-  private readonly lookupsApi = inject(LookupsApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly seniorityOptions = SENIORITY_OPTIONS;
-  readonly workModeOptions = WORK_MODE_OPTIONS;
-  readonly siteOptions = SITE_OPTIONS;
-  readonly salaryOptions = [
-    0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
-    13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000,
-    25000, 30000, 35000, 40000, 45000, 50000
-  ];
+  @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
-  // Fallback gdy backend lookups niedostępne
-  private readonly roleLabels: Record<string, string> = {
-    backend: 'Backend', frontend: 'Frontend', fullstack: 'Full-stack', mobile: 'Mobile',
-    architecture: 'Architecture', devops: 'DevOps', gamedev: 'Game dev',
-    data: 'Data analytics & BI', bigdata: 'Big Data / Data Science', embedded: 'Embedded',
-    qa: 'QA/Testing', security: 'Security', helpdesk: 'Helpdesk', product: 'Product Management',
-    project: 'Project Management', agile: 'Agile', ux: 'UX/UI', business: 'Business analytics',
-    system: 'System analytics', sap: 'SAP&ERP', admin: 'IT admin', ai: 'AI/ML',
-  };
-
-  private readonly techLabels: Record<string, string> = {
-    javascript: 'JavaScript', html: 'HTML', sql: 'SQL', python: 'Python', java: 'Java',
-    csharp: 'C#', php: 'PHP', cpp: 'C++', typescript: 'TypeScript', go: 'Go', c: 'C',
-    dotnet: '.NET', react: 'React.js', angular: 'Angular', android: 'Android', aws: 'AWS',
-    ios: 'iOS', rust: 'Rust', r: 'R', nodejs: 'Node.js', ruby: 'Ruby on Rails', hibernate: 'Hibernate',
-  };
-
-  availableRoles: { key: string; label: string; id: string }[] = [];
-  availableTechs: { key: string; label: string; id: string }[] = [];
-
+  initialFilters: FiltersInitialState | null = null;
   cvFileName: string | null = null;
-  private expLevelIds: string[] = [];
-  private specializationIds: string[] = [];
-  private technologyIds: string[] = [];
-  private workTypeIds: string[] = [];
-  availableLocations: LocationItem[] = [];
-  selectedLocations: LocationItem[] = [];
-  filtersForm!: FormGroup;
-  filtersCollapsed = true;
 
+  currentFilters: FiltersValue | null = null;
   allOffers: JobOffer[] = [];
   matchedOffers: OfferViewModel[] = [];
   previewOffersCount = 0;
 
-  showAllRoles = false;
-  showAllTech = false;
-
   isLoading = false;
+  isLoadingMore = false;
   loadError: string | null = null;
+
+  readonly pageSize = 20;
+  currentPage = 0;
+  hasMore = true;
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const navState = history.state as { filters?: CandidateFilters; cvFileName?: string | null };
-    if (!navState?.filters) { this.router.navigate(['/']); return; }
-
-    this.cvFileName = navState.cvFileName ?? null;
-    this.expLevelIds = navState.filters.expLevelIds ?? [];
-    this.workTypeIds = navState.filters.workTypeIds ?? [];
-    this.selectedLocations = navState.filters.selectedLocations ?? [];
-    this.isLoading = true;
-
-    forkJoin({
-      techs: this.lookupsApi.getTechnologies(),
-      specs: this.lookupsApi.getSpecializations(),
-      locations: this.lookupsApi.getLocations(),
-    }).subscribe({
-      next: ({ techs, specs, locations }) => {
-        this.availableLocations = locations
-          .map(l => ({ id: l.id, name: l.name }))
-          .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
-        this.availableTechs = this.jobOffersApi.buildLookupItems(techs, techNameToKey);
-        this.availableRoles = this.jobOffersApi.buildLookupItems(specs, specNameToKey);
-        this.filtersForm = this.buildFiltersForm(navState.filters!);
-        this.specializationIds = this.resolveSelectedIds('itArea', this.availableRoles, navState.filters!);
-        this.technologyIds = this.resolveSelectedIds('technologies', this.availableTechs, navState.filters!);
-        this.loadOffersFromApi();
-      },
-      error: () => {
-        this.availableRoles = Object.entries(this.roleLabels).map(([key, label]) => ({ key, label, id: '' }));
-        this.availableTechs = Object.entries(this.techLabels).map(([key, label]) => ({ key, label, id: '' }));
-        this.filtersForm = this.buildFiltersForm(navState.filters!);
-        this.loadOffersFromApi();
-      },
+    this.router.events.subscribe(() => {
+      this.cdr.markForCheck();
     });
+
+    const navState = history.state as { filters?: FiltersInitialState; cvFileName?: string | null };
+    const filters = navState?.filters ?? this.loadSavedFilters();
+
+    if (!filters) {
+      this.router.navigate(['/']);
+      return;
+    }
+
+    this.cvFileName = navState?.cvFileName ?? null;
+    this.initialFilters = filters;
   }
 
-  private resolveSelectedIds(
-    groupKey: 'itArea' | 'technologies',
-    lookup: { key: string; id: string }[],
-    filters: CandidateFilters
-  ): string[] {
-    const group = (groupKey === 'itArea' ? filters.itArea : filters.technologies) as Record<string, boolean>;
-    const selectedKeys = Object.entries(group).filter(([, v]) => v).map(([k]) => k);
-    return lookup
-      .filter(item => selectedKeys.includes(item.key) && item.id !== '')
-      .map(item => item.id);
+  private loadSavedFilters(): FiltersInitialState | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
   }
 
-  private loadOffersFromApi(): void {
-    const params: Parameters<typeof this.jobOffersApi.getOffers>[0] = { limit: 100 };
-    if (this.expLevelIds.length > 0) params.exp_level_ids = this.expLevelIds;
-    if (this.specializationIds.length > 0) params.specialization_ids = this.specializationIds;
-    if (this.technologyIds.length > 0) params.technology_ids = this.technologyIds;
-    if (this.workTypeIds.length > 0) params.work_type_ids = this.workTypeIds;
+  onFiltersReady(value: FiltersValue): void {
+    this.currentFilters = value;
+    this.resetAndLoad(value);
+  }
+
+  onFiltersChange(value: FiltersValue): void {
+    this.currentFilters = value;
+    this.matchedOffers = this.computeMatchedOffers();
+    this.previewOffersCount = this.matchedOffers.length;
+  }
+
+  onApplyClicked(value: FiltersValue): void {
+    this.currentFilters = value;
+    this.resetAndLoad(value);
+  }
+
+  loadMore(): void {
+    if (!this.currentFilters || !this.hasMore || this.isLoadingMore || this.isLoading) return;
+    this.loadOffersFromApi(this.currentFilters, this.currentPage + 1);
+  }
+
+  private resetAndLoad(value: FiltersValue): void {
+    this.currentPage = 0;
+    this.hasMore = true;
+    this.allOffers = [];
+    this.matchedOffers = [];
+    this.previewOffersCount = 0;
+    this.loadOffersFromApi(value, 0);
+  }
+
+  private loadOffersFromApi(value: FiltersValue, page: number): void {
+    const isFirstPage = page === 0;
+    if (isFirstPage) {
+      this.isLoading = true;
+    } else {
+      this.isLoadingMore = true;
+    }
+    this.loadError = null;
+
+    const params: Parameters<typeof this.jobOffersApi.getOffers>[0] = {
+      skip: page * this.pageSize,
+      limit: this.pageSize,
+    };
+    if (value.expLevelIds.length > 0) params.exp_level_ids = value.expLevelIds;
+    if (value.specializationIds.length > 0) params.specialization_ids = value.specializationIds;
+    if (value.technologyIds.length > 0) params.technology_ids = value.technologyIds;
+    if (value.siteIds.length > 0) params.site_ids = value.siteIds;
+    if (value.locationIds.length > 0) params.location_ids = value.locationIds;
+    if (value.workTypeIds.length > 0) params.work_type_ids = value.workTypeIds;
+    if (value.salaryFrom > 0) params.salary_from_min = value.salaryFrom;
+    if (value.salaryTo < 50000) params.salary_to_max = value.salaryTo;
+
     this.jobOffersApi.getOffers(params).subscribe({
       next: (apiOffers) => {
-        this.allOffers = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
+        const mapped = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
+        this.allOffers = isFirstPage ? mapped : [...this.allOffers, ...mapped];
+        this.currentPage = page;
+        this.hasMore = apiOffers.length >= this.pageSize;
+        this.matchedOffers = this.computeMatchedOffers();
+        this.previewOffersCount = this.matchedOffers.length;
         this.isLoading = false;
-        this.applyFilters();
-        this.setupPreviewListener();
+        this.isLoadingMore = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loadError = 'Nie udało się załadować ofert. Sprawdź czy backend jest uruchomiony.';
         this.isLoading = false;
-        this.setupPreviewListener();
+        this.isLoadingMore = false;
+        this.cdr.markForCheck();
       },
     });
   }
 
-  private isSalaryInRange(offer: JobOffer): boolean {
-    const min = this.salaryFromValue;
-    const max = this.salaryToValue;
-    if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;
-    return offer.salaryMax >= min && offer.salaryMin <= max;
-  }
-
-  private buildFiltersForm(filters: CandidateFilters): FormGroup {
-    const itAreaGroup: Record<string, boolean> = {};
-    for (const { key } of this.availableRoles) {
-      itAreaGroup[key] = filters.itArea?.[key] ?? false;
-    }
-
-    const techGroup: Record<string, boolean> = {};
-    for (const { key } of this.availableTechs) {
-      techGroup[key] = filters.technologies?.[key] ?? false;
-    }
-
-    return this.fb.group({
-      itArea: this.fb.group(itAreaGroup),
-      seniority: [filters.seniority],
-      technologies: this.fb.group(techGroup),
-      salaryFromIndex: [filters.salaryFromIndex],
-      salaryToIndex: [filters.salaryToIndex],
-      contractType: [filters.contractType],
-      noticePeriod: [filters.noticePeriod],
-      jobSites: this.fb.group(
-        Object.fromEntries(SITE_OPTIONS.map(s => [s.value, filters.jobSites?.[s.value as keyof typeof filters.jobSites] ?? true]))
-      ),
-      matchPrecision: [filters.matchPrecision]
-    });
-  }
-
-  private setupPreviewListener(): void {
-    this.filtersForm.valueChanges.subscribe(() => {
-      this.matchedOffers = this.getFilteredOffers();
-      this.previewOffersCount = this.matchedOffers.length;
-    });
-  }
-
-  applyFilters(): void {
-    this.checkSalaryRange('from');
-    this.matchedOffers = this.getFilteredOffers();
-    this.previewOffersCount = this.matchedOffers.length;
-  }
-
-  private isLocationMatch(offer: JobOffer): boolean {
-    if (this.selectedLocations.length === 0) return true;
-    const offerCities = offer.location.split(', ').map(c => c.toLowerCase());
-    return this.selectedLocations.some(loc => {
-      const name = loc.name.toLowerCase();
-      if (name === 'zdalnie') return offer.workMode === 'remote' || offerCities.includes('zdalnie');
-      return offerCities.some(city => city.includes(name));
-    });
-  }
-
-  private getFilteredOffers(): OfferViewModel[] {
+  private computeMatchedOffers(): OfferViewModel[] {
+    if (!this.currentFilters) return [];
+    const filters = this.currentFilters;
     return this.allOffers
-      .filter((offer) => this.isSalaryInRange(offer) && this.isSourceAllowed(offer.source) && this.isLocationMatch(offer))
-      .map((offer) => this.toOfferViewModel(offer))
-      .filter((offer) => {
-        const minScore = Number(this.filtersForm.get('matchPrecision')?.value ?? 75);
-        return offer.matchScore >= minScore;
-      })
-      .sort((a, b) => b.matchScore - a.matchScore);
+      .filter(offer => this.isSalaryInRange(offer, filters))
+      .map(offer => this.toOfferViewModel(offer, filters));
+  }
+
+  private isSalaryInRange(offer: JobOffer, filters: FiltersValue): boolean {
+    if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;
+    return offer.salaryMax >= filters.salaryFrom && offer.salaryMin <= filters.salaryTo;
+  }
+
+  private toOfferViewModel(offer: JobOffer, filters: FiltersValue): OfferViewModel {
+    const selectedRoles = this.selectedKeys(filters.itArea);
+    const selectedTech = this.selectedKeys(filters.technologies);
+    const matchedRoles = offer.roles.filter(role => selectedRoles.includes(role));
+    const matchedTech = offer.technologies.filter(tech => selectedTech.includes(tech));
+    return { ...offer, matchedRoles, matchedTech };
+  }
+
+  private selectedKeys(group: Record<string, boolean>): string[] {
+    return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
+  }
+
+  hasSalary(offer: OfferViewModel): boolean {
+    return offer.salaryMin > 0 || offer.salaryMax > 0;
   }
 
   openOffer(offer: OfferViewModel): void {
@@ -243,123 +182,20 @@ export class OffersComponent implements OnInit {
     }
   }
 
-  hasSalary(offer: OfferViewModel): boolean {
-    return offer.salaryMin > 0 || offer.salaryMax > 0;
+  formatRole(key: string): string {
+    return this.filtersFormRef?.formatRole(key) ?? key;
   }
 
-  private toOfferViewModel(offer: JobOffer): OfferViewModel {
-    const selectedRoles = this.getSelectedRoles();
-    const selectedTech = this.getSelectedTechnologies();
-    const matchedRoles = offer.roles.filter((role) => selectedRoles.includes(role));
-    const matchedTech = offer.technologies.filter((tech) => selectedTech.includes(tech));
-    return { ...offer, matchedRoles, matchedTech, matchScore: this.calculateMatchScore(offer, matchedRoles, matchedTech) };
-  }
-
-  private calculateMatchScore(offer: JobOffer, matchedRoles: string[], matchedTech: string[]): number {
-    let score = 0;
-    const selectedTech = this.getSelectedTechnologies();
-    const selectedSeniority = this.filtersForm.get('seniority')?.value as Seniority;
-    const selectedContract = this.filtersForm.get('contractType')?.value as ContractType;
-    const salaryFrom = this.salaryFromValue;
-    const salaryTo = this.salaryToValue;
-
-    if (matchedRoles.length > 0) score += 30;
-    if (offer.seniority === selectedSeniority) {
-      score += 25;
-    } else if (selectedSeniority === 'Mid / Regular' && (offer.seniority === 'Junior' || offer.seniority === 'Senior')) {
-      score += 10;
-    }
-    if (selectedTech.length > 0) score += Math.min((matchedTech.length / Math.max(offer.technologies.length, 1)) * 30, 30);
-    if (offer.contractType === selectedContract) score += 5;
-    if (offer.salaryMax >= salaryFrom && offer.salaryMin <= salaryTo) score += 10;
-    return Math.round(Math.min(score, 100));
-  }
-
-  checkSalaryRange(type: 'from' | 'to'): void {
-    const fromCtrl = this.filtersForm.get('salaryFromIndex');
-    const toCtrl = this.filtersForm.get('salaryToIndex');
-    if (!fromCtrl || !toCtrl) return;
-    const from = Number(fromCtrl.value);
-    const to = Number(toCtrl.value);
-    if (from >= to) {
-      if (type === 'from') toCtrl.setValue(from + 1, { emitEvent: false });
-      else fromCtrl.setValue(to - 1, { emitEvent: false });
-    }
-  }
-
-  get salaryFromValue(): number {
-    return this.salaryOptions[Number(this.filtersForm?.get('salaryFromIndex')?.value ?? 0)] ?? 0;
-  }
-
-  get salaryToValue(): number {
-    return this.salaryOptions[Number(this.filtersForm?.get('salaryToIndex')?.value ?? this.salaryOptions.length - 1)] ?? 0;
-  }
-
-  getSalaryProgressPercent(): number {
-    const from = Number(this.filtersForm.get('salaryFromIndex')?.value ?? 0);
-    const to = Number(this.filtersForm.get('salaryToIndex')?.value ?? this.salaryOptions.length - 1);
-    return ((to - from) / (this.salaryOptions.length - 1)) * 100;
-  }
-
-  getSalaryProgressLeft(): number {
-    const from = Number(this.filtersForm.get('salaryFromIndex')?.value ?? 0);
-    return (from / (this.salaryOptions.length - 1)) * 100;
-  }
-
-  getSelectedRoles(): string[] {
-    const group = this.filtersForm.get('itArea')?.value as Record<string, boolean>;
-    return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
-  }
-
-  getSelectedTechnologies(): string[] {
-    const group = this.filtersForm.get('technologies')?.value as Record<string, boolean>;
-    return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
-  }
-
-  getSelectedSources(): string[] {
-    const group = this.filtersForm.get('jobSites')?.value as Record<string, boolean>;
-    return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
-  }
-
-  formatRole(role: string): string {
-    return this.availableRoles.find(r => r.key === role)?.label ?? this.roleLabels[role] ?? role;
-  }
-
-  formatTech(tech: string): string {
-    return this.availableTechs.find(t => t.key === tech)?.label ?? this.techLabels[tech] ?? tech;
-  }
-
-  getVisibleRoles(): string[] {
-    const keys = this.availableRoles.map(r => r.key);
-    return this.showAllRoles ? keys : keys.slice(0, 8);
-  }
-
-  getVisibleTechnologies(): string[] {
-    const keys = this.availableTechs.map(t => t.key);
-    return this.showAllTech ? keys : keys.slice(0, 10);
-  }
-
-  isSourceAllowed(source: string): boolean {
-    const selected = this.getSelectedSources();
-    return selected.length === 0 || selected.includes(source);
-  }
-
-  getWorkModeLabel(mode: WorkMode): string {
-    return WORK_MODE_OPTIONS.find(o => o.value === mode)?.label ?? mode;
-  }
-
-  getContractLabel(contract: ContractType): string {
-    const labels: Record<ContractType, string> = { uop: 'UoP', b2b: 'B2B', uz: 'UZ / UoD' };
-    return labels[contract];
+  formatTech(key: string): string {
+    return this.filtersFormRef?.formatTech(key) ?? key;
   }
 
   formatSource(source: string): string {
-    return SITE_OPTIONS.find(s => s.value === source)?.label ?? source;
+    return this.filtersFormRef?.availableSites.find(s => s.key === source)?.label ?? source;
   }
 
-  getMatchClass(score: number): string {
-    if (score >= 90) return 'match-excellent';
-    if (score >= 75) return 'match-good';
-    return 'match-fair';
+  getWorkModeLabel(mode: string): string {
+    return mode;
   }
+
 }

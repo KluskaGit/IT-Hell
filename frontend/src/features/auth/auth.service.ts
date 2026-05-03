@@ -49,8 +49,26 @@ export class AuthService {
     const loggedIn = !!this.keycloak?.authenticated;
     this.isAuthenticated.set(loggedIn);
 
-    const parsed = this.keycloak?.tokenParsed as { preferred_username?: string } | undefined;
+    const parsed = this.keycloak?.tokenParsed as {
+      preferred_username?: string;
+      given_name?: string;
+      family_name?: string;
+      email?: string;
+    } | undefined;
     this.username.set(parsed?.preferred_username ?? null);
+  }
+
+  getProfile(): { firstName: string; lastName: string; email: string } {
+    const parsed = this.keycloak?.tokenParsed as {
+      given_name?: string;
+      family_name?: string;
+      email?: string;
+    } | undefined;
+    return {
+      firstName: parsed?.given_name ?? '',
+      lastName: parsed?.family_name ?? '',
+      email: parsed?.email ?? '',
+    };
   }
 
   async login(): Promise<void> {

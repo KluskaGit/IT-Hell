@@ -28,19 +28,22 @@
 </div>
 
 <div class="home-container">
-  
+
   <section class="hero-section animate-up">
     <span class="badge">Skaner Kompetencji</span>
-      <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
-      <p>Przestań tracić czas na przeglądanie setek ofert. <strong>CV_ANALIZER</strong> przeanalizuje Twoje CV i wybierze tylko te ogłoszenia, które realnie pasują do Twoich umiejętności i oczekiwań.</p>
+    <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
+    <p>Przestań tracić czas na przeglądanie setek ofert. <strong>CV_ANALIZER</strong> przeanalizuje Twoje CV i wybierze tylko te ogłoszenia, które realnie pasują do Twoich umiejętności i oczekiwań.</p>
   </section>
 
-  <main class="main-card animate-up delay-1">
-    
+  <!-- CV upload card -->
+  <div class="main-card animate-up delay-1">
+
     <div class="upload-area" *ngIf="!scanComplete">
       <ng-container *ngIf="!isScanning">
-         <input type="file" #fileInput id="cvUpload" hidden accept=".pdf, .doc, .docx" (change)="onFileSelected($event)">
-        <button type="button" class="dropzone" [class.dragging]="isDragging" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="fileInput.click()">
+        <input type="file" #fileInput id="cvUpload" hidden accept=".pdf, .doc, .docx" (change)="onFileSelected($event)">
+        <button type="button" class="dropzone" [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)" (click)="fileInput.click()">
           <div class="dropzone-inner">
             <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
             <span>Wgraj CV (PDF, DOC, DOCX) - AI automatycznie uzupełni dane</span>
@@ -70,191 +73,21 @@
       <button type="button" class="remove-link" (click)="removeFile($event)">Usuń CV</button>
     </div>
 
-    <div class="divider"><span>DANE KANDYDATA</span></div>
+  </div>
 
-    <form [formGroup]="candidateForm" (ngSubmit)="onSubmit()">
+  <!-- Shared filter form -->
+  <app-filters-form
+    class="animate-up delay-2"
+    [initialFilters]="savedFilters"
+    [showApplyButton]="false"
+    (applyClicked)="onSubmit($event)">
+  </app-filters-form>
 
-      <h3 class="form-section-title">1. Doświadczenie i Rola</h3>
+  <div class="actions-row animate-up delay-3">
+    <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj dopasowanych ofert</button>
+    <button type="button" class="secondary-button" (click)="submitAndSignup()">Zapisz profil i załóż konto</button>
+  </div>
 
-      <div class="input-group full-width" style="margin-bottom: 1.5rem;">
-        <label>Główna rola (Możesz wybrać kilka) *</label>
-        <fieldset formGroupName="itArea" class="site-fieldset">
-          <div class="pills-container">
-            <label class="pill-card" *ngFor="let role of getVisibleRoles()">
-              <input type="checkbox" [formControlName]="role.key">
-              <div class="pill-content">{{ role.label }}</div>
-            </label>
-            <button *ngIf="availableRoles.length > 8" type="button" class="toggle-pill-btn" (click)="showAllSpecs = !showAllSpecs">
-              {{ showAllSpecs ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-            </button>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="input-group full-width" style="margin-bottom: 2rem;">
-        <label>Poziom doświadczenia</label>
-        <div class="pills-container">
-          <label class="pill-card" *ngFor="let option of seniorityOptions">
-            <input type="radio" formControlName="seniority" [value]="option.value">
-            <div class="pill-content">{{ option.label }}</div>
-          </label>
-        </div>
-      </div>
-
-      <div class="input-group full-width" style="margin-bottom: 2rem;">
-        <label>Preferowany tryb pracy</label>
-        <fieldset formGroupName="workMode" class="site-fieldset">
-          <div class="pills-container">
-            <label class="pill-card"><input type="checkbox" formControlName="remote"><div class="pill-content">Zdalnie</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="hybrid"><div class="pill-content">Hybrydowo</div></label>
-            <label class="pill-card"><input type="checkbox" formControlName="onsite"><div class="pill-content">Stacjonarnie</div></label>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="input-group full-width" style="margin-bottom: 2rem;">
-        <label>Lokalizacja <small style="opacity:0.5">(opcjonalne — domyślnie wszystkie)</small></label>
-        <app-location-picker
-          [locations]="availableLocations"
-          [selected]="selectedLocations"
-          (selectedChange)="selectedLocations = $event">
-        </app-location-picker>
-      </div>
-
-      <h4 class="sub-section-title">Umiejętności</h4>
-      <div class="input-group full-width" style="margin-bottom: 1.5rem;">
-        <label>Popularne technologie *</label>
-        <fieldset formGroupName="technologies" class="site-fieldset">
-          <div class="pills-container">
-            <label class="pill-card" *ngFor="let tech of getVisibleTechs()">
-              <input type="checkbox" [formControlName]="tech.key">
-              <div class="pill-content">
-                <ng-container *ngIf="getTechIcon(tech.key) as iconClass">
-                  <i [class]="iconClass"></i>
-                </ng-container>
-                <img *ngIf="tech.key === 'r'" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg" width="18" height="18" [alt]="tech.label" style="margin-right: -2px;">
-                {{ tech.label }}
-              </div>
-            </label>
-            <button *ngIf="availableTechs.length > 10" type="button" class="toggle-pill-btn" (click)="showAllTech = !showAllTech">
-              {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-            </button>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="form-grid">
-        <div class="input-group full-width">
-          <label for="english">Poziom znajomości j. angielskiego</label>
-          <select id="english" formControlName="englishLevel">
-            <option value="A1">A1 (Początkujący)</option>
-            <option value="A2">A2 (Podstawowy)</option>
-            <option value="B1">B1 (Średniozaawansowany)</option>
-            <option value="B2">B2 (Wyżej średni)</option>
-            <option value="C1">C1 (Zaawansowany)</option>
-            <option value="C2">C2 (Biegły / Native)</option>
-          </select>
-        </div>
-      </div>
-
-<div class="student-box">
-        <label class="checkbox-container">
-          <input type="checkbox" formControlName="isStudent">
-          Posiadam status studenta
-        </label>
-        
-        <div *ngIf="candidateForm.get('isStudent')?.value" class="student-years-container">
-          <span class="year-label">Rok studiów:</span>
-          <div class="pills-container">
-            <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="1"><div class="pill-content year-pill">1</div></label>
-            <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="2"><div class="pill-content year-pill">2</div></label>
-            <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="3"><div class="pill-content year-pill">3</div></label>
-            <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="4"><div class="pill-content year-pill">4</div></label>
-            <label class="pill-card"><input type="radio" formControlName="studyYear" [value]="5"><div class="pill-content year-pill">5</div></label>
-          </div>
-        </div>
-      </div>
-
-      <h3 class="form-section-title">2. Finanse i Kontrakt</h3>
-      
-      <div class="input-group full-width slider-group salary-slider-group" style="margin-bottom: 1.5rem;">
-        <label>Widełki płacowe (PLN / m-c)</label>
-        <div class="salary-labels">
-          <span class="salary-badge from">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
-          <span class="salary-badge to">
-            DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}
-          </span>
-        </div>
-        
-        <div class="salary-range-slider">
-          <div class="salary-progess-fill" [style.width.%]="getSalaryProgessPercent()" [style.left.%]="getSalaryProgessLeft()"></div>
-          
-          <input type="range" formControlName="salaryFromIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('from')" class="salary-input salary-input-from">
-          <input type="range" formControlName="salaryToIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('to')" class="salary-input salary-input-to">
-        </div>
-        
-        <div class="slider-labels range-markers"><span>0 PLN</span><span>50 000+ PLN</span></div>
-      </div>
-
-      <div class="form-grid">
-        <div class="input-group">
-          <label for="contract">Rodzaj kontraktu</label>
-          <select id="contract" formControlName="contractType">
-            <option value="uop">Umowa o Pracę</option>
-            <!-- B2B i Zlecenie/Dzieło ukryte — backend nie zwraca jeszcze pola contract_type (do odkrycia gdy backend doda) -->
-          </select>
-        </div>
-        <div class="input-group">
-          <label for="notice">Okres wypowiedzenia</label>
-          <select id="notice" formControlName="noticePeriod">
-            <option value="immediate">Dostępny od zaraz</option>
-            <option value="2_weeks">2 tygodnie</option>
-            <option value="1_month">1 miesiąc</option>
-            <option value="3_months">3 miesiące</option>
-          </select>
-        </div>
-      </div>
-      
-      <h4 class="sub-section-title">Źródła ofert</h4>
-      <div class="form-grid">
-        <div class="input-group full-width">
-          <fieldset formGroupName="jobSites" class="site-fieldset" aria-labelledby="jobSitesLegend">
-            <legend id="jobSitesLegend" class="sr-only">Skąd pobierać oferty</legend>
-            <div class="site-cards-grid">
-              <label class="site-card" *ngFor="let site of siteOptions" [for]="'job_' + site.value">
-                <input [id]="'job_' + site.value" type="checkbox" [formControlName]="site.value">
-                <div class="site-card-content"><svg class="site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>{{ site.label }}</span></div>
-              </label>
-            </div>
-          </fieldset>
-        </div>
-      </div>
-
-      <h3 class="form-section-title ai-section-title">✨ 5. Inteligentne Dopasowanie</h3>
-      <div class="form-grid">
-        <div class="input-group full-width slider-group">
-          <div class="slider-header">
-            <label>Wymagana precyzja ofert:</label>
-            <span class="precision-badge" [ngClass]="{'strict': candidateForm.get('matchPrecision')?.value === 100, 'loose': candidateForm.get('matchPrecision')?.value === 50}">
-              {{ candidateForm.get('matchPrecision')?.value }}% Zgodności
-            </span>
-          </div>
-          <input type="range" formControlName="matchPrecision" min="50" max="100" step="25" class="ai-slider">
-          <div class="slider-labels">
-            <span>50%<br><small>Eksploracja (okazje do nauki)</small></span>
-            <span>75%<br><small>Zalecane (dopuszcza małe braki)</small></span>
-            <span>100%<br><small>Tylko idealne (bez kompromisów)</small></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions-row">
-        <button type="submit" class="submit-button">Szukaj dopasowanych ofert</button>
-        <button type="button" class="secondary-button" (click)="submitAndSignup()" aria-label="Rozpocznij analizę i załóż konto">Zapisz profil i załóż konto</button>
-      </div>
-    </form>
-  </main>
-  
   <section id="features" class="features-grid">
     <div class="feature-card animate-up delay-2">
       <div class="icon-box">🔍</div>
@@ -272,7 +105,6 @@
       <p>Otrzymujesz tylko te oferty, które realnie Cię zainteresują i w których masz szanse.</p>
     </div>
   </section>
-
 
   <footer class="site-footer">
     <div class="footer-inner">
