@@ -1128,4 +1128,10 @@
     width: 100%;
     max-width: 280px;
   }
+  .nav-auth-logged {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
 }

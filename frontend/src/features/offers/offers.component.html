@@ -10,10 +10,17 @@
       <a routerLink="/profile">Mój profil</a>
     </div>
 
-    <div class="nav-actions">
+    <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedUserBlock">
       <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
-      <button type="button" class="btn-primary" routerLink="/login">Zaloguj się</button>
+      <button type="button" class="btn-primary" (click)="login()">Zaloguj się</button>
     </div>
+
+    <ng-template #loggedUserBlock>
+      <div class="nav-actions nav-auth-logged">
+        <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
+        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
+      </div>
+    </ng-template>
   </div>
 </nav>
 

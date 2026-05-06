@@ -126,7 +126,7 @@ export class ProfileComponent implements OnInit {
     this.saveFilters();
   }
 
-  onLogout(): void {
-    this.router.navigate(['/login']);
+  async onLogout(): Promise<void> {
+    await this.authService.logout();
   }
 }

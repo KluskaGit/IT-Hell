@@ -80,6 +80,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
+      - ./keycloak/themes:/opt/keycloak/themes
 
 
 volumes:

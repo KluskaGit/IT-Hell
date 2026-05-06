@@ -122,5 +122,10 @@ export class HomeComponent implements OnInit {
 
   get isAuthenticated() { return this.authService.isAuthenticated; }
   get username() { return this.authService.username; }
-  async logout(): Promise<void> { await this.authService.logout(); }
+  async logout(): Promise<void> { 
+    await this.authService.logout(); 
+  }
+  async login(): Promise<void> {
+    await this.authService.login();
+  }
 }

@@ -7,6 +7,7 @@ import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form
 import {
   JobOffersApiService, MappedOffer,
 } from '../../app/core/services/job-offers-api.service';
+import { AuthService } from '../auth/auth.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
@@ -29,6 +30,7 @@ export class OffersComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly authService = inject(AuthService);
 
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
@@ -198,4 +200,19 @@ export class OffersComponent implements OnInit {
     return mode;
   }
 
+  isAuthenticated(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
+  username(): string {
+    return this.authService.getUsername() ?? 'Użytkownik';
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+
+  async login(): Promise<void> {
+    await this.authService.login();
+  }
 }
