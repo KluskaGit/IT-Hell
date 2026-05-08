@@ -7,10 +7,11 @@ export interface FiltersValue {
   technologies: Record<string, boolean>;
   jobSites: Record<string, boolean>;
   workMode: Record<string, boolean>;
-  seniority: string;
+  seniority: Record<string, boolean>;
   salaryFromIndex: number;
   salaryToIndex: number;
   selectedLocations: LocationItem[];
+  selectedTechnologies: LocationItem[];
   specializationIds: string[];
   technologyIds: string[];
   expLevelIds: string[];
@@ -26,8 +27,12 @@ export interface FiltersInitialState {
   technologies?: Record<string, boolean>;
   jobSites?: Record<string, boolean>;
   workMode?: Record<string, boolean>;
-  seniority?: string;
+  seniority?: Record<string, boolean>;
   salaryFromIndex?: number;
   salaryToIndex?: number;
   selectedLocations?: LocationItem[];
+  selectedTechnologies?: LocationItem[];
+  locationIds?: string[];
+  workModeIds?: string[];
+  jobSiteKeys?: string[];
 }

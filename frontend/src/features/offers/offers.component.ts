@@ -1,6 +1,8 @@
-import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
@@ -25,8 +27,9 @@ interface OfferViewModel extends JobOffer {
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.css'],
 })
-export class OffersComponent implements OnInit {
+export class OffersComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -34,13 +37,35 @@ export class OffersComponent implements OnInit {
 
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
+  private readonly destroy$ = new Subject<void>();
+  private intersectionObserver?: IntersectionObserver;
+  private sentinelEl?: HTMLElement;
+  private isSentinelVisible = false;
+
+  @ViewChild('scrollSentinel')
+  set scrollSentinel(el: ElementRef | undefined) {
+    if (el?.nativeElement === this.sentinelEl) return;
+    this.intersectionObserver?.disconnect();
+    this.intersectionObserver = undefined;
+    this.sentinelEl = el?.nativeElement;
+    if (this.sentinelEl && isPlatformBrowser(this.platformId)) {
+      this.intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          this.isSentinelVisible = entries[0].isIntersecting;
+          if (entries[0].isIntersecting) this.loadMore();
+        },
+        { rootMargin: '200px' }
+      );
+      this.intersectionObserver.observe(this.sentinelEl);
+    }
+  }
+
   initialFilters: FiltersInitialState | null = null;
   cvFileName: string | null = null;
 
   currentFilters: FiltersValue | null = null;
   allOffers: JobOffer[] = [];
   matchedOffers: OfferViewModel[] = [];
-  previewOffersCount = 0;
 
   isLoading = false;
   isLoadingMore = false;
@@ -57,16 +82,87 @@ export class OffersComponent implements OnInit {
       this.cdr.markForCheck();
     });
 
-    const navState = history.state as { filters?: FiltersInitialState; cvFileName?: string | null };
-    const filters = navState?.filters ?? this.loadSavedFilters();
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        if (this.initialFilters) return;
 
-    if (!filters) {
-      this.router.navigate(['/']);
-      return;
-    }
+        const urlFilters = this.urlToFilters(params);
+        if (urlFilters) {
+          this.initialFilters = urlFilters;
+          return;
+        }
 
-    this.cvFileName = navState?.cvFileName ?? null;
-    this.initialFilters = filters;
+        const navState = history.state as { filters?: FiltersInitialState; cvFileName?: string | null };
+        const stateFilters = navState?.filters;
+        const filters = stateFilters ?? this.loadSavedFilters();
+
+        if (!filters) {
+          this.router.navigate(['/']);
+          return;
+        }
+
+        this.cvFileName = navState?.cvFileName ?? null;
+        this.initialFilters = filters;
+      });
+  }
+
+  private updateUrl(value: FiltersValue): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.buildQueryParams(value),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private buildQueryParams(value: FiltersValue): Record<string, string[] | string | null> {
+    return {
+      roles:     value.specializationIds.length ? value.specializationIds : null,
+      seniority: value.expLevelIds.length       ? value.expLevelIds       : null,
+      wm:        value.workTypeIds.length        ? value.workTypeIds        : null,
+      sites:     value.siteIds.length            ? value.siteIds            : null,
+      loc:       value.locationIds.length        ? value.locationIds        : null,
+      tech:      value.technologyIds.length      ? value.technologyIds      : null,
+      salFrom:   value.salaryFromIndex > 0       ? String(value.salaryFromIndex) : null,
+      salTo:     value.salaryToIndex < 25        ? String(value.salaryToIndex)   : null,
+    };
+  }
+
+  private urlToFilters(params: ParamMap): FiltersInitialState | null {
+    const knownKeys = ['roles', 'seniority', 'wm', 'sites', 'loc', 'tech', 'salFrom', 'salTo'];
+    if (!knownKeys.some(k => params.has(k))) return null;
+
+    // getAll handles ?key=v1&key=v2 (array format); flatMap+split handles legacy ?key=v1,v2 format
+    const getIds = (key: string): string[] =>
+      params.getAll(key).flatMap(v => v.split(',').filter(Boolean));
+
+    const result: FiltersInitialState = {};
+
+    const roles = getIds('roles');
+    if (roles.length) result.itArea = Object.fromEntries(roles.map(id => [id, true]));
+
+    const seniority = getIds('seniority');
+    if (seniority.length) result.seniority = Object.fromEntries(seniority.map(id => [id, true]));
+
+    const wm = getIds('wm');
+    if (wm.length) result.workModeIds = wm;
+
+    const sites = getIds('sites');
+    if (sites.length) result.jobSiteKeys = sites;
+
+    const loc = getIds('loc');
+    if (loc.length) result.locationIds = loc;
+
+    const tech = getIds('tech');
+    if (tech.length) result.technologies = Object.fromEntries(tech.map(id => [id, true]));
+
+    const salFrom = params.get('salFrom');
+    if (salFrom != null) result.salaryFromIndex = +salFrom;
+    const salTo = params.get('salTo');
+    if (salTo != null) result.salaryToIndex = +salTo;
+
+    return result;
   }
 
   private loadSavedFilters(): FiltersInitialState | null {
@@ -78,18 +174,30 @@ export class OffersComponent implements OnInit {
 
   onFiltersReady(value: FiltersValue): void {
     this.currentFilters = value;
+    this.updateUrl(value);
     this.resetAndLoad(value);
   }
 
   onFiltersChange(value: FiltersValue): void {
     this.currentFilters = value;
+    this.updateUrl(value);
     this.matchedOffers = this.computeMatchedOffers();
-    this.previewOffersCount = this.matchedOffers.length;
   }
 
   onApplyClicked(value: FiltersValue): void {
     this.currentFilters = value;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.buildQueryParams(value),
+      queryParamsHandling: 'merge',
+    });
     this.resetAndLoad(value);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.intersectionObserver?.disconnect();
   }
 
   loadMore(): void {
@@ -102,7 +210,6 @@ export class OffersComponent implements OnInit {
     this.hasMore = true;
     this.allOffers = [];
     this.matchedOffers = [];
-    this.previewOffersCount = 0;
     this.loadOffersFromApi(value, 0);
   }
 
@@ -135,10 +242,12 @@ export class OffersComponent implements OnInit {
         this.currentPage = page;
         this.hasMore = apiOffers.length >= this.pageSize;
         this.matchedOffers = this.computeMatchedOffers();
-        this.previewOffersCount = this.matchedOffers.length;
         this.isLoading = false;
         this.isLoadingMore = false;
         this.cdr.markForCheck();
+        if (this.hasMore && this.isSentinelVisible) {
+          setTimeout(() => this.loadMore(), 0);
+        }
       },
       error: () => {
         this.loadError = 'Nie udało się załadować ofert. Sprawdź czy backend jest uruchomiony.';

@@ -11,9 +11,6 @@
 
   <div *ngIf="showSummaryHeader" class="summary-header summary-header-collapsible">
     <h2>{{ summaryHeading }}</h2>
-    <div class="summary-header-actions" *ngIf="previewCount !== null">
-      <span class="summary-count">{{ previewCount }} ofert</span>
-    </div>
   </div>
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
@@ -27,11 +24,11 @@
       </app-location-picker>
     </div>
 
-    <div class="summary-block">
+    <div class="summary-block" formGroupName="seniority">
       <h3>Poziom doświadczenia</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let option of availableExpLevels">
-          <input type="radio" formControlName="seniority" [value]="option.id">
+          <input type="checkbox" [formControlName]="option.id">
           <div class="pill-content">{{ option.label }}</div>
         </label>
       </div>
@@ -41,7 +38,7 @@
       <h3>Tryb pracy</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let mode of availableWorkTypes">
-          <input type="checkbox" [formControlName]="getWorkModeKey(mode.label)">
+          <input type="checkbox" [formControlName]="mode.id">
           <div class="pill-content">{{ mode.label }}</div>
         </label>
       </div>
@@ -107,22 +104,13 @@
       </div>
     </div>
 
-    <div class="summary-block full-width" formGroupName="technologies">
-      <h3>Technologie</h3>
-      <div class="pills-container">
-        <label class="pill-card" *ngFor="let tech of getVisibleTechnologies()">
-          <input type="checkbox" [formControlName]="tech.id">
-          <div class="pill-content">{{ tech.label }}</div>
-        </label>
-
-        <button
-          *ngIf="availableTechs.length > 10"
-          type="button"
-          class="toggle-pill-btn"
-          (click)="showAllTech = !showAllTech">
-          {{ showAllTech ? 'zwiń ⌃' : 'rozwiń ⌄' }}
-        </button>
-      </div>
+    <div class="summary-block full-width">
+      <h3>Technologie <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
+      <app-tech-picker
+        [technologies]="availableTechItems"
+        [selected]="selectedTechnologies"
+        (selectedChange)="onTechnologiesChange($event)">
+      </app-tech-picker>
     </div>
 
     <div class="summary-block full-width" formGroupName="jobSites">
@@ -165,7 +153,7 @@
 
       <div class="filters-actions" *ngIf="showApplyButton">
         <button type="button" class="btn-primary" (click)="applyFilters()">
-          {{ applyButtonLabel }}<ng-container *ngIf="previewCount !== null"> ({{ previewCount }})</ng-container>
+          {{ applyButtonLabel }}
         </button>
       </div>
     </div>

@@ -52,8 +52,7 @@
     [collapsible]="true"
     [showSummaryHeader]="true"
     summaryHeading="Filtry"
-    [previewCount]="previewOffersCount"
-    applyButtonLabel="Szukaj ofert"
+applyButtonLabel="Szukaj ofert"
     (ready)="onFiltersReady($event)"
     (filtersChange)="onFiltersChange($event)"
     (applyClicked)="onApplyClicked($event)">
@@ -124,14 +123,11 @@
       </div>
     </article>
 
-    <div class="load-more-row" *ngIf="hasMore || isLoadingMore">
-      <button
-        type="button"
-        class="btn-primary load-more-btn"
-        (click)="loadMore()"
-        [disabled]="isLoadingMore || isLoading">
-        {{ isLoadingMore ? 'Ładowanie...' : 'Załaduj więcej ofert' }}
-      </button>
+    <div #scrollSentinel class="scroll-sentinel">
+      <div class="loading-more-indicator" *ngIf="isLoadingMore">
+        <div class="spinner"></div>
+        <span>Ładowanie ofert...</span>
+      </div>
     </div>
   </section>
 

@@ -1,6 +1,7 @@
 {
   "id" : "077dbb43-6154-4918-a0f5-c127994785b1",
   "realm" : "it-hell",
+  "loginTheme" : "cv-analizer",
   "notBefore" : 0,
   "defaultSignatureAlgorithm" : "RS256",
   "revokeRefreshToken" : false,

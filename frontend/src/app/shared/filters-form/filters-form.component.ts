@@ -4,25 +4,16 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 
 import { LocationItem, LocationPickerComponent } from '../location-picker/location-picker.component';
+import { TechPickerComponent } from '../tech-picker/tech-picker.component';
 import { LookupsApiService } from '../../core/services/lookups-api.service';
 import { FiltersInitialState, FiltersValue } from './filters-form.types';
-
-const WORK_TYPE_TO_MODE: Record<string, string> = {
-  'Praca zdalna': 'remote',
-  'Praca hybrydowa': 'hybrid',
-  'Praca stacjonarna': 'onsite',
-  'Zdalnie': 'remote',
-  'Hybrydowo': 'hybrid',
-  'Stacjonarnie': 'onsite',
-  'Praca mobilna': 'onsite',
-};
 
 type LookupItem = { key: string; label: string; id: string };
 
 @Component({
   selector: 'app-filters-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LocationPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, LocationPickerComponent, TechPickerComponent],
   templateUrl: './filters-form.component.html',
   styleUrls: ['./filters-form.component.css'],
 })
@@ -37,7 +28,7 @@ export class FiltersFormComponent implements OnInit {
   @Input() applyButtonLabel = 'Szukaj ofert';
   @Input() summaryHeading = 'Filtry';
   @Input() showSummaryHeader = false;
-  @Input() previewCount: number | null = null;
+
 
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
@@ -52,18 +43,19 @@ export class FiltersFormComponent implements OnInit {
 
   availableRoles: LookupItem[] = [];
   availableTechs: LookupItem[] = [];
+  availableTechItems: LocationItem[] = [];
   availableSites: LookupItem[] = [];
   availableExpLevels: LookupItem[] = [];
   availableWorkTypes: LookupItem[] = [];
   availableLocations: LocationItem[] = [];
   selectedLocations: LocationItem[] = [];
+  selectedTechnologies: LocationItem[] = [];
 
   filtersForm: FormGroup | null = null;
   isLoading = true;
   loadError: string | null = null;
   collapsed = false;
   showAllRoles = false;
-  showAllTech = false;
 
   ngOnInit(): void {
     forkJoin({
@@ -78,6 +70,7 @@ export class FiltersFormComponent implements OnInit {
         this.availableTechs = this.dedupeByKey(
           techs.map(t => ({ key: t.id, label: t.name, id: t.id }))
         );
+        this.availableTechItems = this.availableTechs.map(t => ({ id: t.id, name: t.label }));
         this.availableRoles = this.dedupeByKey(specs.map(s => ({ key: s.id, label: s.name, id: s.id })));
         this.availableSites = sites.map(s => ({ key: s.id, label: s.name, id: s.id }));
         this.availableExpLevels = expLevels.map(e => ({ key: e.id, label: e.name, id: e.id }));
@@ -86,7 +79,9 @@ export class FiltersFormComponent implements OnInit {
           .map(l => ({ id: l.id, name: l.name }))
           .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
 
-        this.selectedLocations = this.initialFilters?.selectedLocations ?? [];
+        this.selectedLocations = this.restoreSelectedLocations(this.initialFilters ?? {});
+        this.selectedTechnologies = this.restoreSelectedTechs(this.initialFilters ?? {});
+
         this.filtersForm = this.buildForm();
         this.subscribeFormChanges();
         this.isLoading = false;
@@ -102,6 +97,23 @@ export class FiltersFormComponent implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  private restoreSelectedLocations(init: FiltersInitialState): LocationItem[] {
+    if (init.selectedLocations?.length) return init.selectedLocations;
+    if (init.locationIds?.length) {
+      return this.availableLocations.filter(l => init.locationIds!.includes(l.id));
+    }
+    return [];
+  }
+
+  private restoreSelectedTechs(init: FiltersInitialState): LocationItem[] {
+    if (init.selectedTechnologies?.length) return init.selectedTechnologies;
+    // backward compat: restore from old Record<string, boolean> format
+    if (init.technologies) {
+      return this.availableTechItems.filter(t => init.technologies![t.id]);
+    }
+    return [];
   }
 
   private dedupeByKey(items: LookupItem[]): LookupItem[] {
@@ -121,21 +133,27 @@ export class FiltersFormComponent implements OnInit {
     const itArea: Record<string, boolean> = {};
     for (const r of this.availableRoles) itArea[r.id] = init.itArea?.[r.id] ?? false;
 
-    const technologies: Record<string, boolean> = {};
-    for (const t of this.availableTechs) technologies[t.id] = init.technologies?.[t.id] ?? false;
-
     const jobSites: Record<string, boolean> = {};
-    for (const s of this.availableSites) jobSites[s.key] = init.jobSites?.[s.key] ?? true;
+    const jobSiteKeys = init.jobSiteKeys;
+    for (const s of this.availableSites) {
+      jobSites[s.key] = jobSiteKeys !== undefined
+        ? jobSiteKeys.includes(s.key)
+        : (init.jobSites?.[s.key] ?? true);
+    }
 
+    const seniority: Record<string, boolean> = {};
+    for (const e of this.availableExpLevels) seniority[e.id] = init.seniority?.[e.id] ?? false;
+
+    const workModeIds = init.workModeIds;
     return this.fb.group({
       itArea: this.fb.group(itArea),
-      seniority: [this.resolveExpLevelId(init.seniority ?? '')],
-      technologies: this.fb.group(technologies),
-      workMode: this.fb.group({
-        remote: [init.workMode?.['remote'] ?? true],
-        hybrid: [init.workMode?.['hybrid'] ?? true],
-        onsite: [init.workMode?.['onsite'] ?? false],
-      }),
+      seniority: this.fb.group(seniority),
+      workMode: this.fb.group(
+        Object.fromEntries(this.availableWorkTypes.map(wt => [
+          wt.id,
+          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? true)],
+        ]))
+      ),
       salaryFromIndex: [init.salaryFromIndex ?? 0],
       salaryToIndex: [init.salaryToIndex ?? this.maxSalaryIndex],
       jobSites: this.fb.group(jobSites),
@@ -153,6 +171,11 @@ export class FiltersFormComponent implements OnInit {
     this.filtersChange.emit(this.computeValue());
   }
 
+  onTechnologiesChange(technologies: LocationItem[]): void {
+    this.selectedTechnologies = technologies;
+    this.filtersChange.emit(this.computeValue());
+  }
+
   applyFilters(): void {
     this.checkSalaryRange('from');
     this.applyClicked.emit(this.computeValue());
@@ -166,17 +189,21 @@ export class FiltersFormComponent implements OnInit {
     }
     this.filtersForm.patchValue(filters);
     if (locations) this.selectedLocations = locations;
+    if (filters.selectedTechnologies) this.selectedTechnologies = filters.selectedTechnologies;
   }
 
   computeValue(): FiltersValue {
     const raw = this.filtersForm?.getRawValue() ?? {};
     const itArea: Record<string, boolean> = raw.itArea ?? {};
-    const technologies: Record<string, boolean> = raw.technologies ?? {};
     const jobSites: Record<string, boolean> = raw.jobSites ?? {};
-    const workMode: Record<string, boolean> = raw.workMode ?? { remote: true, hybrid: true, onsite: false };
+    const workMode: Record<string, boolean> = raw.workMode ?? {};
 
     const specializationIds = this.availableRoles.filter(r => itArea[r.id]).map(r => r.id);
-    const technologyIds = this.availableTechs.filter(t => technologies[t.id]).map(t => t.id);
+
+    const technologyIds = this.selectedTechnologies.map(t => t.id);
+    const technologies: Record<string, boolean> = Object.fromEntries(
+      this.availableTechs.map(t => [t.id, technologyIds.includes(t.id)])
+    );
 
     const allSiteKeys = this.availableSites.map(s => s.key);
     const selectedSiteKeys = allSiteKeys.filter(k => jobSites[k]);
@@ -184,19 +211,13 @@ export class FiltersFormComponent implements OnInit {
       ? []
       : this.availableSites.filter(s => selectedSiteKeys.includes(s.key) && s.id).map(s => s.id);
 
-    const seniority = (raw.seniority as string) ?? '';
-    const expLevelIds = this.availableExpLevels.some(e => e.id === seniority) ? [seniority] : [];
+    const seniority: Record<string, boolean> = raw.seniority ?? {};
+    const expLevelIds = this.availableExpLevels.filter(e => seniority[e.id]).map(e => e.id);
 
-    const selectedModes = (Object.entries(workMode) as [string, boolean][])
-      .filter(([, v]) => v).map(([m]) => m);
+    const selectedModes = Object.entries(workMode).filter(([, v]) => v).map(([id]) => id);
     const workTypeIds = (selectedModes.length === 0 || selectedModes.length === Object.keys(workMode).length)
       ? []
-      : this.availableWorkTypes
-          .filter(wt => {
-            const mode = WORK_TYPE_TO_MODE[wt.label];
-            return mode && selectedModes.includes(mode) && wt.id;
-          })
-          .map(wt => wt.id);
+      : selectedModes;
 
     const locationIds = this.selectedLocations.filter(l => l.id).map(l => l.id);
     const salaryFrom = this.salaryOptions[Number(raw.salaryFromIndex) || 0] ?? 0;
@@ -208,19 +229,10 @@ export class FiltersFormComponent implements OnInit {
       salaryFromIndex: Number(raw.salaryFromIndex) || 0,
       salaryToIndex: Number(raw.salaryToIndex) || this.maxSalaryIndex,
       selectedLocations: this.selectedLocations,
+      selectedTechnologies: this.selectedTechnologies,
       specializationIds, technologyIds, expLevelIds, workTypeIds, siteIds, locationIds,
       salaryFrom, salaryTo,
     };
-  }
-
-  private resolveExpLevelId(value: string): string {
-    if (!value) return '';
-    if (this.availableExpLevels.some(e => e.id === value)) return value;
-    return this.availableExpLevels.find(e => e.label === value)?.id ?? '';
-  }
-
-  getWorkModeKey(label: string): string {
-    return WORK_TYPE_TO_MODE[label] ?? 'remote';
   }
 
   formatRole(id: string): string {
@@ -235,10 +247,6 @@ export class FiltersFormComponent implements OnInit {
     return this.showAllRoles ? this.availableRoles : this.availableRoles.slice(0, 8);
   }
 
-  getVisibleTechnologies(): LookupItem[] {
-    return this.showAllTech ? this.availableTechs : this.availableTechs.slice(0, 10);
-  }
-
   get salaryFromValue(): number {
     return this.salaryOptions[Number(this.filtersForm?.get('salaryFromIndex')?.value) || 0] ?? 0;
   }
@@ -248,13 +256,14 @@ export class FiltersFormComponent implements OnInit {
   }
 
   getSalaryProgressPercent(): number {
-    const maxValue = this.salaryOptions[this.maxSalaryIndex];
-    return ((this.salaryToValue - this.salaryFromValue) / maxValue) * 100;
+    const fromIndex = Number(this.filtersForm?.get('salaryFromIndex')?.value) || 0;
+    const toIndex = Number(this.filtersForm?.get('salaryToIndex')?.value) || this.maxSalaryIndex;
+    return ((toIndex - fromIndex) / this.maxSalaryIndex) * 100;
   }
 
   getSalaryProgressLeft(): number {
-    const maxValue = this.salaryOptions[this.maxSalaryIndex];
-    return (this.salaryFromValue / maxValue) * 100;
+    const fromIndex = Number(this.filtersForm?.get('salaryFromIndex')?.value) || 0;
+    return (fromIndex / this.maxSalaryIndex) * 100;
   }
 
   checkSalaryRange(type: 'from' | 'to'): void {
