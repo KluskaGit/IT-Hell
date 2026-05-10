@@ -37,6 +37,7 @@ export class FiltersFormComponent implements OnInit {
   @Input() showRoles = true;
   @Input() showTechnologies = true;
   @Input() showSites = true;
+  @Input() singleExpLevelSelection = false;
 
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
@@ -289,5 +290,15 @@ export class FiltersFormComponent implements OnInit {
 
   toggleCollapsed(): void {
     this.collapsed = !this.collapsed;
+  }
+  onSingleExpLevelSelect(selectedId: string): void {
+    const seniorityGroup = this.filtersForm?.get('seniority') as FormGroup | null;
+    if (!seniorityGroup) return;
+
+    Object.keys(seniorityGroup.controls).forEach(id => {
+      seniorityGroup.get(id)?.setValue(id === selectedId, { emitEvent: false });
+    });
+
+    this.filtersChange.emit(this.computeValue());
   }
 }
