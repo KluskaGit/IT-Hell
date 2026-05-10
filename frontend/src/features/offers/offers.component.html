@@ -58,8 +58,32 @@ applyButtonLabel="Szukaj ofert"
     (applyClicked)="onApplyClicked($event)">
   </app-filters-form>
 
-  <section class="offers-list animate-up delay-2" *ngIf="matchedOffers.length > 0; else emptyState">
-    <article class="offer-card" *ngFor="let offer of matchedOffers">
+  <div class="searchbar-wrap animate-up delay-2">
+    <div class="searchbar-field" [class.searchbar-focused]="searchFocused">
+      <svg class="searchbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        class="searchbar-input"
+        type="text"
+        placeholder="Szukaj po stanowisku, firmie lub lokalizacji…"
+        [(ngModel)]="searchQuery"
+        (focus)="searchFocused = true"
+        (blur)="searchFocused = false"
+        autocomplete="off">
+      <button *ngIf="searchQuery" type="button" class="searchbar-clear" (click)="searchQuery = ''" title="Wyczyść">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <span class="searchbar-count" *ngIf="!isLoading">
+      {{ displayedOffers.length }} {{ displayedOffers.length === 1 ? 'oferta' : (displayedOffers.length < 5 ? 'oferty' : 'ofert') }}
+    </span>
+  </div>
+
+  <section class="offers-list animate-up delay-3" *ngIf="displayedOffers.length > 0; else emptyState">
+    <article class="offer-card" *ngFor="let offer of displayedOffers">
       <div class="offer-top-row">
         <div class="offer-main-info">
           <div class="company-logo">

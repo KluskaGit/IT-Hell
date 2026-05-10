@@ -955,6 +955,10 @@
   animation-delay: 0.16s;
 }
 
+.delay-3 {
+  animation-delay: 0.24s;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -1060,6 +1064,94 @@
     grid-template-columns: 1fr;
   }
 }
+/* ==========================================================================
+   SEARCH BAR
+   ========================================================================== */
+.searchbar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.searchbar-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  padding: 0.7rem 1rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.06);
+}
+
+.searchbar-field.searchbar-focused {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.searchbar-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 0.2s;
+}
+
+.searchbar-field.searchbar-focused .searchbar-icon {
+  color: var(--primary);
+}
+
+.searchbar-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  font-family: inherit;
+}
+
+.searchbar-input::placeholder {
+  color: #94a3b8;
+}
+
+.searchbar-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.searchbar-clear:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.searchbar-count {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0.35rem 0.85rem;
+}
+
 /* ==========================================================================
    COLLAPSIBLE FILTERS
    ========================================================================== */
