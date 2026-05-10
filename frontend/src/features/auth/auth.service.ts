@@ -55,7 +55,8 @@ export class AuthService {
       family_name?: string;
       email?: string;
     } | undefined;
-    this.username.set(parsed?.preferred_username ?? null);
+
+    this.username.set(parsed?.given_name ?? parsed?.preferred_username ?? null);
   }
 
   getProfile(): { firstName: string; lastName: string; email: string } {

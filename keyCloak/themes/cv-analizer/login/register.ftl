@@ -32,22 +32,38 @@
         </#if>
 
         <form id="kc-register-form" class="login-form" action="${url.registrationAction}" method="post">
-          
+
           <div class="input-group">
-            <label for="username">Nazwa użytkownika</label>
+            <label for="firstName">Imię</label>
             <input
-            type="text"
-            id="username"
-            name="username"
-            value="${(register.formData.username!'')}"
-            autocomplete="username"
-            placeholder="Wpisz nazwę użytkownika"
-            aria-invalid="<#if messagesPerField.existsError('username')>true<#else>false</#if>"
+              type="text"
+              id="firstName"
+              name="firstName"
+              value="${(register.formData.firstName!'')}"
+              autocomplete="given-name"
+              placeholder="Wpisz swoje imię"
+              aria-invalid="<#if messagesPerField.existsError('firstName')>true<#else>false</#if>"
             />
-            <#if messagesPerField.existsError('username')>
-            <span class="input-error">${kcSanitize(messagesPerField.get('username'))?no_esc}</span>
+            <#if messagesPerField.existsError('firstName')>
+              <span class="input-error">${kcSanitize(messagesPerField.get('firstName'))?no_esc}</span>
             </#if>
-        </div>
+          </div>
+
+          <div class="input-group">
+            <label for="lastName">Nazwisko</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value="${(register.formData.lastName!'')}"
+              autocomplete="family-name"
+              placeholder="Wpisz swoje nazwisko"
+              aria-invalid="<#if messagesPerField.existsError('lastName')>true<#else>false</#if>"
+            />
+            <#if messagesPerField.existsError('lastName')>
+              <span class="input-error">${kcSanitize(messagesPerField.get('lastName'))?no_esc}</span>
+            </#if>
+          </div>
 
           <div class="input-group">
             <label for="email">Adres e-mail</label>

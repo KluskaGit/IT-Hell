@@ -39,6 +39,14 @@ export class FiltersFormComponent implements OnInit {
   @Input() showSummaryHeader = false;
   @Input() previewCount: number | null = null;
 
+  @Input() showLocation = true;
+  @Input() showExpLevel = true;
+  @Input() showWorkMode = true;
+  @Input() showSalary = true;
+  @Input() showRoles = true;
+  @Input() showTechnologies = true;
+  @Input() showSites = true;
+
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
   @Output() ready = new EventEmitter<FiltersValue>();

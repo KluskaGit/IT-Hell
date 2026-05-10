@@ -23,7 +23,6 @@
 
 <div class="profile-container">
 
-  <!-- HERO: personal info + student badge -->
   <section class="glass-card hero-card animate-up">
     <div class="hero-layout">
       <div class="avatar-container">
@@ -55,25 +54,8 @@
         </div>
       </div>
     </div>
-
-    <div class="student-box" [formGroup]="profileForm">
-      <label class="checkbox-container">
-        <input type="checkbox" formControlName="isStudent">
-        Posiadam status studenta
-      </label>
-      <div *ngIf="profileForm.get('isStudent')?.value" class="student-years-container">
-        <span class="year-label">Rok studiów:</span>
-        <div class="pills-container">
-          <label class="pill-card" *ngFor="let y of [1,2,3,4,5]">
-            <input type="radio" formControlName="studyYear" [value]="y">
-            <div class="pill-content year-pill">{{ y }}</div>
-          </label>
-        </div>
-      </div>
-    </div>
   </section>
 
-  <!-- CV upload + English level -->
   <div class="dashboard-grid">
     <div class="grid-col">
       <section class="glass-card animate-up delay-1">
@@ -102,32 +84,21 @@
         </button>
       </section>
     </div>
-
-    <div class="grid-col">
-      <section class="glass-card animate-up delay-1" [formGroup]="profileForm">
-        <h3 class="section-title">Język angielski</h3>
-        <div class="field-block">
-          <label class="field-label">Poziom j. angielskiego</label>
-          <select formControlName="englishLevel" class="styled-select">
-            <option value="A1">A1 (Początkujący)</option>
-            <option value="A2">A2 (Podstawowy)</option>
-            <option value="B1">B1 (Średniozaawansowany)</option>
-            <option value="B2">B2 (Wyżej średni)</option>
-            <option value="C1">C1 (Zaawansowany)</option>
-            <option value="C2">C2 (Biegły / Native)</option>
-          </select>
-        </div>
-      </section>
-    </div>
   </div>
 
-  <!-- Shared filter form: roles, seniority, technologies, work mode, salary, etc. -->
   <app-filters-form
     class="animate-up delay-2"
     [initialFilters]="savedFilters"
     [showApplyButton]="false"
-    summaryHeading="Preferencje zawodowe"
+    summaryHeading="Technologie i doświadczenie"
     [showSummaryHeader]="true"
+    [showLocation]="false"
+    [showWorkMode]="false"
+    [showSalary]="false"
+    [showRoles]="false"
+    [showSites]="false"
+    [showExpLevel]="true"
+    [showTechnologies]="true"
     (filtersChange)="onFiltersChange($event)">
   </app-filters-form>
 

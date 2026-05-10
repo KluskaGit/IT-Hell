@@ -18,7 +18,7 @@
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
-    <div class="summary-block full-width">
+    <div class="summary-block full-width" *ngIf="showLocation">
       <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
       <app-location-picker
         [locations]="availableLocations"
@@ -27,7 +27,7 @@
       </app-location-picker>
     </div>
 
-    <div class="summary-block">
+    <div class="summary-block" *ngIf="showExpLevel">
       <h3>Poziom doświadczenia</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let option of availableExpLevels">
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <div class="summary-block" formGroupName="workMode">
+    <div class="summary-block" formGroupName="workMode" *ngIf="showWorkMode">
       <h3>Tryb pracy</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let mode of availableWorkTypes">
@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <div class="summary-block full-width">
+    <div class="summary-block full-width" *ngIf="showSalary">
       <h3>Widełki płacowe</h3>
 
       <div class="salary-labels">
@@ -89,7 +89,7 @@
       </div>
     </div>
 
-    <div class="summary-block full-width" formGroupName="itArea">
+    <div class="summary-block full-width" formGroupName="itArea" *ngIf="showRoles">
       <h3>Główne role</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let role of getVisibleRoles()">
@@ -107,7 +107,7 @@
       </div>
     </div>
 
-    <div class="summary-block full-width" formGroupName="technologies">
+    <div class="summary-block full-width" formGroupName="technologies" *ngIf="showTechnologies">
       <h3>Technologie</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let tech of getVisibleTechnologies()">
@@ -125,7 +125,7 @@
       </div>
     </div>
 
-    <div class="summary-block full-width" formGroupName="jobSites">
+    <div class="summary-block full-width" formGroupName="jobSites" *ngIf="showSites">
       <h3>Źródła ofert</h3>
       <div class="pills-container">
         <label class="pill-card" *ngFor="let site of availableSites">
