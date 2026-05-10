@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -17,7 +17,7 @@ type LookupItem = { key: string; label: string; id: string };
   templateUrl: './filters-form.component.html',
   styleUrls: ['./filters-form.component.css'],
 })
-export class FiltersFormComponent implements OnInit {
+export class FiltersFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly lookupsApi = inject(LookupsApiService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -196,9 +196,12 @@ export class FiltersFormComponent implements OnInit {
       if (locations) this.selectedLocations = locations;
       return;
     }
-    this.filtersForm.patchValue(filters);
-    if (locations) this.selectedLocations = locations;
-    if (filters.selectedTechnologies) this.selectedTechnologies = filters.selectedTechnologies;
+
+    this.selectedLocations = locations ?? this.restoreSelectedLocations(filters);
+    this.selectedTechnologies = this.restoreSelectedTechs(filters);
+
+    this.filtersForm.patchValue(this.buildPatchValue(filters), { emitEvent: false });
+    this.filtersChange.emit(this.computeValue());
   }
 
   computeValue(): FiltersValue {
@@ -300,5 +303,64 @@ export class FiltersFormComponent implements OnInit {
     });
 
     this.filtersChange.emit(this.computeValue());
+  }
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['initialFilters'] || !this.filtersForm) return;
+
+    const next = changes['initialFilters'].currentValue as FiltersInitialState | null;
+    if (!next) return;
+
+    this.selectedLocations = this.restoreSelectedLocations(next);
+    this.selectedTechnologies = this.restoreSelectedTechs(next);
+
+    const patch = this.buildPatchValue(next);
+    this.filtersForm.patchValue(patch, { emitEvent: false });
+
+    this.filtersChange.emit(this.computeValue());
+    this.cdr.markForCheck();
+  }
+
+  private buildPatchValue(init: FiltersInitialState): Record<string, unknown> {
+    const itArea: Record<string, boolean> = {};
+    for (const r of this.availableRoles) {
+      itArea[r.id] = init.itArea?.[r.id] ?? false;
+    }
+
+    const jobSites: Record<string, boolean> = {};
+    const jobSiteKeys = init.jobSiteKeys;
+    for (const s of this.availableSites) {
+      jobSites[s.key] = jobSiteKeys !== undefined
+        ? jobSiteKeys.includes(s.key)
+        : (init.jobSites?.[s.key] ?? true);
+    }
+
+    const seniority: Record<string, boolean> = {};
+    for (const e of this.availableExpLevels) {
+      seniority[e.id] = init.seniority?.[e.id] ?? false;
+    }
+
+    const workModeIds = init.workModeIds;
+    const workMode: Record<string, boolean> = {};
+    for (const wt of this.availableWorkTypes) {
+      workMode[wt.id] = workModeIds !== undefined
+        ? workModeIds.includes(wt.id)
+        : (init.workMode?.[wt.id] ?? true);
+    }
+
+    return {
+      itArea,
+      seniority,
+      workMode,
+      salaryFromIndex: init.salaryFromIndex ?? 0,
+      salaryToIndex: init.salaryToIndex ?? this.maxSalaryIndex,
+      jobSites,
+    };
+  }
+  isExpLevelSelected(id: string): boolean {
+    const seniorityGroup = this.filtersForm?.get('seniority') as FormGroup | null;
+    return !!seniorityGroup?.get(id)?.value;
+  }
+  get seniorityGroup(): FormGroup {
+    return this.filtersForm?.get('seniority') as FormGroup;
   }
 }
