@@ -18,6 +18,8 @@ async def save_job_offer_to_db(payload: Dict) -> None:
             work_type = payload["work_type"]
             url = payload["url"]
             locations = payload["locations"]
+            salary_from = payload.get("salary_from")
+            salary_to = payload.get("salary_to")
             description = payload["description"]
 
             offer = JobOfferScraperCreate(
@@ -30,7 +32,9 @@ async def save_job_offer_to_db(payload: Dict) -> None:
                 work_type_name=work_type,
                 url=url,
                 description=description,
-                location_names=locations
+                location_names=locations,
+                salary_from=salary_from,
+                salary_to=salary_to
             )
             await service.create_from_scraper(offer)
         except KeyError as e:
