@@ -46,6 +46,16 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
         location_name: str = location.get("inlandLocation", {}).get("location", {}).get("name", "").strip()
         locations.append(location_name)
 
+    # Salary
+    employment = attributes.get("employment", {})
+    typesOfContracts = employment.get("typesOfContracts", [])
+
+    salary = {}
+    for contract in typesOfContracts: 
+        if s:=contract.get("salary", {}):
+            salary = s
+            break
+
     # Specialization
     spec_details = {}
     for attr in secondary_attributes:
@@ -56,5 +66,8 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
 
     job_offer.specialization = spec_details.get("name", "").strip() if spec_details else no_record
     job_offer.locations = locations
+    if salary:
+        job_offer.salary_from = salary.get("from")
+        job_offer.salary_to = salary.get("to")
     job_offer.description = "None"
 
