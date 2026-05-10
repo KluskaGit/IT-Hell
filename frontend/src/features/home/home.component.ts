@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
+import { CvApiService } from '../../app/core/services/cv-api.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
@@ -21,6 +22,7 @@ export class HomeComponent implements OnInit {
     private readonly router: Router,
     private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
+    private readonly cvApi: CvApiService,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -52,13 +54,13 @@ export class HomeComponent implements OnInit {
   private saveFilters(value: FiltersValue): void {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const { itArea, technologies, jobSites, workMode, seniority,
+      const { itArea, jobSites, workMode, seniority,
               salaryFromIndex, salaryToIndex,
-              selectedLocations } = value;
+              selectedLocations, selectedTechnologies } = value;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        itArea, technologies, jobSites, workMode, seniority,
+        itArea, jobSites, workMode, seniority,
         salaryFromIndex, salaryToIndex,
-        selectedLocations,
+        selectedLocations, selectedTechnologies,
       }));
     } catch { /* ignore */ }
   }
@@ -96,17 +98,35 @@ export class HomeComponent implements OnInit {
       return;
     }
     this.selectedFile = file;
-    this.simulateScanning();
+    this.analyzeCV(file);
   }
 
-  private simulateScanning(): void {
+  private analyzeCV(file: File): void {
     this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
-    setTimeout(() => { this.scanProgress = 35; }, 200);
-    setTimeout(() => { this.scanProgress = 70; }, 500);
-    setTimeout(() => {
-      this.scanProgress = 100; this.scanStatus = 'Zakończono!';
-      setTimeout(() => { this.isScanning = false; this.scanComplete = true; this.autoFillForm(); }, 150);
-    }, 800);
+    setTimeout(() => { this.scanProgress = 35; this.cdr.markForCheck(); }, 200);
+
+    this.cvApi.uploadCv(file).subscribe({
+      next: (techs) => {
+        this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+        const selectedTechnologies = techs.map(t => ({ id: t.id, name: t.name }));
+        setTimeout(() => {
+          this.isScanning = false;
+          this.scanComplete = true;
+          this.filtersFormRef?.patchValue({ selectedTechnologies });
+          this.autoFillForm();
+          this.cdr.markForCheck();
+        }, 150);
+      },
+      error: () => {
+        this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+        setTimeout(() => {
+          this.isScanning = false;
+          this.scanComplete = true;
+          this.autoFillForm();
+          this.cdr.markForCheck();
+        }, 150);
+      },
+    });
   }
 
   onDragOver(e: DragEvent): void { e.preventDefault(); this.isDragging = true; }
