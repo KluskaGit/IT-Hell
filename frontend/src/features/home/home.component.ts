@@ -37,7 +37,6 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.savedFilters = this.loadSavedFilters();
     this.router.events.subscribe(() => {
       this.cdr.markForCheck();
     });

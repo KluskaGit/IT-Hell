@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -23,7 +24,7 @@ interface OfferViewModel extends JobOffer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, RouterModule, FiltersFormComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FiltersFormComponent],
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.css'],
 })
@@ -66,6 +67,9 @@ export class OffersComponent implements OnInit, OnDestroy {
   currentFilters: FiltersValue | null = null;
   allOffers: JobOffer[] = [];
   matchedOffers: OfferViewModel[] = [];
+
+  searchQuery = '';
+  searchFocused = false;
 
   isLoading = false;
   isLoadingMore = false;
@@ -281,6 +285,16 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   private selectedKeys(group: Record<string, boolean>): string[] {
     return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
+  }
+
+  get displayedOffers(): OfferViewModel[] {
+    const q = this.searchQuery.trim().toLowerCase();
+    if (!q) return this.matchedOffers;
+    return this.matchedOffers.filter(o =>
+      o.title.toLowerCase().includes(q) ||
+      o.company.toLowerCase().includes(q) ||
+      o.location.toLowerCase().includes(q)
+    );
   }
 
   hasSalary(offer: OfferViewModel): boolean {

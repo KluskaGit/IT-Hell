@@ -138,7 +138,7 @@ export class FiltersFormComponent implements OnInit {
     for (const s of this.availableSites) {
       jobSites[s.key] = jobSiteKeys !== undefined
         ? jobSiteKeys.includes(s.key)
-        : (init.jobSites?.[s.key] ?? true);
+        : (init.jobSites?.[s.key] ?? false);
     }
 
     const seniority: Record<string, boolean> = {};
@@ -151,7 +151,7 @@ export class FiltersFormComponent implements OnInit {
       workMode: this.fb.group(
         Object.fromEntries(this.availableWorkTypes.map(wt => [
           wt.id,
-          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? true)],
+          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? false)],
         ]))
       ),
       salaryFromIndex: [init.salaryFromIndex ?? 0],

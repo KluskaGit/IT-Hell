@@ -10,7 +10,7 @@ import { LocationItem } from '../location-picker/location-picker.component';
   template: `
     <div class="tp-root">
 
-      <div class="tp-field" [class.tp-focused]="showDropdown">
+      <div class="tp-field" [class.tp-focused]="showDropdown" (click)="onFieldClick()">
         <svg class="tp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
         </svg>
@@ -18,12 +18,13 @@ import { LocationItem } from '../location-picker/location-picker.component';
         <div class="tp-tags">
           <span class="tp-tag" *ngFor="let item of selected">
             {{ item.name }}
-            <button type="button" class="tp-tag-x" (click)="remove(item.id)">×</button>
+            <button type="button" class="tp-tag-x" (click)="$event.stopPropagation(); remove(item.id)">×</button>
           </span>
           <input
+            #inputEl
             class="tp-input"
             type="text"
-            [placeholder]="selected.length === 0 ? 'Wpisz technologię, np. React…' : 'Dodaj kolejną…'"
+            [placeholder]="selected.length === 0 ? 'Kliknij lub wpisz technologię…' : 'Dodaj kolejną…'"
             [(ngModel)]="query"
             (input)="onInput()"
             (focus)="onFocus()"
@@ -31,14 +32,28 @@ import { LocationItem } from '../location-picker/location-picker.component';
             autocomplete="off">
         </div>
 
-        <button *ngIf="selected.length > 0" type="button" class="tp-clear" (click)="clearAll()" title="Wyczyść">
+        <button *ngIf="selected.length > 0" type="button" class="tp-clear" (click)="$event.stopPropagation(); clearAll()" title="Wyczyść">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
+
+        <svg class="tp-chevron" [class.tp-chevron--open]="showDropdown"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
       </div>
 
       <div class="tp-dropdown" *ngIf="showDropdown">
+        <div class="tp-dropdown-header" *ngIf="!query.trim()">
+          <span>Wszystkie technologie</span>
+          <span class="tp-count">{{ availableCount }}</span>
+        </div>
+        <div class="tp-dropdown-header" *ngIf="query.trim()">
+          <span>Wyniki dla „{{ query.trim() }}"</span>
+          <span class="tp-count">{{ filtered.length }}</span>
+        </div>
+
         <div class="tp-no-results" *ngIf="technologies.length === 0">Ładowanie…</div>
         <div class="tp-no-results" *ngIf="technologies.length > 0 && filtered.length === 0">
           Brak wyników dla „{{ query }}"
@@ -89,6 +104,15 @@ import { LocationItem } from '../location-picker/location-picker.component';
     }
     .tp-field.tp-focused .tp-icon { color: #6366f1; }
 
+    .tp-chevron {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      color: #94a3b8;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .tp-chevron--open { transform: rotate(180deg); color: #6366f1; }
+
     .tp-tags {
       display: flex;
       flex-wrap: wrap;
@@ -132,7 +156,7 @@ import { LocationItem } from '../location-picker/location-picker.component';
       color: #1e293b;
       padding: 2px 0;
       flex: 1;
-      min-width: 140px;
+      min-width: 100px;
     }
     .tp-input::placeholder { color: #94a3b8; }
 
@@ -163,9 +187,37 @@ import { LocationItem } from '../location-picker/location-picker.component';
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
-      max-height: 260px;
+      max-height: 280px;
       overflow-y: auto;
       padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #e2e8f0 transparent;
+    }
+    .tp-dropdown::-webkit-scrollbar { width: 5px; }
+    .tp-dropdown::-webkit-scrollbar-track { background: transparent; }
+    .tp-dropdown::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+
+    .tp-dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 2px;
+    }
+
+    .tp-count {
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 99px;
     }
 
     .tp-no-results {
@@ -208,12 +260,15 @@ export class TechPickerComponent {
   query = '';
   showDropdown = false;
 
+  get availableCount(): number {
+    return this.technologies.filter(t => !this.selected.some(s => s.id === t.id)).length;
+  }
+
   get filtered(): LocationItem[] {
     const q = this.query.trim().toLowerCase();
-    if (!q) return [];
-    return this.technologies
-      .filter(t => t.name.toLowerCase().includes(q) && !this.selected.some(s => s.id === t.id))
-      .slice(0, 20);
+    const unselected = this.technologies.filter(t => !this.selected.some(s => s.id === t.id));
+    if (!q) return unselected;
+    return unselected.filter(t => t.name.toLowerCase().includes(q));
   }
 
   highlight(name: string): string {
@@ -228,15 +283,16 @@ export class TechPickerComponent {
     );
   }
 
-  onInput(): void { this.showDropdown = this.query.trim().length > 0; }
-  onFocus(): void { if (this.query.trim()) this.showDropdown = true; }
+  onFieldClick(): void { this.showDropdown = true; }
+  onInput(): void { this.showDropdown = true; }
+  onFocus(): void { this.showDropdown = true; }
   onBlur(): void { setTimeout(() => { this.showDropdown = false; }, 160); }
 
   select(item: LocationItem): void {
     this.selected = [...this.selected, item];
     this.selectedChange.emit(this.selected);
     this.query = '';
-    this.showDropdown = false;
+    this.showDropdown = true;
   }
 
   remove(id: string): void {
