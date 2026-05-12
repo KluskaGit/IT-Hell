@@ -15,6 +15,17 @@
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
+    <div class="summary-block full-width" *ngIf="showProfileFillButton">
+      <div class="filters-profile-fill-row">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="onProfileFillClick()">
+          {{ profileFillButtonLabel }}
+        </button>
+      </div>
+    </div>
+
     <div class="summary-block full-width" *ngIf="showLocation">
       <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
       <app-location-picker

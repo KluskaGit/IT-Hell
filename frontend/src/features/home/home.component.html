@@ -77,11 +77,17 @@
 
   <!-- Shared filter form -->
   <app-filters-form
-    class="animate-up delay-2"
-    [initialFilters]="savedFilters"
-    [showApplyButton]="false"
-    (applyClicked)="onSubmit($event)">
-  </app-filters-form>
+      class="animate-up delay-2"
+      [initialFilters]="savedFilters"
+      [showApplyButton]="false"
+      [showProfileFillButton]="isAuthenticated()"
+      profileFillButtonLabel="Uzupełnij z profilu"
+      (profileFillClicked)="fillFromProfile()"
+      (applyClicked)="onSubmit($event)">
+    </app-filters-form>
+    <div class="form-error" *ngIf="fillProfileError">
+      {{ fillProfileError }}
+    </div>
 
   <div class="actions-row animate-up delay-3">
     <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj dopasowanych ofert</button>

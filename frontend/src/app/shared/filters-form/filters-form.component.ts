@@ -39,7 +39,10 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   @Input() showTechnologies = true;
   @Input() showSites = true;
   @Input() singleExpLevelSelection = false;
+  @Input() showProfileFillButton = false;
+  @Input() profileFillButtonLabel = 'Uzupełnij z profilu';
 
+  @Output() profileFillClicked = new EventEmitter<void>();
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
   @Output() ready = new EventEmitter<FiltersValue>();
@@ -67,6 +70,10 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   collapsed = false;
   showAllRoles = false;
   techPickerReady = false;
+
+  onProfileFillClick(): void {
+    this.profileFillClicked.emit();
+  }
 
   ngOnInit(): void {
     forkJoin({

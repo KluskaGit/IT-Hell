@@ -5,6 +5,7 @@ import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
 import { CvApiService } from '../../app/core/services/cv-api.service';
+import { UserApiService } from '../../app/core/services/user-api.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
@@ -23,6 +24,7 @@ export class HomeComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
     private readonly cvApi: CvApiService,
+    private readonly userApi: UserApiService,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -32,11 +34,49 @@ export class HomeComponent implements OnInit {
   scanProgress = 0;
   scanStatus = '';
   scanComplete = false;
+  isFillingFromProfile = false;
+  fillProfileError: string | null = null;
 
   savedFilters: FiltersInitialState | null = null;
 
+  async fillFromProfile(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || !this.isAuthenticated()) return;
+
+    this.isFillingFromProfile = true;
+    this.fillProfileError = null;
+
+    try {
+      const profile = await this.userApi.getMyProfile();
+
+      const selectedTechnologies = profile.technologies.map(t => ({
+        id: t.id,
+        name: t.name,
+      }));
+
+      const expLevelId = profile.exp_level?.id ?? '';
+
+      const nextFilters: FiltersInitialState = {
+        ...(this.savedFilters ?? this.loadSavedFilters() ?? {}),
+        selectedTechnologies,
+        technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+        seniority: expLevelId ? { [expLevelId]: true } : {},
+      };
+
+      this.savedFilters = nextFilters;
+      this.filtersFormRef?.patchValue(nextFilters);
+      this.autoFillForm();
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Nie udało się uzupełnić formularza z profilu:', error);
+      this.fillProfileError = 'Nie udało się pobrać danych z profilu.';
+    } finally {
+      this.isFillingFromProfile = false;
+    }
+  }
+
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.savedFilters = this.loadSavedFilters();
     this.router.events.subscribe(() => {
       this.cdr.markForCheck();
     });
