@@ -30,13 +30,11 @@ export interface UserProfileDto {
 export interface UserProfileCreateDto {
   exp_level_id: string;
   technology_ids: string[];
-  raw_cv?: string | null;
 }
 
 export interface UserProfileUpdateDto {
   exp_level_id?: string | null;
   technology_ids?: string[] | null;
-  raw_cv?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

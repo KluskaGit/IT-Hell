@@ -137,8 +137,8 @@ export class ProfileComponent implements OnInit {
       salaryTo: 50000,
     };
 
-    this.currentCvFile = profile.raw_cv ? 'CV zapisane w profilu' : null;
-    this.currentCvDate = profile.raw_cv ? 'Z backendu' : '';
+    this.currentCvFile = null;
+    this.currentCvDate = '';
   }
 
   onFiltersChange(value: FiltersValue): void {
@@ -153,8 +153,7 @@ export class ProfileComponent implements OnInit {
 
     return {
       exp_level_id: expLevelId,
-      technology_ids: this.currentFilterValue?.technologyIds ?? [],
-      raw_cv: null,
+      technology_ids: this.currentFilterValue?.technologyIds ?? []
     };
   }
 
@@ -228,8 +227,7 @@ export class ProfileComponent implements OnInit {
       if (this.profileExists) {
         const updatePayload: UserProfileUpdateDto = {
           exp_level_id: payload.exp_level_id,
-          technology_ids: payload.technology_ids,
-          raw_cv: payload.raw_cv,
+          technology_ids: payload.technology_ids
         };
         savedProfile = await this.userApi.updateMyProfile(updatePayload);
       } else {
