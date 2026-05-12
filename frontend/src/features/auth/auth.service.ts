@@ -37,7 +37,7 @@ export class AuthService {
     await this.keycloak.init({
       onLoad: 'check-sso',
       pkceMethod: 'S256',
-      redirectUri: window.location.origin,
+      redirectUri: window.location.href,
     });
 
     this.initialized = true;
@@ -72,13 +72,17 @@ export class AuthService {
     };
   }
 
-  async login(): Promise<void> {
+  async login(redirectPath?: string): Promise<void> {
     if (!this.keycloak) {
       await this.init();
     }
 
+    const redirectUri = redirectPath
+      ? `${window.location.origin}${redirectPath}`
+      : window.location.href;
+
     await this.keycloak?.login({
-      redirectUri: window.location.origin
+      redirectUri
     });
   }
 
