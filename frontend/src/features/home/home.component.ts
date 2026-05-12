@@ -111,10 +111,10 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  submitAndSignup(): void {
+  async submitAndSignup(): Promise<void> {
     const value = this.filtersFormRef?.computeValue();
     if (value) this.saveFilters(value);
-    this.router.navigate(['/login']);
+    await this.authService.login();
   }
 
   private autoFillForm(): void {
