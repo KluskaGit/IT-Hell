@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
+import { CvApiService } from '../../app/core/services/cv-api.service';
 import {
   UserApiService,
   UserMeDto,
@@ -30,6 +31,11 @@ export class ProfileComponent implements OnInit {
   currentCvDate = '';
   isDragging = false;
 
+  isScanning = false;
+  scanProgress = 0;
+  scanStatus = '';
+  scanComplete = false;
+
   profileForm!: FormGroup;
   savedFilters: FiltersInitialState | null = null;
   private currentFilterValue: FiltersValue | null = null;
@@ -45,6 +51,7 @@ export class ProfileComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly authService: AuthService,
     private readonly userApi: UserApiService,
+    private readonly cvApi: CvApiService,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -189,15 +196,75 @@ export class ProfileComponent implements OnInit {
 
     this.currentCvFile = file.name;
     this.currentCvDate = 'Właśnie teraz';
+    this.analyzeCV(file);
+  }
+
+  private analyzeCV(file: File): void {
+    this.isScanning = true;
+    this.scanProgress = 0;
+    this.scanStatus = 'Analiza CV...';
+    this.saveError = null;
+
+    setTimeout(() => {
+      this.scanProgress = 35;
+    }, 200);
+
+    this.cvApi.uploadCv(file).subscribe({
+      next: (techs) => {
+        this.scanProgress = 100;
+        this.scanStatus = 'Zakończono!';
+
+        const selectedTechnologies = techs.map(t => ({
+          id: t.id,
+          name: t.name,
+        }));
+
+        setTimeout(() => {
+          this.isScanning = false;
+          this.scanComplete = true;
+
+          const nextFilters: FiltersInitialState = {
+            ...(this.savedFilters ?? {}),
+            selectedTechnologies,
+            technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+          };
+
+          this.savedFilters = nextFilters;
+          this.filtersFormRef?.patchValue(nextFilters);
+
+          if (this.currentFilterValue) {
+            this.currentFilterValue = {
+              ...this.currentFilterValue,
+              selectedTechnologies,
+              technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+              technologyIds: selectedTechnologies.map(t => t.id),
+            };
+          }
+
+          this.currentCvDate = 'Przeanalizowano przed chwilą';
+        }, 150);
+      },
+      error: (error) => {
+        console.error('Błąd analizy CV:', error);
+        this.scanProgress = 100;
+        this.scanStatus = 'Nie udało się przeanalizować CV';
+
+        setTimeout(() => {
+          this.isScanning = false;
+          this.scanComplete = false;
+          this.saveError = 'Nie udało się przeanalizować CV.';
+        }, 150);
+      },
+    });
   }
 
   removeCv(): void {
     this.currentCvFile = null;
     this.currentCvDate = '';
+    this.scanComplete = false;
   }
 
   async onSave(): Promise<void> {
-
     if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       return;
@@ -220,8 +287,6 @@ export class ProfileComponent implements OnInit {
     this.saveSuccess = null;
 
     try {
-      console.log('before request, profileExists =', this.profileExists);
-
       let savedProfile: UserProfileDto;
 
       if (this.profileExists) {
@@ -238,6 +303,7 @@ export class ProfileComponent implements OnInit {
       this.patchProfileData(savedProfile);
       this.saveSuccess = 'Profil został zapisany.';
     } catch (error) {
+      console.error('Błąd podczas zapisu profilu:', error);
       this.saveError = 'Nie udało się zapisać profilu.';
     } finally {
       this.isSaving = false;
