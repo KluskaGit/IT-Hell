@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import { LocationItem, LocationPickerComponent } from '../location-picker/location-picker.component';
 import { TechPickerComponent } from '../tech-picker/tech-picker.component';
@@ -66,41 +66,53 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   loadError: string | null = null;
   collapsed = false;
   showAllRoles = false;
+  techPickerReady = false;
 
   ngOnInit(): void {
-    this.collapsed = this.startCollapsed;
     forkJoin({
-      techs: this.lookupsApi.getTechnologies(),
-      specs: this.lookupsApi.getSpecializations(),
-      locations: this.lookupsApi.getLocations(),
-      sites: this.lookupsApi.getSites(),
-      expLevels: this.lookupsApi.getExperienceLevels(),
-      workTypes: this.lookupsApi.getWorkTypes(),
+      techs: this.showTechnologies ? this.lookupsApi.getTechnologies() : of([]),
+      specs: this.showRoles ? this.lookupsApi.getSpecializations() : of([]),
+      locations: this.showLocation ? this.lookupsApi.getLocations() : of([]),
+      sites: this.showSites ? this.lookupsApi.getSites() : of([]),
+      expLevels: this.showExpLevel ? this.lookupsApi.getExperienceLevels() : of([]),
+      workTypes: this.showWorkMode ? this.lookupsApi.getWorkTypes() : of([]),
     }).subscribe({
       next: ({ techs, specs, locations, sites, expLevels, workTypes }) => {
         this.availableTechs = this.dedupeByKey(
           techs.map(t => ({ key: t.id, label: t.name, id: t.id }))
         );
         this.availableTechItems = this.availableTechs.map(t => ({ id: t.id, name: t.label }));
-        this.availableRoles = this.dedupeByKey(specs.map(s => ({ key: s.id, label: s.name, id: s.id })));
+
+        this.availableRoles = this.dedupeByKey(
+          specs.map(s => ({ key: s.id, label: s.name, id: s.id }))
+        );
+
         this.availableSites = sites.map(s => ({ key: s.id, label: s.name, id: s.id }));
         this.availableExpLevels = expLevels.map(e => ({ key: e.id, label: e.name, id: e.id }));
         this.availableWorkTypes = workTypes.map(w => ({ key: w.id, label: w.name, id: w.id }));
+
         this.availableLocations = locations
           .map(l => ({ id: l.id, name: l.name }))
           .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
 
         this.selectedLocations = this.restoreSelectedLocations(this.initialFilters ?? {});
-        this.selectedTechnologies = this.restoreSelectedTechs(this.initialFilters ?? {});
+        this.selectedTechnologies = [...this.restoreSelectedTechs(this.initialFilters ?? {})];
 
         this.filtersForm = this.buildForm();
         this.subscribeFormChanges();
         this.isLoading = false;
-        this.cdr.markForCheck();
 
-        const initial = this.computeValue();
-        this.ready.emit(initial);
-        this.filtersChange.emit(initial);
+        this.techPickerReady = false;
+        this.cdr.detectChanges();
+
+        queueMicrotask(() => {
+          this.techPickerReady = true;
+          this.cdr.detectChanges();
+
+          const initial = this.computeValue();
+          this.ready.emit(initial);
+          this.filtersChange.emit(initial);
+        });
       },
       error: () => {
         this.loadError = 'Nie udało się pobrać słowników z backendu.';
