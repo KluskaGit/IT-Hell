@@ -143,14 +143,14 @@
           class="filters-toggle-btn filters-toggle-btn-bottom"
           (click)="toggleCollapsed()"
           [attr.aria-expanded]="!collapsed"
-          aria-label="Pokaż lub ukryj filtry"
+          aria-label="Zwiń filtry"
         >
           <svg
             class="filters-toggle-icon"
             [class.rotated]="!collapsed"
             viewBox="0 0 24 24"
-            width="22"
-            height="22"
+            width="16"
+            height="16"
             fill="none"
             stroke="currentColor"
             stroke-width="2.5"
@@ -159,6 +159,7 @@
           >
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
+          <span>Zwiń filtry</span>
         </button>
       </div>
 
@@ -176,14 +177,13 @@
       class="filters-toggle-btn filters-toggle-btn-bottom"
       (click)="toggleCollapsed()"
       [attr.aria-expanded]="!collapsed"
-      aria-label="Pokaż lub ukryj filtry"
+      aria-label="Rozwiń filtry"
     >
       <svg
         class="filters-toggle-icon"
-        [class.rotated]="!collapsed"
         viewBox="0 0 24 24"
-        width="22"
-        height="22"
+        width="16"
+        height="16"
         fill="none"
         stroke="currentColor"
         stroke-width="2.5"
@@ -192,6 +192,7 @@
       >
         <polyline points="6 9 12 15 18 9"></polyline>
       </svg>
+      <span>Rozwiń filtry</span>
     </button>
   </div>
 </section>
