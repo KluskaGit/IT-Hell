@@ -29,6 +29,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   @Input() applyButtonLabel = 'Szukaj ofert';
   @Input() summaryHeading = 'Filtry';
   @Input() showSummaryHeader = false;
+  @Input() initialCollapsed = false;
 
 
   @Input() showLocation = true;
@@ -76,6 +77,8 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
+    this.collapsed = this.collapsible && this.initialCollapsed;
+    
     forkJoin({
       techs: this.showTechnologies ? this.lookupsApi.getTechnologies() : of([]),
       specs: this.showRoles ? this.lookupsApi.getSpecializations() : of([]),
