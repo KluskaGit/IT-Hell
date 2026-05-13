@@ -1,3 +1,5 @@
+<app-navbar></app-navbar>
+
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -5,14 +7,6 @@
 </div>
 
 <div class="legal-wrapper">
-
-  <!-- HEADER -->
-  <header class="legal-header">
-    <a routerLink="/" class="logo-link">
-      <div class="logo-icon"></div>
-      <span class="logo-text">CV<span class="logo-accent">_ANALIZER</span></span>
-    </a>
-  </header>
 
   <!-- TABS -->
   <nav class="legal-tabs" role="tablist">
@@ -36,7 +30,7 @@
     <div class="hero-block">
       <div class="hero-badge">Przewodnik po serwisie</div>
       <h1>Jak działa CV_ANALIZER?</h1>
-      <p class="hero-sub">Inteligentne dopasowanie ofert pracy do Twojego profilu zawodowego w 5 krokach.</p>
+      <p class="hero-sub">Agregator ofert IT z Pracuj.pl z mocnymi filtrami i automatycznym wykrywaniem technologii z Twojego CV — w czterech krokach.</p>
     </div>
 
     <!-- STEPS -->
@@ -103,7 +97,7 @@
 
     <!-- CTA -->
     <section class="cta-section">
-      @if (authService.isLoggedIn()) {
+      @if (authService.isAuthenticated()) {
         <div class="cta-card cta-logged">
           <div class="cta-text">
             <h3>Witaj z powrotem!</h3>
@@ -118,12 +112,11 @@
         <div class="cta-card cta-guest">
           <div class="cta-text">
             <h3>Gotowy żeby zacząć?</h3>
-            <p>Załóż darmowe konto w 30 sekund lub wypróbuj serwis bez rejestracji.</p>
+            <p>Możesz od razu przeglądać oferty jako gość. Konto (logowanie u góry strony) potrzebne tylko żeby zapisać profil i CV.</p>
           </div>
           <div class="cta-actions">
-            <a routerLink="/register" class="cta-btn primary">Zarejestruj się za darmo</a>
-            <a routerLink="/login" class="cta-btn secondary">Mam już konto</a>
-            <a routerLink="/" class="cta-btn ghost">Wypróbuj jako gość →</a>
+            <a routerLink="/offers" class="cta-btn primary">Przeglądaj oferty</a>
+            <a routerLink="/" class="cta-btn secondary">Strona główna</a>
           </div>
         </div>
       }
@@ -150,11 +143,11 @@
       <h2>§2. Zakres usług</h2>
       <p>Serwis świadczy następujące usługi drogą elektroniczną:</p>
       <ul>
-        <li>Analiza treści CV (curriculum vitae) przy użyciu algorytmów dopasowania słów kluczowych i NLP</li>
-        <li>Personalizowane dopasowywanie ofert pracy na podstawie profilu i preferencji użytkownika (Match Score)</li>
-        <li>Przechowywanie i zarządzanie profilem zawodowym użytkownika</li>
-        <li>Agregacja ofert pracy z zewnętrznych portali rekrutacyjnych (m.in. Pracuj.pl)</li>
-        <li>Filtrowanie i sortowanie ofert według wybranych kryteriów</li>
+        <li>Automatyczne wyciąganie technologii z przesłanego pliku CV (PDF, DOC, DOCX)</li>
+        <li>Przechowywanie i zarządzanie profilem zawodowym użytkownika (poziom doświadczenia, technologie)</li>
+        <li>Agregacja ofert pracy z portalu Pracuj.pl</li>
+        <li>Filtrowanie ofert według wybranych kryteriów (rola, technologie, lokalizacja, tryb pracy, widełki płacowe)</li>
+        <li>Wyszukiwanie po treści ofert (stanowisko, firma, lokalizacja)</li>
       </ul>
     </section>
 
@@ -312,8 +305,13 @@
 
   <!-- FOOTER -->
   <footer class="legal-footer">
-    <a routerLink="/" class="back-btn">← Wróć do strony głównej</a>
-    <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER · Wersja 1.0</span>
+    <a routerLink="/" class="back-btn">
+      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Wróć na stronę główną
+    </a>
+    <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER</span>
   </footer>
 
 </div>

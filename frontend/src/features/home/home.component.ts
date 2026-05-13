@@ -3,15 +3,17 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
-import { AuthService } from '../auth/auth.service';
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import { CvApiService } from '../../app/core/services/cv-api.service';
+import { AuthService } from '../auth/auth.service';
+import { UserApiService } from '../../app/core/services/user-api.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FiltersFormComponent],
+  imports: [CommonModule, RouterModule, FiltersFormComponent, NavbarComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
@@ -20,9 +22,10 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private readonly router: Router,
-    private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef,
     private readonly cvApi: CvApiService,
+    private readonly authService: AuthService,
+    private readonly userApi: UserApiService,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -35,11 +38,32 @@ export class HomeComponent implements OnInit {
 
   savedFilters: FiltersInitialState | null = null;
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.router.events.subscribe(() => {
+
+    const stored = this.loadSavedFilters();
+    if (stored) {
+      this.savedFilters = stored;
+      return;
+    }
+
+    if (this.authService.isAuthenticated()) {
+      await this.loadFiltersFromProfile();
+    }
+  }
+
+  private async loadFiltersFromProfile(): Promise<void> {
+    try {
+      const profile = await this.userApi.getMyProfile();
+      const selectedTechnologies = profile.technologies.map(t => ({ id: t.id, name: t.name }));
+      const expLevelId = profile.exp_level?.id ?? '';
+      this.savedFilters = {
+        selectedTechnologies,
+        technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+        seniority: expLevelId ? { [expLevelId]: true } : {},
+      };
       this.cdr.markForCheck();
-    });
+    } catch { /* brak profilu — zostaw puste filtry */ }
   }
 
   private loadSavedFilters(): FiltersInitialState | null {
@@ -71,10 +95,35 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  submitAndSignup(): void {
+  get isAuthenticated() { return this.authService.isAuthenticated; }
+
+  async submitAndSignup(): Promise<void> {
     const value = this.filtersFormRef?.computeValue();
     if (value) this.saveFilters(value);
-    this.router.navigate(['/login']);
+    await this.authService.register();
+  }
+
+  async saveToProfileAndSearch(): Promise<void> {
+    const value = this.filtersFormRef?.computeValue();
+    if (!value) return;
+    this.saveFilters(value);
+
+    const payload = {
+      exp_level_id: value.expLevelIds[0] ?? '',
+      technology_ids: value.technologyIds,
+    };
+
+    if (payload.exp_level_id || payload.technology_ids.length) {
+      try {
+        await this.userApi.updateMyProfile(payload);
+      } catch {
+        try { await this.userApi.createMyProfile(payload); } catch { /* ignoruj, i tak nawigujemy */ }
+      }
+    }
+
+    this.router.navigate(['/offers'], {
+      state: { filters: value, cvFileName: this.selectedFile?.name ?? null },
+    });
   }
 
   private autoFillForm(): void {
@@ -139,12 +188,4 @@ export class HomeComponent implements OnInit {
     if (input.files?.length) this.handleFile(input.files[0]);
   }
 
-  get isAuthenticated() { return this.authService.isAuthenticated; }
-  get username() { return this.authService.username; }
-  async logout(): Promise<void> { 
-    await this.authService.logout(); 
-  }
-  async login(): Promise<void> {
-    await this.authService.login();
-  }
 }

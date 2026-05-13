@@ -1,16 +1,16 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject, HostListener } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, debounceTime, skip } from 'rxjs/operators';
 
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
-import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
+import { FiltersInitialState, FiltersValue, MAX_SALARY_INDEX, MAX_SALARY } from '../../app/shared/filters-form/filters-form.types';
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import {
   JobOffersApiService, MappedOffer,
 } from '../../app/core/services/job-offers-api.service';
-import { AuthService } from '../auth/auth.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
@@ -24,7 +24,7 @@ interface OfferViewModel extends JobOffer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FiltersFormComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FiltersFormComponent, NavbarComponent],
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.css'],
 })
@@ -34,11 +34,13 @@ export class OffersComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly authService = inject(AuthService);
 
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
+  @ViewChild('mainScroll') private mainScrollRef?: ElementRef<HTMLElement>;
 
   private readonly destroy$ = new Subject<void>();
+  private readonly filtersTrigger$ = new Subject<FiltersValue>();
+  private readonly searchTrigger$ = new Subject<string>();
   private intersectionObserver?: IntersectionObserver;
   private sentinelEl?: HTMLElement;
   private isSentinelVisible = false;
@@ -55,9 +57,72 @@ export class OffersComponent implements OnInit, OnDestroy {
           this.isSentinelVisible = entries[0].isIntersecting;
           if (entries[0].isIntersecting) this.loadMore();
         },
-        { rootMargin: '200px' }
+        {
+          root: this.mainScrollRef?.nativeElement ?? null,
+          rootMargin: '200px',
+          threshold: 0,
+        }
       );
       this.intersectionObserver.observe(this.sentinelEl);
+    }
+  }
+
+  isFiltersVisible = true;
+
+  /* ── Resizable sidebar ── */
+  private readonly SIDEBAR_KEY    = 'cv_offers_sidebar_width';
+  private readonly SIDEBAR_MIN    = 240;
+  private readonly SIDEBAR_MAX    = 480;
+  private readonly SIDEBAR_DEFAULT = 340;
+
+  sidebarWidth = this.SIDEBAR_DEFAULT;
+  isSidebarDragging = false;
+
+  private dragStartX     = 0;
+  private dragStartWidth = 0;
+  private readonly boundMove = this.onDragMove.bind(this);
+  private readonly boundEnd  = this.onDragEnd.bind(this);
+
+  onDragStart(event: MouseEvent): void {
+    event.preventDefault();
+    this.isSidebarDragging = true;
+    this.dragStartX     = event.clientX;
+    this.dragStartWidth = this.sidebarWidth;
+    document.addEventListener('mousemove', this.boundMove);
+    document.addEventListener('mouseup',   this.boundEnd);
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  private onDragMove(event: MouseEvent): void {
+    if (!this.isSidebarDragging) return;
+    const delta = event.clientX - this.dragStartX;
+    this.sidebarWidth = Math.min(
+      this.SIDEBAR_MAX,
+      Math.max(this.SIDEBAR_MIN, this.dragStartWidth + delta)
+    );
+    this.cdr.markForCheck();
+  }
+
+  private onDragEnd(): void {
+    this.isSidebarDragging = false;
+    document.removeEventListener('mousemove', this.boundMove);
+    document.removeEventListener('mouseup',   this.boundEnd);
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.SIDEBAR_KEY, String(this.sidebarWidth));
+    }
+  }
+
+  private loadSidebarWidth(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const raw = localStorage.getItem(this.SIDEBAR_KEY);
+    if (raw) {
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed)) {
+        this.sidebarWidth = Math.min(this.SIDEBAR_MAX, Math.max(this.SIDEBAR_MIN, parsed));
+      }
     }
   }
 
@@ -81,9 +146,26 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.loadSidebarWidth();
 
-    this.router.events.subscribe(() => {
+    this.router.events.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.cdr.markForCheck();
+    });
+
+    this.filtersTrigger$.pipe(
+      skip(1),
+      debounceTime(700),
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      this.updateUrl(value);
+      this.resetAndLoad(value);
+    });
+
+    this.searchTrigger$.pipe(
+      debounceTime(500),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      if (this.currentFilters) this.resetAndLoad(this.currentFilters);
     });
 
     this.route.queryParamMap
@@ -128,8 +210,8 @@ export class OffersComponent implements OnInit, OnDestroy {
       sites:     value.siteIds.length            ? value.siteIds            : null,
       loc:       value.locationIds.length        ? value.locationIds        : null,
       tech:      value.technologyIds.length      ? value.technologyIds      : null,
-      salFrom:   value.salaryFromIndex > 0       ? String(value.salaryFromIndex) : null,
-      salTo:     value.salaryToIndex < 25        ? String(value.salaryToIndex)   : null,
+      salFrom:   value.salaryFromIndex > 0                ? String(value.salaryFromIndex) : null,
+      salTo:     value.salaryToIndex < MAX_SALARY_INDEX   ? String(value.salaryToIndex)   : null,
     };
   }
 
@@ -184,24 +266,16 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   onFiltersChange(value: FiltersValue): void {
     this.currentFilters = value;
-    this.updateUrl(value);
     this.matchedOffers = this.computeMatchedOffers();
-  }
-
-  onApplyClicked(value: FiltersValue): void {
-    this.currentFilters = value;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: this.buildQueryParams(value),
-      queryParamsHandling: 'merge',
-    });
-    this.resetAndLoad(value);
+    this.filtersTrigger$.next(value);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.intersectionObserver?.disconnect();
+    document.removeEventListener('mousemove', this.boundMove);
+    document.removeEventListener('mouseup',   this.boundEnd);
   }
 
   loadMore(): void {
@@ -237,21 +311,20 @@ export class OffersComponent implements OnInit, OnDestroy {
     if (value.locationIds.length > 0) params.location_ids = value.locationIds;
     if (value.workTypeIds.length > 0) params.work_type_ids = value.workTypeIds;
     if (value.salaryFrom > 0) params.salary_from_min = value.salaryFrom;
-    if (value.salaryTo < 50000) params.salary_to_max = value.salaryTo;
+    if (value.salaryTo < MAX_SALARY) params.salary_to_max = value.salaryTo;
+    const q = this.searchQuery.trim();
+    if (q) params.title = q;
 
     this.jobOffersApi.getOffers(params).subscribe({
       next: (apiOffers) => {
         const mapped = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
         this.allOffers = isFirstPage ? mapped : [...this.allOffers, ...mapped];
         this.currentPage = page;
-        this.hasMore = apiOffers.length >= this.pageSize;
+        this.hasMore = apiOffers.length === this.pageSize;
         this.matchedOffers = this.computeMatchedOffers();
         this.isLoading = false;
         this.isLoadingMore = false;
         this.cdr.markForCheck();
-        if (this.hasMore && this.isSentinelVisible) {
-          setTimeout(() => this.loadMore(), 0);
-        }
       },
       error: () => {
         this.loadError = 'Nie udało się załadować ofert. Sprawdź czy backend jest uruchomiony.';
@@ -288,13 +361,17 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   get displayedOffers(): OfferViewModel[] {
-    const q = this.searchQuery.trim().toLowerCase();
-    if (!q) return this.matchedOffers;
-    return this.matchedOffers.filter(o =>
-      o.title.toLowerCase().includes(q) ||
-      o.company.toLowerCase().includes(q) ||
-      o.location.toLowerCase().includes(q)
-    );
+    return this.matchedOffers;
+  }
+
+  onSearchChange(query: string): void {
+    this.searchQuery = query;
+    this.searchTrigger$.next(query);
+  }
+
+  onSearchClear(): void {
+    this.searchQuery = '';
+    this.searchTrigger$.next('');
   }
 
   hasSalary(offer: OfferViewModel): boolean {
@@ -320,22 +397,7 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   getWorkModeLabel(mode: string): string {
-    return mode;
+    return this.filtersFormRef?.availableWorkTypes.find(w => w.id === mode)?.label ?? mode;
   }
 
-  isAuthenticated(): boolean {
-    return this.authService.isLoggedIn();
-  }
-
-  username(): string {
-    return this.authService.getUsername() ?? 'Użytkownik';
-  }
-
-  logout(): void {
-    this.authService.logout();
-  }
-
-  async login(): Promise<void> {
-    await this.authService.login();
-  }
 }

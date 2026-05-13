@@ -33,6 +33,7 @@ export class JobOffersApiService {
     salary_to_max?: number;
     skip?: number;
     limit?: number;
+    title?: string;
     technology_ids?: string[];
     specialization_ids?: string[];
     work_type_ids?: string[];
@@ -45,6 +46,7 @@ export class JobOffersApiService {
     if (params?.salary_to_max != null) httpParams = httpParams.set('salary_to_max', params.salary_to_max);
     if (params?.skip != null) httpParams = httpParams.set('skip', params.skip);
     if (params?.limit != null) httpParams = httpParams.set('limit', params.limit);
+    if (params?.title) httpParams = httpParams.set('title', params.title);
     for (const id of params?.technology_ids ?? []) httpParams = httpParams.append('technology_ids', id);
     for (const id of params?.specialization_ids ?? []) httpParams = httpParams.append('specialization_ids', id);
     for (const id of params?.work_type_ids ?? []) httpParams = httpParams.append('work_type_ids', id);

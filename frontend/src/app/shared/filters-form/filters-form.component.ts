@@ -6,7 +6,8 @@ import { forkJoin, of } from 'rxjs';
 import { LocationItem, LocationPickerComponent } from '../location-picker/location-picker.component';
 import { TechPickerComponent } from '../tech-picker/tech-picker.component';
 import { LookupsApiService } from '../../core/services/lookups-api.service';
-import { FiltersInitialState, FiltersValue } from './filters-form.types';
+import { CvApiService } from '../../core/services/cv-api.service';
+import { FiltersInitialState, FiltersValue, SALARY_OPTIONS, MAX_SALARY_INDEX } from './filters-form.types';
 
 type LookupItem = { key: string; label: string; id: string };
 
@@ -20,6 +21,7 @@ type LookupItem = { key: string; label: string; id: string };
 export class FiltersFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly lookupsApi = inject(LookupsApiService);
+  private readonly cvApi = inject(CvApiService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   @Input() initialFilters: FiltersInitialState | null = null;
@@ -39,17 +41,18 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   @Input() showTechnologies = true;
   @Input() showSites = true;
   @Input() singleExpLevelSelection = false;
+  @Input() showCvUpload = false;
+  @Input() techPickerMaxTags = 999;
+  /** Gdy true — każda sekcja filtrów ma nagłówek z chevronem do zwijania/rozwijania.
+   *  Domyślnie false — nie zmienia wyglądu na home ani profile. */
+  @Input() collapsibleSections = false;
 
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
   @Output() ready = new EventEmitter<FiltersValue>();
 
-  readonly salaryOptions = [
-    0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
-    13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000,
-    25000, 30000, 35000, 40000, 45000, 50000,
-  ];
-  readonly maxSalaryIndex = this.salaryOptions.length - 1;
+  readonly salaryOptions = SALARY_OPTIONS;
+  readonly maxSalaryIndex = MAX_SALARY_INDEX;
 
   availableRoles: LookupItem[] = [];
   availableTechs: LookupItem[] = [];
@@ -68,7 +71,15 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   showAllRoles = false;
   techPickerReady = false;
 
+  cvSelectedFile: File | null = null;
+  cvIsDragging = false;
+  cvIsScanning = false;
+  cvScanProgress = 0;
+  cvScanStatus = '';
+  cvScanComplete = false;
+
   ngOnInit(): void {
+    this.loadSectionState();
     forkJoin({
       techs: this.showTechnologies ? this.lookupsApi.getTechnologies() : of([]),
       specs: this.showRoles ? this.lookupsApi.getSpecializations() : of([]),
@@ -161,7 +172,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
     for (const s of this.availableSites) {
       jobSites[s.key] = jobSiteKeys !== undefined
         ? jobSiteKeys.includes(s.key)
-        : (init.jobSites?.[s.key] ?? false);
+        : (init.jobSites?.[s.key] ?? true);
     }
 
     const seniority: Record<string, boolean> = {};
@@ -174,7 +185,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
       workMode: this.fb.group(
         Object.fromEntries(this.availableWorkTypes.map(wt => [
           wt.id,
-          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? false)],
+          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? true)],
         ]))
       ),
       salaryFromIndex: [init.salaryFromIndex ?? 0],
@@ -308,6 +319,61 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   toggleCollapsed(): void {
     this.collapsed = !this.collapsed;
   }
+
+  private readonly LS_COLLAPSED = 'cv_filter_collapsed';
+  private readonly LS_EXPANDED  = 'cv_filter_expanded';
+
+  collapsedSections = new Set<string>();
+
+  toggleSection(name: string): void {
+    if (this.collapsedSections.has(name)) {
+      this.collapsedSections.delete(name);
+    } else {
+      this.collapsedSections.add(name);
+    }
+    this.saveSectionState();
+  }
+
+  isSectionCollapsed(name: string): boolean {
+    return this.collapsedSections.has(name);
+  }
+
+  readonly FILTER_LIMIT = 4;
+  expandedFilterSections = new Set<string>();
+
+  toggleFilterExpand(section: string, event: Event): void {
+    event.stopPropagation();
+    if (this.expandedFilterSections.has(section)) {
+      this.expandedFilterSections.delete(section);
+    } else {
+      this.expandedFilterSections.add(section);
+    }
+    this.saveSectionState();
+  }
+
+  isFilterExpanded(section: string): boolean {
+    return this.expandedFilterSections.has(section);
+  }
+
+  sliceItems<T>(items: T[], section: string): T[] {
+    return this.isFilterExpanded(section) ? items : items.slice(0, this.FILTER_LIMIT);
+  }
+
+  private saveSectionState(): void {
+    try {
+      localStorage.setItem(this.LS_COLLAPSED, JSON.stringify([...this.collapsedSections]));
+      localStorage.setItem(this.LS_EXPANDED,  JSON.stringify([...this.expandedFilterSections]));
+    } catch { /* ignore */ }
+  }
+
+  private loadSectionState(): void {
+    try {
+      const collapsed = localStorage.getItem(this.LS_COLLAPSED);
+      if (collapsed) this.collapsedSections = new Set(JSON.parse(collapsed));
+      const expanded = localStorage.getItem(this.LS_EXPANDED);
+      if (expanded) this.expandedFilterSections = new Set(JSON.parse(expanded));
+    } catch { /* ignore */ }
+  }
   onSingleExpLevelSelect(selectedId: string): void {
     const seniorityGroup = this.filtersForm?.get('seniority') as FormGroup | null;
     if (!seniorityGroup) return;
@@ -376,5 +442,58 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   }
   get seniorityGroup(): FormGroup {
     return this.filtersForm?.get('seniority') as FormGroup;
+  }
+
+  cvOnDragOver(e: DragEvent): void { e.preventDefault(); this.cvIsDragging = true; }
+  cvOnDragLeave(e: DragEvent): void { e.preventDefault(); this.cvIsDragging = false; }
+  cvOnDrop(e: DragEvent): void {
+    e.preventDefault(); this.cvIsDragging = false;
+    if (e.dataTransfer?.files.length) this.cvHandleFile(e.dataTransfer.files[0]);
+  }
+  cvOnFileSelected(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    if (input.files?.length) this.cvHandleFile(input.files[0]);
+  }
+  cvRemoveFile(ev: Event): void {
+    ev.stopPropagation();
+    this.cvSelectedFile = null;
+    this.cvScanComplete = false;
+    this.cdr.markForCheck();
+  }
+  private cvHandleFile(file: File): void {
+    const allowed = ['.pdf', '.doc', '.docx'];
+    if (!allowed.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!');
+      return;
+    }
+    this.cvSelectedFile = file;
+    this.cvAnalyze(file);
+  }
+  private cvAnalyze(file: File): void {
+    this.cvIsScanning = true; this.cvScanProgress = 0; this.cvScanStatus = 'Analiza CV...';
+    setTimeout(() => { this.cvScanProgress = 35; this.cdr.markForCheck(); }, 200);
+
+    this.cvApi.uploadCv(file).subscribe({
+      next: (techs) => {
+        this.cvScanProgress = 100; this.cvScanStatus = 'Zakończono!';
+        const selectedTechnologies = techs.map(t => ({ id: t.id, name: t.name }));
+        setTimeout(() => {
+          this.cvIsScanning = false;
+          this.cvScanComplete = true;
+          this.selectedTechnologies = selectedTechnologies;
+          this.filtersChange.emit(this.computeValue());
+          setTimeout(() => this.applyFilters(), 50);
+          this.cdr.markForCheck();
+        }, 150);
+      },
+      error: () => {
+        this.cvScanProgress = 100; this.cvScanStatus = 'Zakończono!';
+        setTimeout(() => {
+          this.cvIsScanning = false;
+          this.cvScanComplete = true;
+          this.cdr.markForCheck();
+        }, 150);
+      },
+    });
   }
 }

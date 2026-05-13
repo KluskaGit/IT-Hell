@@ -1,26 +1,4 @@
-<nav class="navbar">
-  <div class="nav-container">
-    <div class="logo">
-      <div class="logo-icon"></div>
-      <span>CV<span class="logo-accent">_ANALIZER</span></span>
-    </div>
-    <div class="nav-links">
-      <a href="#features">Jak to działa</a>
-      <a href="#about">O nas</a>
-    </div>
-    <div class="nav-auth" *ngIf="!isAuthenticated(); else loggedUserBlock">
-      <button class="btn-text">Masz już konto?</button>
-      <button class="btn-primary" type="button" (click)="login()">Zaloguj się</button>
-    </div>
-
-    <ng-template #loggedUserBlock>
-      <div class="nav-auth nav-auth-logged">
-        <a class="user-badge" routerLink="/profile">Cześć, {{ username() || 'Użytkownik' }}</a>
-        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
-      </div>
-    </ng-template>
-  </div>
-</nav>
+<app-navbar></app-navbar>
 
 <div class="background-glow">
   <div class="glow-1"></div>
@@ -30,9 +8,9 @@
 <div class="home-container">
 
   <section class="hero-section animate-up">
-    <span class="badge">Skaner Kompetencji</span>
+    <span class="badge">Agregator ofert IT</span>
     <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
-    <p>Przestań tracić czas na przeglądanie setek ofert. <strong>CV_ANALIZER</strong> przeanalizuje Twoje CV i wybierze tylko te ogłoszenia, które realnie pasują do Twoich umiejętności i oczekiwań.</p>
+    <p>Filtruj oferty IT z popularnych portali pracy po roli, technologiach, lokalizacji i widełkach. Wgraj CV — <strong>CV_ANALIZER</strong> wyciągnie z niego technologie i automatycznie ustawi filtry.</p>
   </section>
 
   <!-- CV upload card -->
@@ -46,7 +24,7 @@
           (drop)="onDrop($event)" (click)="fileInput.click()">
           <div class="dropzone-inner">
             <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            <span>Wgraj CV (PDF, DOC, DOCX) - AI automatycznie uzupełni dane</span>
+            <span>Wgraj CV (PDF, DOC, DOCX) — automatycznie wykryjemy Twoje technologie</span>
           </div>
         </button>
       </ng-container>
@@ -85,24 +63,30 @@
 
   <div class="actions-row animate-up delay-3">
     <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj dopasowanych ofert</button>
-    <button type="button" class="secondary-button" (click)="submitAndSignup()">Zapisz profil i załóż konto</button>
+
+    <ng-container *ngIf="isAuthenticated(); else guestBtn">
+      <button type="button" class="secondary-button" (click)="saveToProfileAndSearch()">Zapisz w profilu i szukaj</button>
+    </ng-container>
+    <ng-template #guestBtn>
+      <button type="button" class="secondary-button" (click)="submitAndSignup()">Zapisz profil i załóż konto</button>
+    </ng-template>
   </div>
 
   <section id="features" class="features-grid">
     <div class="feature-card animate-up delay-2">
       <div class="icon-box">🔍</div>
-      <h3>Smart Scraper</h3>
-      <p>Przeszukujemy ponad 50 portali z ofertami pracy co godzinę, abyś Ty nie musiał.</p>
+      <h3>Agregator ofert IT</h3>
+      <p>Cyklicznie pobieramy oferty z popularnych portali pracy IT — masz je w jednym miejscu, bez przeszukiwania wielu stron osobno.</p>
     </div>
     <div class="feature-card animate-up delay-3">
-      <div class="icon-box">🧠</div>
-      <h3>AI Analysis</h3>
-      <p>Nasz model rozumie kontekst Twojego doświadczenia, a nie tylko słowa kluczowe z CV.</p>
+      <div class="icon-box">📄</div>
+      <h3>Skaner CV</h3>
+      <p>Wgrane CV jest parsowane przez backend, który wyciąga z niego nazwy technologii i wstawia je do filtrów.</p>
     </div>
     <div class="feature-card animate-up delay-4">
-      <div class="icon-box">🎯</div>
-      <h3>Perfect Match</h3>
-      <p>Otrzymujesz tylko te oferty, które realnie Cię zainteresują i w których masz szanse.</p>
+      <div class="icon-box">🎛️</div>
+      <h3>Mocne filtry</h3>
+      <p>Rola, seniority, technologie (multi-select), lokalizacja, tryb pracy i widełki — wszystko aktualizowane w czasie rzeczywistym.</p>
     </div>
   </section>
 

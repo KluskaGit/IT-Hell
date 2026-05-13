@@ -1,0 +1,29 @@
+<nav class="navbar">
+  <div class="nav-container">
+
+    <a routerLink="/" class="logo">
+      <div class="logo-icon"></div>
+      <span>CV<span class="logo-accent">_ANALIZER</span></span>
+    </a>
+
+    <div class="nav-links">
+      <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{exact: true}">Strona główna</a>
+      <a routerLink="/offers" routerLinkActive="nav-active">Oferty pracy</a>
+    </div>
+
+    <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedInBlock">
+      <button type="button" class="btn-login" (click)="login()">Zaloguj się</button>
+    </div>
+
+    <ng-template #loggedInBlock>
+      <div class="nav-actions nav-actions--logged">
+        <a class="user-badge" routerLink="/profile">
+          <div class="user-avatar">{{ (username() || 'U')[0].toUpperCase() }}</div>
+          <span>{{ username() || 'Użytkownik' }}</span>
+        </a>
+        <button type="button" class="btn-logout" (click)="logout()">Wyloguj się</button>
+      </div>
+    </ng-template>
+
+  </div>
+</nav>

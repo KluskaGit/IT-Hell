@@ -158,17 +158,35 @@
 /* ═══════════════════════════════════════════════════
  * 4. LAYOUT
  * ═══════════════════════════════════════════════════ */
-.profile-container {
-  padding: 96px 1rem 3rem;
-  max-width: 1100px; margin: 0 auto;
+.profile-wrapper {
+  padding: 88px 1.25rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-.dashboard-grid {
+
+.profile-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin-top: 1.25rem;
+  gap: 1.5rem;
+  align-items: start;
 }
-.grid-col { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.profile-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-right {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .profile-grid { grid-template-columns: 340px 1fr; }
+}
+@media (min-width: 1024px) {
+  .profile-grid { grid-template-columns: 370px 1fr; }
+}
 
 
 /* ═══════════════════════════════════════════════════
@@ -238,24 +256,23 @@
 /* ═══════════════════════════════════════════════════
  * 6. HERO SECTION
  * ═══════════════════════════════════════════════════ */
-.hero-card { padding: 2rem; }
+.hero-card { padding: 2rem 2rem 1.75rem; }
 .hero-layout {
-  display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
 }
-.avatar-container { position: relative; flex-shrink: 0; }
+.avatar-container { position: relative; flex-shrink: 0; margin-bottom: 1rem; }
 .avatar {
-  width: 88px; height: 88px; border-radius: 50%;
+  width: 96px; height: 96px; border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-light), #ddd6fe);
   display: flex; align-items: center; justify-content: center;
   color: var(--primary);
-  box-shadow: 0 0 0 3px white, 0 8px 24px var(--primary-glow);
+  box-shadow: 0 0 0 4px white, 0 8px 28px var(--primary-glow);
   overflow: hidden;
 }
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-initials {
   font-size: 1.6rem; font-weight: 800; color: var(--primary);
-  letter-spacing: -0.05em; text-transform: uppercase;
-  user-select: none;
+  letter-spacing: -0.05em; text-transform: uppercase; user-select: none;
 }
 .avatar-edit-btn {
   position: absolute; bottom: 2px; right: -2px;
@@ -263,29 +280,40 @@
   background: var(--primary); color: white; border: 2.5px solid white;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: transform 0.2s, background 0.2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 2;
 }
 .avatar-edit-btn:hover { transform: scale(1.12); background: var(--primary-dark); }
-
-/* Pulse ring — gentle hint to upload photo */
 .avatar-pulse {
   position: absolute; inset: -6px; border-radius: 50%;
-  border: 2px solid var(--primary);
-  opacity: 0.3;
-  animation: avatarPulse 2.5s ease-in-out infinite;
-  pointer-events: none;
+  border: 2px solid var(--primary); opacity: 0.3;
+  animation: avatarPulse 2.5s ease-in-out infinite; pointer-events: none;
 }
 @keyframes avatarPulse {
   0%, 100% { transform: scale(1);   opacity: 0.3; }
   50%       { transform: scale(1.1); opacity: 0;   }
 }
 
-.hero-info { position: relative; z-index: 1; width: 100%; }
-.form-row {
-  display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;
+/* Identity display pod avatarem */
+.hero-identity {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  margin-bottom: 1.5rem; text-align: center;
 }
-.form-row--mt { margin-top: 1.5rem; }
+.hero-display-name {
+  font-size: 1.15rem; font-weight: 800; color: var(--text-main);
+  letter-spacing: -0.025em; line-height: 1.2;
+}
+.hero-display-email {
+  font-size: 0.8rem; color: var(--text-muted); font-weight: 500;
+}
+
+.hero-info {
+  position: relative; z-index: 1; width: 100%;
+  border-top: 1px solid rgba(226,232,240,0.65);
+  padding-top: 1.25rem;
+}
+.form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;
+}
 .input-group { display: flex; flex-direction: column; gap: 5px; }
 .input-group label {
   font-size: 0.78rem; font-weight: 700; color: var(--text-main);
@@ -298,13 +326,11 @@
 }
 .input-group input:focus, .styled-select:focus {
   outline: none; border-color: var(--primary);
-  background: #fff;
-  box-shadow: 0 0 0 3px var(--primary-glow);
+  background: #fff; box-shadow: 0 0 0 3px var(--primary-glow);
 }
 .input-readonly {
   background: rgba(241,245,249,0.8) !important;
-  color: var(--text-sub) !important;
-  cursor: not-allowed;
+  color: var(--text-sub) !important; cursor: not-allowed;
 }
 .input-error {
   border-color: var(--danger) !important;
@@ -314,9 +340,18 @@
   font-size: 0.75rem; font-weight: 600; color: var(--danger);
   display: flex; align-items: center; gap: 4px;
 }
-.field-hint {
-  font-size: 0.73rem; color: var(--text-muted);
+.field-hint { font-size: 0.73rem; color: var(--text-muted); }
+
+/* ── Alerty ── */
+.alert {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1rem; border-radius: var(--radius-md);
+  font-size: 0.83rem; font-weight: 600;
+  backdrop-filter: blur(8px);
 }
+.alert svg { flex-shrink: 0; }
+.alert-error  { background: rgba(254,242,242,.9); border: 1px solid #fecaca; color: #b91c1c; }
+.alert-success { background: rgba(240,253,244,.9); border: 1px solid #bbf7d0; color: #065f46; }
 
 
 /* ═══════════════════════════════════════════════════
@@ -674,9 +709,10 @@
 /* ═══════════════════════════════════════════════════
  * 14. BUTTONS
  * ═══════════════════════════════════════════════════ */
-.actions-row {
-  display: grid; grid-template-columns: 1fr;
-  gap: 1rem; margin-top: 1.25rem;
+.actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 .submit-button {
   position: relative; overflow: hidden;
@@ -770,24 +806,94 @@
 /* ═══════════════════════════════════════════════════
  * 17. RESPONSIVE
  * ═══════════════════════════════════════════════════ */
-@media (min-width: 640px) {
-  .form-row:not(.form-row--mt) { grid-template-columns: 1fr 1fr; }
-  .form-row--mt                { grid-template-columns: 1fr 1fr; }
-  .hero-layout { flex-direction: row; align-items: flex-start; }
-  .student-box { flex-direction: row; align-items: center; justify-content: space-between; }
-  .student-years-container { border-top: none; padding-top: 0; }
-  .actions-row { grid-template-columns: 1fr 1fr; }
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+  .hero-card { padding: 1.25rem; }
 }
 
 @media (min-width: 768px) {
-  .nav-links { display: flex; }
-  .nav-container { padding: 0 2rem; }
-  .profile-container { padding: 96px 2rem 3rem; }
-  .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .profile-wrapper { padding: 92px 2rem 3rem; }
 }
 
-@media (min-width: 1024px) {
-  .dashboard-grid { grid-template-columns: 5fr 7fr; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-up { animation: none; opacity: 1; }
+  .glow-1, .glow-2, .glow-3, .avatar-pulse { animation: none; }
+  .glass-card::before { display: none; }
+  .submit-button::after { display: none; }
+  * { transition-duration: 0.01s !important; }
+}
+
+
+/* ═══════════════════════════════════════════════════
+ * 19. PRAWA KOLUMNA — filtry rozciągnięte na pełną szerokość
+ * ═══════════════════════════════════════════════════ */
+
+/* Wszystkie sekcje (CV, exp level, tech) jako jedna kolumna */
+:host ::ng-deep .profile-right .summary-grid {
+  grid-template-columns: 1fr !important;
+}
+:host ::ng-deep .profile-right .summary-block {
+  grid-column: auto !important;
+}
+
+/* Karta filtrów wypełnia dostępną wysokość */
+:host ::ng-deep .profile-right .ff-card {
+  height: 100%;
+}
+
+/* Tech picker zajmuje pełną szerokość */
+:host ::ng-deep .profile-right .tp-field {
+  max-width: 100%;
+}
+
+
+/* ═══════════════════════════════════════════════════
+ * 20. PRZYWRÓCENIE ORYGINALNEGO STYLU PILLÓW
+ *     (nadpisuje nowy styl z filters-form globalnego CSS)
+ * ═══════════════════════════════════════════════════ */
+:host ::ng-deep .pill-content {
+  justify-content: center;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.9);
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  gap: 0.5rem;
+}
+
+/* Ukryj checkbox indicator — nie ma go na profilu */
+:host ::ng-deep .pill-content::before {
+  display: none;
+}
+
+:host ::ng-deep .pill-card:hover .pill-content {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+:host ::ng-deep .pill-card input:checked + .pill-content {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.2), 0 2px 8px var(--primary-glow);
+  font-weight: 700;
+}
+
+:host ::ng-deep .toggle-pill-btn {
+  border: 1px dashed #cbd5e1;
+  border-radius: 50px;
+  padding: 0.5rem 1.2rem;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+:host ::ng-deep .toggle-pill-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  border-style: dashed;
 }
 
 

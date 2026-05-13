@@ -14,10 +14,6 @@ async function initializeApp() {
 
   if (isPlatformBrowser(platformId)) {
     await authService.init();
-
-    console.log('KEYCLOAK LOGGED IN:', authService.isLoggedIn());
-    console.log('KEYCLOAK USER:', authService.getUsername());
-    console.log('KEYCLOAK TOKEN:', authService.getToken());
   }
 }
 

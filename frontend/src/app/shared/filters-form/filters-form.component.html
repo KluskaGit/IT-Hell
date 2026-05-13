@@ -15,185 +15,273 @@
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
-    <div class="summary-block full-width" *ngIf="showLocation">
-      <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
-      <app-location-picker
-        [locations]="availableLocations"
-        [selected]="selectedLocations"
-        (selectedChange)="onLocationsChange($event)">
-      </app-location-picker>
-    </div>
-
-    <div class="summary-block" formGroupName="seniority" *ngIf="showExpLevel">
-      <h3>Poziom doświadczenia</h3>
-      <div class="pills-container">
-        <label class="pill-card" *ngFor="let option of availableExpLevels">
-          <input
-            *ngIf="!singleExpLevelSelection"
-            type="checkbox"
-            [formControlName]="option.id">
-
-          <input
-            *ngIf="singleExpLevelSelection"
-            type="radio"
-            name="profile-exp-level"
-            [checked]="filtersForm?.get('seniority')?.get(option.id)?.value"
-            (change)="onSingleExpLevelSelect(option.id)">
-
-          <div class="pill-content">{{ option.label }}</div>
-        </label>
-      </div>
-    </div>
-
-    <div class="summary-block" formGroupName="workMode" *ngIf="showWorkMode">
-      <h3>Tryb pracy</h3>
-      <div class="pills-container">
-        <label class="pill-card" *ngFor="let mode of availableWorkTypes">
-          <input type="checkbox" [formControlName]="mode.id">
-          <div class="pill-content">{{ mode.label }}</div>
-        </label>
-      </div>
-    </div>
-
-    <div class="summary-block full-width" *ngIf="showSalary">
-      <h3>Widełki płacowe</h3>
-
-      <div class="salary-labels">
-        <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
-        <span class="salary-badge">
-          DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}
-        </span>
-      </div>
-
-      <div class="salary-range-slider">
-        <div
-          class="salary-progress-fill"
-          [style.width.%]="getSalaryProgressPercent()"
-          [style.left.%]="getSalaryProgressLeft()">
-        </div>
-
-        <input
-          type="range"
-          formControlName="salaryFromIndex"
-          min="0"
-          [max]="maxSalaryIndex"
-          step="1"
-          (input)="checkSalaryRange('from')"
-          class="salary-input">
-
-        <input
-          type="range"
-          formControlName="salaryToIndex"
-          min="0"
-          [max]="maxSalaryIndex"
-          step="1"
-          (input)="checkSalaryRange('to')"
-          class="salary-input">
-      </div>
-
-      <div class="range-markers">
-        <span>0 PLN</span>
-        <span>50 000+ PLN</span>
-      </div>
-    </div>
-
-    <div class="summary-block full-width" formGroupName="itArea" *ngIf="showRoles">
-      <h3>Główne role</h3>
-      <div class="pills-container">
-        <label class="pill-card" *ngFor="let role of getVisibleRoles()">
-          <input type="checkbox" [formControlName]="role.id">
-          <div class="pill-content">{{ role.label }}</div>
-        </label>
-
-        <button
-          *ngIf="availableRoles.length > 8"
-          type="button"
-          class="toggle-pill-btn"
-          (click)="showAllRoles = !showAllRoles">
-          {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+    <!-- ── CV UPLOAD ── -->
+    <div class="summary-block full-width cv-upload-block" *ngIf="showCvUpload">
+      <ng-container *ngIf="!collapsibleSections; else cvHeader">
+        <h3>Wgraj CV — AI uzupełni technologie</h3>
+      </ng-container>
+      <ng-template #cvHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('cv')">
+          <span>Wgraj CV</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('cv')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('cv')">
+        <div class="cv-upload-area" *ngIf="!cvScanComplete">
+          <ng-container *ngIf="!cvIsScanning">
+            <input type="file" #cvFileInput hidden accept=".pdf,.doc,.docx" (change)="cvOnFileSelected($event)">
+            <button type="button" class="cv-dropzone" [class.dragging]="cvIsDragging"
+              (dragover)="cvOnDragOver($event)" (dragleave)="cvOnDragLeave($event)"
+              (drop)="cvOnDrop($event)" (click)="cvFileInput.click()">
+              <div class="cv-dropzone-inner">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <span>Kliknij lub przeciągnij plik PDF, DOC, DOCX</span>
+              </div>
+            </button>
+          </ng-container>
+          <div class="cv-scanner" *ngIf="cvIsScanning">
+            <div class="cv-radar-box">
+              <div class="cv-radar-sweep" [class.radar-done]="cvScanProgress === 100"></div>
+              <svg viewBox="0 0 24 24" width="26" height="26" stroke="#6366f1" stroke-width="1.5" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <span class="cv-scan-status">{{ cvScanStatus }}</span>
+            <div class="cv-progress-bg"><div class="cv-progress-fill" [style.width.%]="cvScanProgress"></div></div>
+            <span class="cv-progress-pct">{{ cvScanProgress }}%</span>
+          </div>
+        </div>
+        <div class="cv-success" *ngIf="cvScanComplete">
+          <div class="cv-success-icon">✓</div>
+          <div class="cv-success-info">
+            <strong>{{ cvSelectedFile?.name }}</strong>
+            <span>Technologie z CV dodane do filtrów</span>
+          </div>
+          <button type="button" class="cv-remove-btn" (click)="cvRemoveFile($event)">Usuń</button>
+        </div>
       </div>
     </div>
 
+    <!-- ── LOKALIZACJA ── -->
+    <div class="summary-block full-width" *ngIf="showLocation">
+      <ng-container *ngIf="!collapsibleSections; else locHeader">
+        <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
+      </ng-container>
+      <ng-template #locHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('location')">
+          <span>Lokalizacja</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('location')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('location')">
+        <app-location-picker
+          [locations]="availableLocations"
+          [selected]="selectedLocations"
+          (selectedChange)="onLocationsChange($event)">
+        </app-location-picker>
+      </div>
+    </div>
+
+    <!-- ── DOŚWIADCZENIE ── -->
+    <div class="summary-block" formGroupName="seniority" *ngIf="showExpLevel">
+      <ng-container *ngIf="!collapsibleSections; else seniorityHeader">
+        <h3>Poziom doświadczenia</h3>
+      </ng-container>
+      <ng-template #seniorityHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('seniority')">
+          <span>Poziom doświadczenia</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('seniority')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('seniority')">
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let option of availableExpLevels">
+            <input *ngIf="!singleExpLevelSelection" type="checkbox" [formControlName]="option.id">
+            <input *ngIf="singleExpLevelSelection" type="radio" name="profile-exp-level"
+              [checked]="filtersForm.get('seniority')?.get(option.id)?.value"
+              (change)="onSingleExpLevelSelect(option.id)">
+            <div class="pill-content">{{ option.label }}</div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TRYB PRACY ── -->
+    <div class="summary-block" formGroupName="workMode" *ngIf="showWorkMode">
+      <ng-container *ngIf="!collapsibleSections; else workModeHeader">
+        <h3>Tryb pracy</h3>
+      </ng-container>
+      <ng-template #workModeHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('workMode')">
+          <span>Tryb pracy</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('workMode')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('workMode')">
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let mode of availableWorkTypes">
+            <input type="checkbox" [formControlName]="mode.id">
+            <div class="pill-content">{{ mode.label }}</div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WYNAGRODZENIE ── -->
+    <div class="summary-block full-width" *ngIf="showSalary">
+      <ng-container *ngIf="!collapsibleSections; else salaryHeader">
+        <h3>Widełki płacowe</h3>
+      </ng-container>
+      <ng-template #salaryHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('salary')">
+          <span>Wynagrodzenie</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('salary')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('salary')">
+        <div class="salary-labels">
+          <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
+          <span class="salary-badge">DO: {{ salaryToValue === 50000 ? '50 000+' : (salaryToValue | number:'1.0-0') }}</span>
+        </div>
+        <div class="salary-range-slider">
+          <div class="salary-progress-fill"
+            [style.width.%]="getSalaryProgressPercent()"
+            [style.left.%]="getSalaryProgressLeft()">
+          </div>
+          <input type="range" formControlName="salaryFromIndex" min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('from')" class="salary-input">
+          <input type="range" formControlName="salaryToIndex"   min="0" [max]="maxSalaryIndex" step="1" (input)="checkSalaryRange('to')"   class="salary-input">
+        </div>
+        <div class="range-markers">
+          <span>0 PLN</span>
+          <span>50 000+ PLN</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROLE ── -->
+    <div class="summary-block full-width" formGroupName="itArea" *ngIf="showRoles">
+      <ng-container *ngIf="!collapsibleSections; else rolesHeader">
+        <h3>Główne role</h3>
+      </ng-container>
+      <ng-template #rolesHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('roles')">
+          <span>Role / Specjalizacja</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('roles')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('roles')">
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let role of getVisibleRoles()">
+            <input type="checkbox" [formControlName]="role.id">
+            <div class="pill-content">{{ role.label }}</div>
+          </label>
+          <button *ngIf="availableRoles.length > 8" type="button" class="toggle-pill-btn" (click)="showAllRoles = !showAllRoles">
+            {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TECHNOLOGIE ── -->
     <div class="summary-block full-width" *ngIf="showTechnologies">
-      <h3>Technologie</h3>
-      <app-tech-picker
-        [technologies]="availableTechItems"
-        [selected]="selectedTechnologies"
-        (selectedChange)="onTechnologiesChange($event)">
-      </app-tech-picker>
-    </div>
-
-    <div class="summary-block full-width" formGroupName="jobSites" *ngIf="showSites">
-      <h3>Źródła ofert</h3>
-      <div class="pills-container">
-        <label class="pill-card" *ngFor="let site of availableSites">
-          <input type="checkbox" [formControlName]="site.key">
-          <div class="pill-content">{{ site.label }}</div>
-        </label>
+      <ng-container *ngIf="!collapsibleSections; else techHeader">
+        <h3>Technologie</h3>
+      </ng-container>
+      <ng-template #techHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('tech')">
+          <span>Technologie</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('tech')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('tech')">
+        <app-tech-picker
+          [technologies]="availableTechItems"
+          [selected]="selectedTechnologies"
+          [maxVisibleTags]="techPickerMaxTags"
+          (selectedChange)="onTechnologiesChange($event)">
+        </app-tech-picker>
       </div>
     </div>
 
+    <!-- ── ŹRÓDŁA ── -->
+    <div class="summary-block full-width" formGroupName="jobSites" *ngIf="showSites">
+      <ng-container *ngIf="!collapsibleSections; else sitesHeader">
+        <h3>Źródła ofert</h3>
+      </ng-container>
+      <ng-template #sitesHeader>
+        <button type="button" class="section-toggle-btn" (click)="toggleSection('sites')">
+          <span>Źródła ofert</span>
+          <svg class="section-chevron" [class.section-chevron--up]="!isSectionCollapsed('sites')"
+               viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </ng-template>
+      <div *ngIf="!collapsibleSections || !isSectionCollapsed('sites')">
+        <div class="pills-container">
+          <label class="pill-card" *ngFor="let site of availableSites">
+            <input type="checkbox" [formControlName]="site.key">
+            <div class="pill-content">{{ site.label }}</div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
     <div class="filters-footer" *ngIf="showApplyButton || collapsible">
       <div class="filters-footer-left"></div>
-
       <div class="filters-toggle-bottom" *ngIf="collapsible">
-        <button
-          type="button"
-          class="filters-toggle-btn filters-toggle-btn-bottom"
-          (click)="toggleCollapsed()"
-          [attr.aria-expanded]="!collapsed"
-          aria-label="Zwiń filtry"
-        >
-          <svg
-            class="filters-toggle-icon"
-            [class.rotated]="!collapsed"
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
+        <button type="button" class="filters-toggle-btn filters-toggle-btn-bottom"
+          (click)="toggleCollapsed()" [attr.aria-expanded]="!collapsed">
+          <svg class="filters-toggle-icon" [class.rotated]="!collapsed"
+               viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="6 9 12 15 18 9"/>
           </svg>
           <span>Zwiń filtry</span>
         </button>
       </div>
-
       <div class="filters-actions" *ngIf="showApplyButton">
-        <button type="button" class="btn-primary" (click)="applyFilters()">
-          {{ applyButtonLabel }}
-        </button>
+        <button type="button" class="btn-primary" (click)="applyFilters()">{{ applyButtonLabel }}</button>
       </div>
     </div>
+
   </div>
 
   <div class="filters-toggle-collapsed" *ngIf="collapsible && collapsed">
-    <button
-      type="button"
-      class="filters-toggle-btn filters-toggle-btn-bottom"
-      (click)="toggleCollapsed()"
-      [attr.aria-expanded]="!collapsed"
-      aria-label="Rozwiń filtry"
-    >
-      <svg
-        class="filters-toggle-icon"
-        viewBox="0 0 24 24"
-        width="16"
-        height="16"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
+    <button type="button" class="filters-toggle-btn filters-toggle-btn-bottom"
+      (click)="toggleCollapsed()" [attr.aria-expanded]="!collapsed">
+      <svg class="filters-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="6 9 12 15 18 9"/>
       </svg>
       <span>Rozwiń filtry</span>
     </button>
   </div>
+
 </section>
 }

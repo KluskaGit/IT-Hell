@@ -21,11 +21,17 @@ import { LocationItem } from '../location-picker/location-picker.component';
         </svg>
 
         <div class="tp-tags">
-          <span class="tp-tag" *ngFor="let item of selected">
+          <span class="tp-tag" *ngFor="let item of visibleTags">
             {{ item.name }}
             <button type="button" class="tp-tag-rm"
                     (click)="$event.stopPropagation(); remove(item.id)" title="Usuń">×</button>
           </span>
+          <!-- "+N więcej" badge -->
+          <button *ngIf="hiddenTagCount > 0" type="button" class="tp-more-badge"
+                  (click)="$event.stopPropagation(); showAllTags = true"
+                  title="Pokaż wszystkie technologie">
+            +{{ hiddenTagCount }}
+          </button>
           <input
             #inputEl
             class="tp-input"
@@ -86,159 +92,165 @@ import { LocationItem } from '../location-picker/location-picker.component';
   `,
   styles: [`
     :host { display: block; }
-
     .tp-wrap { position: relative; }
 
-    /* ── Field — identyczny styl jak location-picker ─ */
+    /* ── Field ── */
     .tp-field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      background: #ffffff;
-      cursor: text;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      min-height: 44px;
+      display: flex; align-items: center; gap: 7px;
+      padding: 0.48rem 0.75rem;
+      border: 1.5px solid #dde4f0; border-radius: 11px;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      min-height: 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      user-select: none;
     }
     .tp-field.tp-open {
       border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-      outline: none;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.14), 0 1px 4px rgba(0,0,0,.04);
+      background: rgba(255,255,255,.97);
     }
 
     .tp-field-icon {
-      width: 15px; height: 15px; flex-shrink: 0;
-      color: #94a3b8; transition: color 0.2s;
+      width: 14px; height: 14px; flex-shrink: 0;
+      color: #94a3b8; transition: color .2s;
     }
     .tp-field.tp-open .tp-field-icon { color: #6366f1; }
 
     .tp-chevron {
-      width: 14px; height: 14px; flex-shrink: 0;
-      color: #94a3b8; transition: transform 0.2s, color 0.2s;
+      width: 13px; height: 13px; flex-shrink: 0;
+      color: #94a3b8; transition: transform .22s, color .2s;
     }
     .tp-chevron-open { transform: rotate(180deg); color: #6366f1; }
 
-    /* Tags */
+    /* ── Tags ── */
     .tp-tags {
-      display: flex; flex-wrap: wrap;
-      align-items: center; gap: 5px;
-      flex: 1; min-width: 0;
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 4px; flex: 1; min-width: 0;
     }
 
     .tp-tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 8px 3px 10px;
-      border: 1px solid #6366f1;
-      border-radius: 50px;
-      background: #eef2ff;
-      color: #4f46e5;
-      font-size: 0.78rem; font-weight: 600;
-      white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 6px 2px 9px;
+      border: 1px solid #c7d2fe; border-radius: 999px;
+      background: #eef2ff; color: #4338ca;
+      font-size: 0.74rem; font-weight: 700;
+      white-space: nowrap; letter-spacing: .01em;
     }
-
     .tp-tag-rm {
       background: none; border: none; padding: 0; margin-left: 1px;
-      color: #818cf8; cursor: pointer;
-      font-size: 1rem; line-height: 1;
-      transition: color 0.15s;
+      color: #a5b4fc; cursor: pointer;
+      font-size: 0.95rem; line-height: 1; transition: color .15s;
     }
     .tp-tag-rm:hover { color: #ef4444; }
 
+    .tp-more-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 2px 8px;
+      border: 1.5px dashed #a5b4fc; border-radius: 999px;
+      background: transparent; color: #6366f1;
+      font-size: 0.7rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .tp-more-badge:hover { background: #eef2ff; border-color: #6366f1; }
+
+    /* ── Input ── */
     .tp-input {
       border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #1e293b;
-      padding: 2px 0; flex: 1; min-width: 100px; cursor: text;
+      font-size: 0.82rem; color: #1e293b; font-family: inherit;
+      padding: 2px 0; flex: 1; min-width: 80px; cursor: text;
     }
     .tp-input::placeholder { color: #94a3b8; }
 
-    /* Badge licznika */
+    /* ── Badge licznika ── */
     .tp-badge {
       display: inline-flex; align-items: center; justify-content: center;
-      min-width: 20px; height: 20px; padding: 0 6px;
-      background: #6366f1; color: #fff;
-      font-size: 0.7rem; font-weight: 800;
+      min-width: 19px; height: 19px; padding: 0 5px;
+      background: linear-gradient(135deg, #818cf8, #6366f1); color: #fff;
+      font-size: 0.68rem; font-weight: 800;
       border-radius: 99px; flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(99,102,241,.35);
     }
 
-    /* Przycisk wyczyść */
+    /* ── Clear ── */
     .tp-clear {
       display: flex; align-items: center; justify-content: center;
-      width: 20px; height: 20px; padding: 0; flex-shrink: 0;
-      background: #f1f5f9; border: 1px solid #e2e8f0;
+      width: 18px; height: 18px; padding: 0; flex-shrink: 0;
+      background: rgba(241,245,249,.8); border: 1px solid #e2e8f0;
       border-radius: 50%; color: #94a3b8;
-      cursor: pointer; transition: background 0.15s, color 0.15s;
+      cursor: pointer; transition: all .15s;
     }
     .tp-clear:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
 
-    /* ── Dropdown ──────────────────────────────── */
+    /* ── Dropdown ── */
     .tp-dropdown {
-      position: absolute;
-      left: 0; right: 0; z-index: 9999;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      box-shadow:
-        0 4px 6px -2px rgba(0, 0, 0, 0.05),
-        0 12px 30px -4px rgba(0, 0, 0, 0.12);
-      overflow-y: auto;
-      padding: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: #e2e8f0 transparent;
+      position: absolute; left: 0; right: 0; z-index: 9999;
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226,232,240,.9); border-radius: 13px;
+      box-shadow: 0 4px 6px -2px rgba(15,23,42,.05), 0 12px 32px -4px rgba(15,23,42,.12);
+      overflow-y: auto; padding: 5px;
+      scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent;
     }
     .tp-dropdown::-webkit-scrollbar { width: 4px; }
-    .tp-dropdown::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+    .tp-dropdown::-webkit-scrollbar-thumb { background: #dde4f0; border-radius: 99px; }
 
     .tp-dropdown:not(.tp-dropdown-up) {
       top: calc(100% + 6px);
-      animation: tp-fade-down 0.14s ease-out;
+      animation: tp-fade-down .15s ease-out;
     }
     .tp-dropdown-up {
       bottom: calc(100% + 6px);
-      animation: tp-fade-up 0.14s ease-out;
+      animation: tp-fade-up .15s ease-out;
     }
 
     @keyframes tp-fade-down {
-      from { opacity: 0; transform: translateY(-6px); }
+      from { opacity: 0; transform: translateY(-7px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes tp-fade-up {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(7px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Nagłówek dropdownu */
+    /* ── Nagłówek ── */
     .tp-dd-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 6px 10px 5px;
-      font-size: 0.7rem; font-weight: 700; color: #94a3b8;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid #f1f5f9; margin-bottom: 2px;
+      padding: 6px 11px 6px;
+      font-size: 0.68rem; font-weight: 800; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: .07em;
+      border-bottom: 1px solid rgba(226,232,240,.7); margin-bottom: 3px;
     }
     .tp-dd-count {
       background: #f1f5f9; color: #64748b;
-      font-size: 0.69rem; font-weight: 700;
+      font-size: 0.67rem; font-weight: 700;
       padding: 1px 7px; border-radius: 99px;
     }
 
     .tp-dd-empty {
-      padding: 10px 12px;
-      font-size: 0.83rem; color: #94a3b8; text-align: center;
+      padding: 12px; font-size: 0.8rem;
+      color: #94a3b8; text-align: center;
     }
 
-    /* Opcje */
+    /* ── Opcje ── */
     .tp-option {
       display: flex; align-items: center; gap: 8px;
-      width: 100%; padding: 8px 10px;
-      background: transparent; border: none; border-radius: 8px;
-      font-size: 0.875rem; color: #334155;
-      cursor: pointer; text-align: left;
-      transition: background 0.1s, color 0.1s;
+      width: 100%; padding: 7px 11px;
+      background: transparent; border: none; border-radius: 9px;
+      font-size: 0.82rem; font-weight: 500; color: #334155;
+      cursor: pointer; text-align: left; font-family: inherit;
+      transition: background .12s, color .12s;
     }
-    .tp-option:hover { background: #eef2ff; color: #4f46e5; }
+    .tp-option:hover {
+      background: linear-gradient(90deg, #eef2ff 0%, rgba(238,242,255,.3) 100%);
+      color: #4338ca;
+    }
     .tp-option:hover .tp-opt-icon { color: #6366f1; }
-    .tp-opt-icon { color: #cbd5e1; flex-shrink: 0; transition: color 0.1s; }
+    .tp-opt-icon { color: #c7d2fe; flex-shrink: 0; transition: color .12s; }
+    .tp-option :global(strong) { color: #4338ca; font-weight: 800; }
   `],
 })
 export class TechPickerComponent {
@@ -248,23 +260,34 @@ export class TechPickerComponent {
   @Input() selected: LocationItem[] = [];
   @Output() selectedChange = new EventEmitter<LocationItem[]>();
 
+  /** Max tagów widocznych bez rozwinięcia. 999 = pokaż wszystkie. */
+  @Input() maxVisibleTags = 999;
+
   @ViewChild('inputEl') private inputEl?: ElementRef<HTMLInputElement>;
 
   query = '';
   showDropdown = false;
   openUpward = false;
   dropdownMaxHeight = 260;
+  showAllTags = false;
+
+  get visibleTags(): LocationItem[] {
+    if (this.showAllTags || this.selected.length <= this.maxVisibleTags) {
+      return this.selected;
+    }
+    return this.selected.slice(0, this.maxVisibleTags);
+  }
+
+  get hiddenTagCount(): number {
+    if (this.showAllTags || this.selected.length <= this.maxVisibleTags) return 0;
+    return this.selected.length - this.maxVisibleTags;
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!(this.host.nativeElement as HTMLElement).contains(event.target as Node)) {
       this.close();
     }
-  }
-
-  @HostListener('window:scroll')
-  onScroll(): void {
-    if (this.showDropdown) this.close();
   }
 
   get filtered(): LocationItem[] {

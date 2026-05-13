@@ -1,167 +1,180 @@
-<nav class="navbar">
-  <div class="nav-container">
-    <a routerLink="/" class="logo">
-      <div class="logo-icon"></div>
-      <span>CV<span class="logo-accent">_ANALIZER</span></span>
-    </a>
+<app-navbar></app-navbar>
 
-    <div class="nav-links">
-      <a routerLink="/">Strona główna</a>
-      <a routerLink="/profile">Mój profil</a>
-    </div>
-
-    <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedUserBlock">
-      <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
-      <button type="button" class="btn-primary" (click)="login()">Zaloguj się</button>
-    </div>
-
-    <ng-template #loggedUserBlock>
-      <div class="nav-actions nav-auth-logged">
-        <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
-        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
-      </div>
-    </ng-template>
-  </div>
-</nav>
-
-<div class="background-glow">
-  <div class="glow-1"></div>
-  <div class="glow-2"></div>
+<div class="bg-glow" aria-hidden="true">
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
 </div>
 
-<div *ngIf="isLoading" class="loading-state">
-  <p>Ładowanie ofert...</p>
-</div>
-<div *ngIf="loadError" class="error-state">
-  <p>{{ loadError }}</p>
-</div>
+<!-- ══════════════════════════════════════════════════════
+     TOP BAR  — sticky below navbar, z-index 90
+     ══════════════════════════════════════════════════════ -->
+<div class="top-bar">
+  <div class="top-bar__inner">
 
-<div class="offers-page">
-  <section class="hero-section animate-up">
-    <span class="badge">Dopasowane oferty</span>
-    <h1>Oferty pracy dopasowane do <span class="text-gradient">Twojego profilu</span></h1>
-    <p>
-      Zmień filtry poniżej i wyszukaj oferty najlepiej pasujące do Twojego doświadczenia,
-      technologii i preferencji zawodowych.
-    </p>
-  </section>
-
-  <app-filters-form
-    class="animate-up delay-1"
-    [initialFilters]="initialFilters"
-    [collapsible]="true"
-    [showSummaryHeader]="true"
-    summaryHeading="Filtry"
-applyButtonLabel="Szukaj ofert"
-    (ready)="onFiltersReady($event)"
-    (filtersChange)="onFiltersChange($event)"
-    (applyClicked)="onApplyClicked($event)">
-  </app-filters-form>
-
-  <div class="searchbar-wrap animate-up delay-2">
-    <div class="searchbar-field" [class.searchbar-focused]="searchFocused">
-      <svg class="searchbar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        class="searchbar-input"
-        type="text"
-        placeholder="Szukaj po stanowisku, firmie lub lokalizacji…"
-        [(ngModel)]="searchQuery"
-        (focus)="searchFocused = true"
-        (blur)="searchFocused = false"
-        autocomplete="off">
-      <button *ngIf="searchQuery" type="button" class="searchbar-clear" (click)="searchQuery = ''" title="Wyczyść">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    <!-- Lewa część — szerokość identyczna jak sidebar; min. 160px żeby przycisk był zawsze widoczny -->
+    <div class="top-bar__sidebar-space"
+         [style.width.px]="isFiltersVisible ? sidebarWidth : 160"
+         [class.top-bar__sidebar-space--hidden]="!isFiltersVisible">
+      <button
+        type="button"
+        class="toggle-btn"
+        (click)="isFiltersVisible = !isFiltersVisible"
+        [class.toggle-btn--active]="isFiltersVisible"
+        title="{{ isFiltersVisible ? 'Ukryj filtry' : 'Pokaż filtry' }}">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
+          <line x1="4" y1="6"  x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
         </svg>
+        <span>{{ isFiltersVisible ? 'Ukryj filtry' : 'Filtry' }}</span>
       </button>
     </div>
-    <span class="searchbar-count" *ngIf="!isLoading">
-      {{ displayedOffers.length }} {{ displayedOffers.length === 1 ? 'oferta' : (displayedOffers.length < 5 ? 'oferty' : 'ofert') }}
-    </span>
+
+    <!-- Prawa część — wyrównana z obszarem ofert -->
+    <div class="top-bar__main-space">
+      <div class="searchbar" [class.searchbar--focused]="searchFocused">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="searchbar__input"
+          type="text"
+          placeholder="Stanowisko, firma, lokalizacja…"
+          [ngModel]="searchQuery"
+          (ngModelChange)="onSearchChange($event)"
+          (focus)="searchFocused = true"
+          (blur)="searchFocused = false"
+          autocomplete="off">
+        <button *ngIf="searchQuery" type="button" class="searchbar__clear" (click)="onSearchClear()">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
   </div>
+</div>
 
-  <section class="offers-list animate-up delay-3" *ngIf="displayedOffers.length > 0; else emptyState">
-    <article class="offer-card" *ngFor="let offer of displayedOffers">
-      <div class="offer-top-row">
-        <div class="offer-main-info">
-          <div class="company-logo">
-            {{ offer.company.charAt(0) }}
-          </div>
+<!-- ══════════════════════════════════════════════════════
+     WORKSPACE  — CSS Grid: sidebar | main
+     ══════════════════════════════════════════════════════ -->
+<div class="workspace" [class.workspace--no-sidebar]="!isFiltersVisible">
 
-          <div class="offer-heading">
-            <div class="offer-title-row">
-              <h2>{{ offer.title }}</h2>
+  <!-- ── SIDEBAR ── -->
+  <aside
+    class="sidebar"
+    [class.sidebar--hidden]="!isFiltersVisible"
+    [class.sidebar--dragging]="isSidebarDragging"
+    [style.width.px]="isFiltersVisible ? sidebarWidth : 0"
+    aria-label="Panel filtrów">
+
+    <!-- Drag handle — right edge -->
+    <div class="drag-handle" (mousedown)="onDragStart($event)" title="Przeciągnij aby zmienić szerokość">
+      <span class="drag-handle__dots"></span>
+    </div>
+
+    <div class="sidebar__inner">
+      <app-filters-form
+        [initialFilters]="initialFilters"
+        [showCvUpload]="true"
+        [showSummaryHeader]="false"
+        [showApplyButton]="false"
+        [collapsible]="false"
+        [collapsibleSections]="true"
+        [techPickerMaxTags]="3"
+        (ready)="onFiltersReady($event)"
+        (filtersChange)="onFiltersChange($event)">
+      </app-filters-form>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main" id="offers-scroll-area" #mainScroll>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="state-loading">
+      <div class="spinner"></div>
+      <span>Ładowanie ofert…</span>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="loadError && !isLoading" class="state-error">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ loadError }}
+    </div>
+
+    <!-- Offers -->
+    <section *ngIf="displayedOffers.length > 0; else emptyState">
+
+      <article class="offer-card" *ngFor="let offer of displayedOffers">
+
+        <div class="offer-card__header">
+          <div class="offer-card__logo">{{ offer.company.charAt(0) }}</div>
+
+          <div class="offer-card__content">
+            <div class="offer-card__title-row">
+              <h2 class="offer-card__title">{{ offer.title }}</h2>
+              <span class="offer-card__salary" [class.offer-card__salary--na]="!hasSalary(offer)">
+                <ng-container *ngIf="hasSalary(offer); else salNa">
+                  {{ offer.salaryMin | number:'1.0-0' }}–{{ offer.salaryMax | number:'1.0-0' }} PLN
+                </ng-container>
+                <ng-template #salNa>Nie podano</ng-template>
+              </span>
             </div>
 
-            <div class="offer-meta">
-              <span>{{ offer.company }}</span>
-              <span>•</span>
+            <div class="offer-card__meta">
+              <span class="offer-card__company">{{ offer.company }}</span>
+              <span class="dot">·</span>
               <span>{{ offer.location }}</span>
-              <span>•</span>
+              <span class="dot">·</span>
               <span>{{ getWorkModeLabel(offer.workMode) }}</span>
-              <span>•</span>
+              <span class="dot">·</span>
               <span>{{ formatSource(offer.source) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="offer-salary-box">
-          <strong *ngIf="hasSalary(offer); else noSalary">
-            {{ offer.salaryMin | number:'1.0-0' }} – {{ offer.salaryMax | number:'1.0-0' }} PLN
-          </strong>
-          <ng-template #noSalary><strong>Nie podano</strong></ng-template>
-          <span>{{ offer.postedLabel }}</span>
-        </div>
-      </div>
+        <p class="offer-card__desc">{{ offer.description }}</p>
 
-      <p class="offer-description">
-        {{ offer.description }}
-      </p>
-
-      <div class="offer-section" *ngIf="offer.matchedRoles.length > 0">
-        <h3>Pasujące role</h3>
-        <div class="chip-list">
-          <span class="chip chip-role" *ngFor="let role of offer.matchedRoles">
-            {{ formatRole(role) }}
-          </span>
-        </div>
-      </div>
-
-      <div class="offer-section">
-        <h3>Technologie</h3>
-        <div class="chip-list">
-          <span
-            class="chip"
-            [ngClass]="{ 'chip-highlight': offer.matchedTech.includes(tech) }"
+        <div class="offer-card__tags">
+          <span class="tag tag--role"  *ngFor="let role of offer.matchedRoles">{{ formatRole(role) }}</span>
+          <span class="tag" [class.tag--match]="offer.matchedTech.includes(tech)"
             *ngFor="let tech of offer.technologies; let i = index">
             {{ offer.technologyNames[i] || formatTech(tech) }}
           </span>
         </div>
-      </div>
 
-      <div class="offer-actions">
-        <button type="button" class="btn-outline">Zapisz ofertę</button>
-        <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">Zobacz ofertę</button>
-      </div>
-    </article>
+        <div class="offer-card__footer">
+          <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">
+            Otwórz ofertę
+            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </div>
 
-    <div #scrollSentinel class="scroll-sentinel">
-      <div class="loading-more-indicator" *ngIf="isLoadingMore">
-        <div class="spinner"></div>
-        <span>Ładowanie ofert...</span>
-      </div>
-    </div>
-  </section>
+      </article>
 
-  <ng-template #emptyState>
-    <section class="empty-state animate-up delay-2" *ngIf="!isLoading">
-      <div class="empty-icon">🔎</div>
-      <h2>Brak ofert spełniających aktualne kryteria</h2>
-      <p>
-        Spróbuj poszerzyć widełki, zaznaczyć więcej ról i technologii.
-      </p>
+      <div #scrollSentinel class="scroll-sentinel">
+        <div *ngIf="isLoadingMore" class="state-loading state-loading--sm">
+          <div class="spinner"></div>
+          <span>Ładowanie kolejnych…</span>
+        </div>
+      </div>
     </section>
-  </ng-template>
+
+    <ng-template #emptyState>
+      <div class="state-empty" *ngIf="!isLoading">
+        <span class="state-empty__icon">🔍</span>
+        <h3>Brak pasujących ofert</h3>
+        <p>Rozszerz kryteria lub wgraj CV, aby AI dobrało filtry za Ciebie.</p>
+      </div>
+    </ng-template>
+
+  </main>
 </div>

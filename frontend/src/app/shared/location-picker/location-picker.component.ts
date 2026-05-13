@@ -63,150 +63,113 @@ export interface LocationItem {
   `,
   styles: [`
     :host { display: block; position: relative; }
-
     .lp-root { position: relative; }
 
-    /* ── pole ── */
+    /* ── Field ── */
     .lp-field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      background: #ffffff;
+      display: flex; align-items: center; gap: 7px;
+      padding: 0.48rem 0.75rem;
+      border: 1.5px solid #dde4f0;
+      border-radius: 11px;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       cursor: text;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      min-height: 44px;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      min-height: 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
     }
     .lp-field.lp-focused {
       border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-      outline: none;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.14), 0 1px 4px rgba(0,0,0,.04);
+      background: rgba(255,255,255,.97);
     }
 
     .lp-pin {
-      width: 15px;
-      height: 15px;
-      flex-shrink: 0;
-      color: #94a3b8;
-      transition: color 0.2s;
+      width: 14px; height: 14px; flex-shrink: 0;
+      color: #94a3b8; transition: color .2s;
     }
     .lp-field.lp-focused .lp-pin { color: #6366f1; }
 
     .lp-tags {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 5px;
-      flex: 1;
-      min-width: 0;
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 4px; flex: 1; min-width: 0;
     }
 
-    /* chipsy — styl jak .pill-card:checked */
+    /* ── Tags ── */
     .lp-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px 3px 10px;
-      border: 1px solid #6366f1;
-      border-radius: 50px;
-      background: #eef2ff;
-      color: #4f46e5;
-      font-size: 0.78rem;
-      font-weight: 600;
-      white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 6px 2px 9px;
+      border: 1px solid #c7d2fe; border-radius: 999px;
+      background: #eef2ff; color: #4338ca;
+      font-size: 0.74rem; font-weight: 700;
+      white-space: nowrap; letter-spacing: .01em;
     }
     .lp-tag-x {
-      background: none;
-      border: none;
-      padding: 0;
-      margin-left: 1px;
-      color: #818cf8;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      transition: color 0.15s;
+      background: none; border: none; padding: 0; margin-left: 1px;
+      color: #a5b4fc; cursor: pointer;
+      font-size: 0.95rem; line-height: 1; transition: color .15s;
     }
     .lp-tag-x:hover { color: #ef4444; }
 
-    /* input w polu */
+    /* ── Input ── */
     .lp-input {
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 0.9rem;
-      color: #1e293b;
-      padding: 2px 0;
-      flex: 1;
-      min-width: 140px;
+      border: none; outline: none; background: transparent;
+      font-size: 0.82rem; color: #1e293b; font-family: inherit;
+      padding: 2px 0; flex: 1; min-width: 120px;
     }
     .lp-input::placeholder { color: #94a3b8; }
 
-    /* przycisk wyczyść */
+    /* ── Clear ── */
     .lp-clear {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      padding: 0;
-      flex-shrink: 0;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-      border-radius: 50%;
-      color: #94a3b8;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; padding: 0; flex-shrink: 0;
+      background: rgba(241,245,249,.8); border: 1px solid #e2e8f0;
+      border-radius: 50%; color: #94a3b8;
+      cursor: pointer; transition: all .15s;
     }
     .lp-clear:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
 
-    /* ── dropdown ── */
+    /* ── Dropdown ── */
     .lp-dropdown {
       position: absolute;
-      top: calc(100% + 5px);
-      left: 0;
-      right: 0;
-      z-index: 300;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.1), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
-      overflow: hidden;
-      padding: 4px;
+      top: calc(100% + 5px); left: 0; right: 0; z-index: 300;
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226,232,240,.9);
+      border-radius: 13px;
+      box-shadow: 0 4px 6px -2px rgba(15,23,42,.05), 0 12px 32px -4px rgba(15,23,42,.12);
+      overflow: hidden; padding: 5px;
+      animation: lp-fade .15s ease-out;
+    }
+
+    @keyframes lp-fade {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .lp-no-results {
-      padding: 10px 14px;
-      font-size: 0.82rem;
-      color: #94a3b8;
+      padding: 10px 13px; font-size: 0.8rem;
+      color: #94a3b8; text-align: center;
     }
 
+    /* ── Options ── */
     .lp-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding: 8px 12px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      color: #334155;
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.1s, color 0.1s;
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 7px 11px;
+      background: transparent; border: none; border-radius: 9px;
+      font-size: 0.82rem; font-weight: 500; color: #334155;
+      cursor: pointer; text-align: left; font-family: inherit;
+      transition: background .12s, color .12s;
     }
     .lp-option:hover {
-      background: #eef2ff;
-      color: #4f46e5;
+      background: linear-gradient(90deg, #eef2ff 0%, rgba(238,242,255,.3) 100%);
+      color: #4338ca;
     }
     .lp-option:hover .lp-option-pin { color: #6366f1; }
-
-    .lp-option-pin { color: #cbd5e1; flex-shrink: 0; transition: color 0.1s; }
-
-    /* podświetlenie dopasowania */
-    .lp-option :global(strong) { color: #4f46e5; font-weight: 700; }
+    .lp-option-pin { color: #c7d2fe; flex-shrink: 0; transition: color .12s; }
+    .lp-option :global(strong) { color: #4338ca; font-weight: 800; }
   `]
 })
 export class LocationPickerComponent {
