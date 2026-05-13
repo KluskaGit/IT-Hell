@@ -1,4 +1,4 @@
-import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -34,6 +34,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   savedFilters: FiltersInitialState | null = null;
   private currentFilterValue: FiltersValue | null = null;
 
+  isProfileLoading = true;
   isSaving = false;
   loadError: string | null = null;
   saveError: string | null = null;
@@ -46,6 +47,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private readonly fb: FormBuilder,
     private readonly authService: AuthService,
     private readonly userApi: UserApiService,
+    private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -84,6 +86,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Błąd podczas pobierania danych użytkownika:', error);
       this.loadError = 'Nie udało się pobrać danych profilu z backendu.';
+      this.savedFilters = { selectedTechnologies: [], technologies: {}, seniority: {} };
+    } finally {
+      this.isProfileLoading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -205,6 +211,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.saveError = 'Nie udało się zapisać profilu.';
     } finally {
       this.isSaving = false;
+      this.cdr.markForCheck();
     }
   }
 

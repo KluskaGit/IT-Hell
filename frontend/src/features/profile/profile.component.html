@@ -86,7 +86,14 @@
 
     <!-- ══ PRAWA KOLUMNA: preferencje ══ -->
     <div class="profile-right animate-up delay-1">
+
+      <div *ngIf="isProfileLoading" class="profile-loading">
+        <div class="profile-loading__spinner"></div>
+        <span>Ładowanie profilu…</span>
+      </div>
+
       <app-filters-form
+        *ngIf="!isProfileLoading"
         [initialFilters]="savedFilters"
         [showApplyButton]="false"
         summaryHeading="Preferencje i umiejętności"
@@ -102,6 +109,7 @@
         [showCvUpload]="true"
         (filtersChange)="onFiltersChange($event)">
       </app-filters-form>
+
     </div>
 
   </div>
