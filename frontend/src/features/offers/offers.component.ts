@@ -323,19 +323,9 @@ export class OffersComponent implements OnInit, OnDestroy {
     return mode;
   }
 
-  isAuthenticated(): boolean {
-    return this.authService.isLoggedIn();
-  }
+  get isAuthenticated() { return this.authService.isAuthenticated; }
+  get username() { return this.authService.username; }
 
-  username(): string {
-    return this.authService.getUsername() ?? 'Użytkownik';
-  }
-
-  logout(): void {
-    this.authService.logout();
-  }
-
-  async login(): Promise<void> {
-    await this.authService.login();
-  }
+  async logout(): Promise<void> { await this.authService.logout(); }
+  async login(): Promise<void> { await this.authService.login(); }
 }
