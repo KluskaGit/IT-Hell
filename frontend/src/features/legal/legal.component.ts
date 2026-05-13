@@ -41,7 +41,7 @@ export class LegalComponent implements OnInit {
       number: '03',
       icon: '💼',
       title: 'Przeglądaj oferty',
-      desc: 'Lista ofert z portalu Pracuj.pl ładuje się płynnie przez infinite scroll. Możesz zawęzić wyniki przez wyszukiwarkę po stanowisku, firmie lub lokalizacji.',
+      desc: 'Lista ofert z popularnych portali pracy ładuje się płynnie przez infinite scroll. Możesz zawęzić wyniki przez wyszukiwarkę po stanowisku, firmie lub lokalizacji.',
     },
     {
       number: '04',
@@ -62,11 +62,11 @@ export class LegalComponent implements OnInit {
 
   readonly faq = [
     { q: 'Czy korzystanie z serwisu jest bezpłatne?', a: 'Tak — pełna funkcjonalność serwisu jest darmowa, bez ukrytych opłat ani limitów.' },
-    { q: 'Skąd pochodzą oferty?', a: 'Aktualnie scrapujemy wyłącznie portal Pracuj.pl (sekcja IT). Architektura jest gotowa na podpięcie kolejnych źródeł — to nasz plan na rozbudowę.' },
+    { q: 'Skąd pochodzą oferty?', a: 'Agregujemy oferty z popularnych portali pracy IT. Lista źródeł jest stale rozszerzana.' },
     { q: 'Co dokładnie robi się z moim CV?', a: 'Plik jest wysyłany do backendu, który wyciąga z niego nazwy technologii i odsyła je do frontu. Po zapisaniu profilu sam plik nie jest przechowywany — w bazie zostaje tylko lista wykrytych technologii.' },
     { q: 'Czy moje CV jest widoczne dla pracodawców?', a: 'Nie. CV nie trafia do nikogo poza Tobą — pracodawcy widzą Cię dopiero gdy sam zaaplikujesz przez przycisk "Otwórz ofertę".' },
     { q: 'Czy mogę korzystać bez konta?', a: 'Tak — strona ofert działa w pełni dla gości. Konto jest potrzebne tylko żeby zapisać profil (technologie + seniority) i mieć je dostępne między sesjami.' },
-    { q: 'Jak często pojawiają się nowe oferty?', a: 'Scraper można uruchomić ręcznie lub w cron jobie. Oferty trafiają do bazy przez kolejkę Redis i są od razu widoczne na liście.' },
+    { q: 'Jak często pojawiają się nowe oferty?', a: 'Oferty są regularnie aktualizowane i od razu widoczne na liście.' },
   ];
 
   expandedFaq: number | null = null;

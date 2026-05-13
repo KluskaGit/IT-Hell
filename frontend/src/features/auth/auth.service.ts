@@ -86,6 +86,18 @@ export class AuthService {
     });
   }
 
+  async register(redirectPath?: string): Promise<void> {
+    if (!this.keycloak) {
+      await this.init();
+    }
+
+    const redirectUri = redirectPath
+      ? `${window.location.origin}${redirectPath}`
+      : window.location.href;
+
+    await this.keycloak?.register({ redirectUri });
+  }
+
   async logout(): Promise<void> {
     this.stopTokenRefresh();
     this.isAuthenticated.set(false);
@@ -117,9 +129,6 @@ export class AuthService {
         const refreshed = await this.keycloak.updateToken(minValidity);
         this.updateAuthState();
 
-        if (refreshed) {
-        console.log('Access token został odświeżony.');
-        }
 
         return true;
     } catch (error) {
