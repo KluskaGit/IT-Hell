@@ -7,7 +7,7 @@ COPY pyproject.toml ./
 
 RUN uv sync
 
-COPY /pracuj_pl ./pracuj_pl
+COPY /src ./src
 COPY main.py ./
 
 ENTRYPOINT ["uv", "run", "main.py"]

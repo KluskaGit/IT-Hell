@@ -9,10 +9,10 @@ from logging import Logger
 
 from curl_cffi.requests import AsyncSession
 
-from pracuj_pl.core.redis import redis_connect
-from pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
-from pracuj_pl.schemas import JobOffer
-from pracuj_pl.helpers import html_to_json
+from src.core.redis import redis_connect
+from src.pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
+from src.pracuj_pl.schemas import JobOffer
+from src.pracuj_pl.helpers import html_to_json
 
 DATA_PATH = "pracuj_pl/data"
 

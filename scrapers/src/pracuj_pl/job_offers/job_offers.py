@@ -1,7 +1,7 @@
 from typing import Dict, List, Any
 
-from pracuj_pl.helpers import extract_query
-from pracuj_pl.schemas import JobOffer
+from src.pracuj_pl.helpers import extract_query
+from src.pracuj_pl.schemas import JobOffer
 
 
 def extract_job_offers(next_data: Dict) -> List[JobOffer]:
