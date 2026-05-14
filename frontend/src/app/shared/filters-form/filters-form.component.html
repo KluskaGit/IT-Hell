@@ -15,7 +15,9 @@
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
-    <div class="summary-block full-width" *ngIf="showProfileFillButton">
+    <div
+      class="summary-block full-width"
+      *ngIf="showProfileFillButton && profileFillButtonPosition === 'top'">
       <div class="filters-profile-fill-row">
         <button
           type="button"
@@ -122,6 +124,19 @@
           class="toggle-pill-btn"
           (click)="showAllRoles = !showAllRoles">
           {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="summary-block full-width"
+      *ngIf="showProfileFillButton && profileFillButtonPosition === 'above-technologies'">
+      <div class="filters-profile-fill-row">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="onProfileFillClick()">
+          {{ profileFillButtonLabel }}
         </button>
       </div>
     </div>

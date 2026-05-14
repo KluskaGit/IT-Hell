@@ -42,6 +42,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   @Input() singleExpLevelSelection = false;
   @Input() showProfileFillButton = false;
   @Input() profileFillButtonLabel = 'Uzupełnij z profilu';
+  @Input() profileFillButtonPosition: 'top' | 'above-technologies' = 'top';
 
   @Output() profileFillClicked = new EventEmitter<void>();
   @Output() filtersChange = new EventEmitter<FiltersValue>();

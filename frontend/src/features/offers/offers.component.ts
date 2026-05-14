@@ -5,12 +5,14 @@ import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router'
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
+
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import {
   JobOffersApiService, MappedOffer,
 } from '../../app/core/services/job-offers-api.service';
 import { AuthService } from '../auth/auth.service';
+import { UserApiService } from '../../app/core/services/user-api.service';
 
 const STORAGE_KEY = 'cv_analizer_candidate_filters';
 
@@ -35,6 +37,7 @@ export class OffersComponent implements OnInit, OnDestroy {
   private readonly jobOffersApi = inject(JobOffersApiService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly authService = inject(AuthService);
+  private readonly userApi = inject(UserApiService);
 
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
@@ -337,5 +340,34 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   async login(): Promise<void> {
     await this.authService.login();
+  }
+
+  async fillFromProfile(): Promise<void> {
+    if (!this.isAuthenticated()) return;
+
+    try {
+      const profile = await this.userApi.getMyProfile();
+
+      const selectedTechnologies = profile.technologies.map(t => ({
+        id: t.id,
+        name: t.name,
+      }));
+
+      const expLevelId = profile.exp_level?.id ?? '';
+
+      const nextFilters: FiltersInitialState = {
+        ...(this.currentFilters ?? this.initialFilters ?? {}),
+        selectedTechnologies,
+        technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+        seniority: expLevelId ? { [expLevelId]: true } : {},
+      };
+
+      this.initialFilters = nextFilters;
+      this.currentFilters = this.filtersFormRef?.computeValue() ?? this.currentFilters;
+
+      this.filtersFormRef?.patchValue(nextFilters);
+    } catch (error) {
+      console.error('Nie udało się uzupełnić filtrów z profilu:', error);
+    }
   }
 }

@@ -53,7 +53,11 @@
     [initialCollapsed]="true"
     [showSummaryHeader]="true"
     summaryHeading="Filtry"
-applyButtonLabel="Szukaj ofert"
+    applyButtonLabel="Szukaj ofert"
+    [showProfileFillButton]="isAuthenticated()"
+    profileFillButtonLabel="Uzupełnij z profilu"
+    [profileFillButtonPosition]="'above-technologies'"
+    (profileFillClicked)="fillFromProfile()"
     (ready)="onFiltersReady($event)"
     (filtersChange)="onFiltersChange($event)"
     (applyClicked)="onApplyClicked($event)">
