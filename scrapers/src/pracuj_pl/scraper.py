@@ -12,7 +12,7 @@ from curl_cffi.requests import AsyncSession
 from src.core.redis import redis_connect
 from src.pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
 from src.schemas import JobOffer
-from src.pracuj_pl.helpers import html_to_json
+from src.helpers import html_to_json
 
 DATA_PATH = "pracuj_pl/data"
 

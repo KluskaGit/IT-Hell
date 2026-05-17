@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 
-from src.pracuj_pl.helpers import extract_query
+from src.helpers import extract_query
 from src.schemas import JobOffer
 
 
