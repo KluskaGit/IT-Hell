@@ -20,6 +20,7 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
         else:
             url = ""
         entity = JobOffer(
+            site="Pracuj.pl",
             title=offer.get("jobTitle", "No title").strip(),
             technologies=offer.get("technologies", [no_record]),
             company=offer.get("companyName",no_record).strip(),
