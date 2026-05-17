@@ -11,6 +11,16 @@
 
   <div *ngIf="showSummaryHeader" class="summary-header summary-header-collapsible">
     <h2>{{ summaryHeading }}</h2>
+
+    <div class="summary-header-actions">
+      <button
+        *ngIf="showProfileFillButton && profileFillButtonPosition === 'header-right'"
+        type="button"
+        class="secondary-button profile-fill-header-btn"
+        (click)="onProfileFillClick()">
+        {{ profileFillButtonLabel }}
+      </button>
+    </div>
   </div>
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">

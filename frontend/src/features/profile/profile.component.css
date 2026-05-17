@@ -514,6 +514,10 @@
   margin-top: 4.15rem;
 }
 
+.actions-row.actions-row-with-feedback {
+  margin-top: 0.9rem;
+}
+
 .submit-button {
   position: relative;
   overflow: hidden;
@@ -603,6 +607,32 @@
 
 .delay-4 {
   animation-delay: 0.28s;
+}
+
+.profile-feedback {
+  max-width: 1030px;
+  margin: 0.75rem auto 0;
+}
+
+.profile-feedback-box {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 16px -12px rgba(0, 0, 0, 0.08);
+}
+
+.profile-feedback-box.success {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.profile-feedback-box.error {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #991b1b;
 }
 
 @keyframes fadeInUp {

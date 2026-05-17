@@ -125,7 +125,19 @@
     (filtersChange)="onFiltersChange($event)">
   </app-filters-form>
 
-  <div class="actions-row animate-up delay-3">
+  <div class="profile-feedback" *ngIf="saveSuccess || saveError">
+    <div class="profile-feedback-box success" *ngIf="saveSuccess">
+      {{ saveSuccess }}
+    </div>
+
+    <div class="profile-feedback-box error" *ngIf="saveError">
+      {{ saveError }}
+    </div>
+  </div>
+
+  <div
+    class="actions-row animate-up delay-3"
+    [class.actions-row-with-feedback]="saveSuccess || saveError">
     <button type="button" class="submit-button" (click)="onSave()">
       <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Zapisz zmiany

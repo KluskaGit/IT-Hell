@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -52,6 +52,7 @@ export class ProfileComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly userApi: UserApiService,
     private readonly cvApi: CvApiService,
+    private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -302,11 +303,14 @@ export class ProfileComponent implements OnInit {
 
       this.patchProfileData(savedProfile);
       this.saveSuccess = 'Profil został zapisany.';
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Błąd podczas zapisu profilu:', error);
       this.saveError = 'Nie udało się zapisać profilu.';
+      this.cdr.detectChanges();
     } finally {
       this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 
