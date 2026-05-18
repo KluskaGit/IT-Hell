@@ -70,5 +70,4 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
     if salary:
         job_offer.salary_from = salary.get("from")
         job_offer.salary_to = salary.get("to")
-    job_offer.description = "None"
 
