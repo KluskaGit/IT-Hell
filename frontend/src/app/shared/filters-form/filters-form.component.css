@@ -489,32 +489,124 @@
   }
 }
 
+/* Profile fill button styles - home */
+.summary-block:has(.filters-profile-fill-row) {
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+}
+
 .filters-profile-fill-row {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 0.25rem;
 }
 
 .filters-profile-fill-row .secondary-button {
-  min-height: 42px;
-  padding: 0.7rem 1rem;
-  border-radius: 10px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.82rem;
+  font-weight: 700;
   white-space: nowrap;
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .filters-profile-fill-row .secondary-button:hover {
+  background: #e0e7ff;
   border-color: #6366f1;
-  color: #4f46e5;
-  background: #eef2ff;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
   transform: translateY(-1px);
 }
 
 .filters-profile-fill-row .secondary-button:active {
   transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Profile fill button — top position (no gray box) */
+.profile-fill-top-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.profile-fill-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.profile-fill-top-btn:hover {
+  background: #e0e7ff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
+}
+
+.profile-fill-top-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Profile fill button styles - header right */
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.profile-fill-header-btn {
+  background: #ffffff;
+  color: #4338ca;
+  border: 2px solid #e0e7ff;
+  padding: 1.2rem;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.profile-fill-header-btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  transform: translateY(-3px);
+}
+
+.profile-fill-header-btn:active {
+  transform: translateY(-1px);
 }
 
 @media (max-width: 640px) {

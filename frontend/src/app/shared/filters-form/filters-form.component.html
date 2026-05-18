@@ -11,11 +11,23 @@
 
   <div *ngIf="showSummaryHeader" class="summary-header summary-header-collapsible">
     <h2>{{ summaryHeading }}</h2>
+
+    <div class="summary-header-actions">
+      <button
+        *ngIf="showProfileFillButton && profileFillButtonPosition === 'header-right'"
+        type="button"
+        class="secondary-button profile-fill-header-btn"
+        (click)="onProfileFillClick()">
+        {{ profileFillButtonLabel }}
+      </button>
+    </div>
   </div>
 
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
-    <div class="summary-block full-width" *ngIf="showProfileFillButton">
+    <div
+      class="summary-block full-width"
+      *ngIf="showProfileFillButton && profileFillButtonPosition === 'top'">
       <div class="filters-profile-fill-row">
         <button
           type="button"
@@ -48,7 +60,7 @@
             *ngIf="singleExpLevelSelection"
             type="radio"
             name="profile-exp-level"
-            [checked]="filtersForm?.get('seniority')?.get(option.id)?.value"
+            [checked]="filtersForm.get('seniority')?.get(option.id)?.value"
             (change)="onSingleExpLevelSelect(option.id)">
 
           <div class="pill-content">{{ option.label }}</div>
@@ -122,6 +134,19 @@
           class="toggle-pill-btn"
           (click)="showAllRoles = !showAllRoles">
           {{ showAllRoles ? 'zwiń ⌃' : 'rozwiń ⌄' }}
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="summary-block full-width"
+      *ngIf="showProfileFillButton && profileFillButtonPosition === 'above-technologies'">
+      <div class="filters-profile-fill-row">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="onProfileFillClick()">
+          {{ profileFillButtonLabel }}
         </button>
       </div>
     </div>

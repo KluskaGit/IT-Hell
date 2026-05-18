@@ -1,26 +1,4 @@
-<nav class="navbar">
-  <div class="nav-container">
-    <div class="logo">
-      <div class="logo-icon"></div>
-      <span>CV<span class="logo-accent">_ANALIZER</span></span>
-    </div>
-    <div class="nav-links">
-      <a href="#features">Jak to działa</a>
-      <a href="#about">O nas</a>
-    </div>
-    <div class="nav-auth" *ngIf="!isAuthenticated(); else loggedUserBlock">
-      <button class="btn-text">Masz już konto?</button>
-      <button class="btn-primary" type="button" (click)="login()">Zaloguj się</button>
-    </div>
-
-    <ng-template #loggedUserBlock>
-      <div class="nav-auth nav-auth-logged">
-        <a class="user-badge" routerLink="/profile">Cześć, {{ username() || 'Użytkownik' }}</a>
-        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
-      </div>
-    </ng-template>
-  </div>
-</nav>
+<app-navbar></app-navbar>
 
 <div class="background-glow">
   <div class="glow-1"></div>
@@ -79,7 +57,8 @@
   <app-filters-form
       class="animate-up delay-2"
       [initialFilters]="savedFilters"
-      [showApplyButton]="false"
+      [showApplyButton]="true"
+      applyButtonLabel="Szukaj dopasowanych ofert"
       [showProfileFillButton]="isAuthenticated()"
       profileFillButtonLabel="Uzupełnij z profilu"
       (profileFillClicked)="fillFromProfile()"
@@ -89,42 +68,24 @@
       {{ fillProfileError }}
     </div>
 
-  <div class="actions-row animate-up delay-3">
-    <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj dopasowanych ofert</button>
-    <button type="button" class="secondary-button" (click)="submitAndSignup()">Zapisz profil i załóż konto</button>
-  </div>
-
   <section id="features" class="features-grid">
     <div class="feature-card animate-up delay-2">
       <div class="icon-box">🔍</div>
       <h3>Smart Scraper</h3>
-      <p>Przeszukujemy ponad 50 portali z ofertami pracy co godzinę, abyś Ty nie musiał.</p>
+      <p>Automatycznie zbieramy oferty pracy z popularnych portali, żebyś miał je wszystkie w jednym miejscu.</p>
     </div>
     <div class="feature-card animate-up delay-3">
       <div class="icon-box">🧠</div>
-      <h3>AI Analysis</h3>
-      <p>Nasz model rozumie kontekst Twojego doświadczenia, a nie tylko słowa kluczowe z CV.</p>
+      <h3>Analiza CV</h3>
+      <p>Wgraj CV, a system automatycznie rozpozna technologie i uzupełni formularz — bez ręcznego wpisywania.</p>
     </div>
     <div class="feature-card animate-up delay-4">
       <div class="icon-box">🎯</div>
-      <h3>Perfect Match</h3>
-      <p>Otrzymujesz tylko te oferty, które realnie Cię zainteresują i w których masz szanse.</p>
+      <h3>Twoje filtry</h3>
+      <p>Ustawiasz technologie, poziom doświadczenia i tryb pracy — widzisz tylko oferty, które Ci pasują.</p>
     </div>
   </section>
 
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo-icon"></div>
-        <span>CV<span class="footer-logo-accent">_ANALIZER</span></span>
-      </div>
-      <div class="footer-links">
-        <a routerLink="/about">O nas</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'how'}">Jak to działa</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'terms'}">Regulamin</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'privacy'}">Polityka Prywatności</a>
-      </div>
-      <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER</span>
-    </div>
-  </footer>
 </div>
+
+<app-footer></app-footer>

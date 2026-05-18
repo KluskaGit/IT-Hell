@@ -1,6 +1,8 @@
 import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
+import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
@@ -12,7 +14,7 @@ const STORAGE_KEY = 'cv_analizer_candidate_filters';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FiltersFormComponent],
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
@@ -111,12 +113,6 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  async submitAndSignup(): Promise<void> {
-    const value = this.filtersFormRef?.computeValue();
-    if (value) this.saveFilters(value);
-    await this.authService.login();
-  }
-
   private autoFillForm(): void {
     const value = this.filtersFormRef?.computeValue();
     if (value) this.saveFilters(value);
@@ -157,11 +153,11 @@ export class HomeComponent implements OnInit {
         }, 150);
       },
       error: () => {
-        this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+        this.scanProgress = 100; this.scanStatus = 'Nie udało się przeanalizować CV';
         setTimeout(() => {
           this.isScanning = false;
-          this.scanComplete = true;
-          this.autoFillForm();
+          this.scanComplete = false;
+          this.selectedFile = null;
           this.cdr.markForCheck();
         }, 150);
       },
@@ -180,11 +176,4 @@ export class HomeComponent implements OnInit {
   }
 
   get isAuthenticated() { return this.authService.isAuthenticated; }
-  get username() { return this.authService.username; }
-  async logout(): Promise<void> { 
-    await this.authService.logout(); 
-  }
-  async login(): Promise<void> {
-    await this.authService.login();
-  }
 }

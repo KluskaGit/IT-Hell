@@ -1,3 +1,5 @@
+<app-navbar></app-navbar>
+
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -6,70 +8,55 @@
 
 <div class="legal-wrapper">
 
-  <!-- HEADER -->
-  <header class="legal-header">
-    <a routerLink="/" class="logo-link">
-      <div class="logo-icon"></div>
-      <span class="logo-text">CV<span class="logo-accent">_ANALIZER</span></span>
-    </a>
-  </header>
-
-  <!-- TABS -->
-  <nav class="legal-tabs" role="tablist">
-    <button role="tab" [class.active]="activeTab === 'how'" (click)="activeTab = 'how'">
+  <nav class="legal-tabs">
+    <button [class.active]="activeTab === 'how'" (click)="setTab('how')">
       <span class="tab-icon">⚡</span> Jak to działa
     </button>
-    <button role="tab" [class.active]="activeTab === 'terms'" (click)="activeTab = 'terms'">
+    <button [class.active]="activeTab === 'terms'" (click)="setTab('terms')">
       <span class="tab-icon">📄</span> Regulamin
     </button>
-    <button role="tab" [class.active]="activeTab === 'privacy'" (click)="activeTab = 'privacy'">
+    <button [class.active]="activeTab === 'privacy'" (click)="setTab('privacy')">
       <span class="tab-icon">🔒</span> Polityka Prywatności
     </button>
   </nav>
 
-  <!-- ══════════════════════════════════════════════ -->
-  <!-- TAB: JAK TO DZIAŁA                            -->
-  <!-- ══════════════════════════════════════════════ -->
   @if (activeTab === 'how') {
   <div class="tab-content">
 
     <div class="hero-block">
       <div class="hero-badge">Przewodnik po serwisie</div>
       <h1>Jak działa CV_ANALIZER?</h1>
-      <p class="hero-sub">Inteligentne dopasowanie ofert pracy do Twojego profilu zawodowego w 5 krokach.</p>
+      <p class="hero-sub">Agregator ofert IT z wielu portali pracy z mocnymi filtrami i automatycznym wykrywaniem technologii z Twojego CV — w czterech krokach.</p>
     </div>
 
-    <!-- STEPS -->
     <section class="steps-section">
       <div class="steps-list">
         @for (step of steps; track step.number) {
-        <div class="step-card">
-          <div class="step-number">{{ step.number }}</div>
-          <div class="step-icon">{{ step.icon }}</div>
-          <div class="step-body">
-            <h3>{{ step.title }}</h3>
-            <p>{{ step.desc }}</p>
+          <div class="step-card">
+            <div class="step-number">{{ step.number }}</div>
+            <div class="step-icon">{{ step.icon }}</div>
+            <div class="step-body">
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.desc }}</p>
+            </div>
           </div>
-        </div>
         }
       </div>
     </section>
 
-    <!-- FEATURES GRID -->
     <section class="features-section">
       <h2 class="section-title">Co wyróżnia nasz serwis?</h2>
       <div class="features-grid">
         @for (feat of features; track feat.title) {
-        <div class="feature-card">
-          <div class="feature-icon">{{ feat.icon }}</div>
-          <h4>{{ feat.title }}</h4>
-          <p>{{ feat.desc }}</p>
-        </div>
+          <div class="feature-card">
+            <div class="feature-icon">{{ feat.icon }}</div>
+            <h4>{{ feat.title }}</h4>
+            <p>{{ feat.desc }}</p>
+          </div>
         }
       </div>
     </section>
 
-    <!-- TECH STACK BADGE -->
     <section class="tech-section">
       <h2 class="section-title">Technologie</h2>
       <div class="tech-row">
@@ -83,27 +70,25 @@
       </div>
     </section>
 
-    <!-- FAQ -->
     <section class="faq-section">
       <h2 class="section-title">Najczęstsze pytania</h2>
       <div class="faq-list">
         @for (item of faq; track item.q; let i = $index) {
-        <div class="faq-item" [class.open]="expandedFaq === i">
-          <button class="faq-question" (click)="toggleFaq(i)">
-            <span>{{ item.q }}</span>
-            <span class="faq-chevron">{{ expandedFaq === i ? '▲' : '▼' }}</span>
-          </button>
-          @if (expandedFaq === i) {
-          <div class="faq-answer">{{ item.a }}</div>
-          }
-        </div>
+          <div class="faq-item" [class.open]="expandedFaq === i">
+            <button class="faq-question" (click)="toggleFaq(i)">
+              <span>{{ item.q }}</span>
+              <span class="faq-chevron">{{ expandedFaq === i ? '▲' : '▼' }}</span>
+            </button>
+            @if (expandedFaq === i) {
+              <div class="faq-answer">{{ item.a }}</div>
+            }
+          </div>
         }
       </div>
     </section>
 
-    <!-- CTA -->
     <section class="cta-section">
-      @if (authService.isLoggedIn()) {
+      @if (authService.isAuthenticated()) {
         <div class="cta-card cta-logged">
           <div class="cta-text">
             <h3>Witaj z powrotem!</h3>
@@ -118,12 +103,11 @@
         <div class="cta-card cta-guest">
           <div class="cta-text">
             <h3>Gotowy żeby zacząć?</h3>
-            <p>Załóż darmowe konto w 30 sekund lub wypróbuj serwis bez rejestracji.</p>
+            <p>Możesz od razu przeglądać oferty jako gość. Konto potrzebne tylko żeby zapisać profil i CV.</p>
           </div>
           <div class="cta-actions">
-            <a routerLink="/register" class="cta-btn primary">Zarejestruj się za darmo</a>
-            <a routerLink="/login" class="cta-btn secondary">Mam już konto</a>
-            <a routerLink="/" class="cta-btn ghost">Wypróbuj jako gość →</a>
+            <a routerLink="/offers" class="cta-btn primary">Przeglądaj oferty</a>
+            <a routerLink="/" class="cta-btn secondary">Strona główna</a>
           </div>
         </div>
       }
@@ -132,188 +116,97 @@
   </div>
   }
 
-  <!-- ══════════════════════════════════════════════ -->
-  <!-- TAB: REGULAMIN                                -->
-  <!-- ══════════════════════════════════════════════ -->
   @if (activeTab === 'terms') {
   <div class="legal-card tab-content">
     <h1>Regulamin Serwisu CV_ANALIZER</h1>
     <p class="legal-date">Ostatnia aktualizacja: 25 kwietnia 2026 r.</p>
-
     <section>
       <h2>§1. Postanowienia ogólne</h2>
-      <p>Niniejszy Regulamin określa zasady korzystania z serwisu internetowego <strong>CV_ANALIZER</strong> (dalej: „Serwis"), prowadzonego przez zespół projektowy <strong>IT-Hell</strong> (dalej: „Administrator").</p>
-      <p>Korzystanie z Serwisu jest równoznaczne z akceptacją niniejszego Regulaminu w całości. Jeżeli nie zgadzasz się z warunkami, prosimy o zaprzestanie korzystania z Serwisu.</p>
+      <p>Niniejszy Regulamin określa zasady korzystania z serwisu internetowego <strong>CV_ANALIZER</strong> (dalej: „Serwis"), prowadzonego przez zespół projektowy <strong>IT-Hell</strong> (dalej: „Administrator"). Korzystanie z Serwisu jest równoznaczne z akceptacją niniejszego Regulaminu.</p>
     </section>
-
     <section>
       <h2>§2. Zakres usług</h2>
-      <p>Serwis świadczy następujące usługi drogą elektroniczną:</p>
       <ul>
-        <li>Analiza treści CV (curriculum vitae) przy użyciu algorytmów dopasowania słów kluczowych i NLP</li>
-        <li>Personalizowane dopasowywanie ofert pracy na podstawie profilu i preferencji użytkownika (Match Score)</li>
+        <li>Automatyczne wyciąganie technologii z przesłanego pliku CV (PDF, DOC, DOCX)</li>
         <li>Przechowywanie i zarządzanie profilem zawodowym użytkownika</li>
-        <li>Agregacja ofert pracy z zewnętrznych portali rekrutacyjnych (m.in. Pracuj.pl)</li>
-        <li>Filtrowanie i sortowanie ofert według wybranych kryteriów</li>
+        <li>Agregacja ofert pracy z popularnych portali IT</li>
+        <li>Filtrowanie ofert według wybranych kryteriów</li>
       </ul>
     </section>
-
     <section>
       <h2>§3. Rejestracja i konto użytkownika</h2>
-      <p>Rejestracja w Serwisie jest dobrowolna i bezpłatna. Uwierzytelnianie obsługiwane jest przez system <strong>Keycloak</strong>. Użytkownik zobowiązuje się do:</p>
-      <ul>
-        <li>Podania prawdziwych i aktualnych danych podczas rejestracji</li>
-        <li>Nieudostępniania danych logowania osobom trzecim</li>
-        <li>Niezwłocznego powiadamiania Administratora o podejrzeniu naruszenia bezpieczeństwa konta</li>
-        <li>Korzystania z Serwisu zgodnie z obowiązującym prawem i dobrymi obyczajami</li>
-      </ul>
-      <p>Przeglądanie ofert jest dostępne również bez rejestracji, jednak pełna funkcjonalność (profil, przesyłanie CV) wymaga posiadania konta.</p>
+      <p>Rejestracja jest dobrowolna i bezpłatna. Uwierzytelnianie obsługiwane jest przez <strong>Keycloak</strong>. Przeglądanie ofert dostępne bez rejestracji — konto potrzebne tylko do zapisu profilu i CV.</p>
     </section>
-
     <section>
       <h2>§4. Przetwarzanie CV i danych profilowych</h2>
-      <p>Przesłane dokumenty CV są przetwarzane wyłącznie w celu analizy dopasowania do ofert pracy. Treść CV jest przechowywana w zaszyfrowanej bazie danych i <strong>nie jest udostępniana pracodawcom ani podmiotom trzecim</strong> bez wyraźnej zgody użytkownika.</p>
-      <p>Użytkownik ma prawo do trwałego usunięcia swojego CV i profilu w dowolnym momencie z poziomu ustawień konta.</p>
+      <p>Przesłane CV przetwarzane są wyłącznie w celu analizy dopasowania i <strong>nie są udostępniane pracodawcom ani podmiotom trzecim</strong>. Użytkownik może usunąć CV i profil w dowolnym momencie.</p>
     </section>
-
     <section>
-      <h2>§5. Prawa własności intelektualnej</h2>
-      <p>Wszelkie elementy Serwisu (kod źródłowy, interfejs graficzny, algorytmy) stanowią własność intelektualną zespołu IT-Hell i podlegają ochronie prawnej. Treści ofert pracy pochodzą z zewnętrznych portali — Administrator nie rości sobie do nich praw autorskich.</p>
+      <h2>§5. Ograniczenia odpowiedzialności</h2>
+      <p>Administrator nie ponosi odpowiedzialności za treść, aktualność i prawdziwość ofert z zewnętrznych portali ani za przerwy wynikające z awarii lub siły wyższej.</p>
     </section>
-
     <section>
-      <h2>§6. Ograniczenia odpowiedzialności</h2>
-      <p>Administrator nie ponosi odpowiedzialności za:</p>
-      <ul>
-        <li>Treść, aktualność ani prawdziwość ofert pracy pobieranych z zewnętrznych portali</li>
-        <li>Trafność i kompletność dopasowania algorytmicznego CV do ofert</li>
-        <li>Przerwy w działaniu Serwisu wynikające z prac konserwacyjnych, awarii lub siły wyższej</li>
-        <li>Utratę danych spowodowaną działaniami niezależnymi od Administratora</li>
-      </ul>
+      <h2>§6. Zmiany Regulaminu</h2>
+      <p>O zmianach użytkownicy informowani są e-mailem z <strong>14-dniowym wyprzedzeniem</strong>.</p>
     </section>
-
     <section>
-      <h2>§7. Zmiany Regulaminu</h2>
-      <p>Administrator zastrzega sobie prawo do zmiany Regulaminu. Użytkownicy zarejestrowani zostaną poinformowani o zmianach drogą e-mailową z <strong>14-dniowym wyprzedzeniem</strong>. Dalsze korzystanie z Serwisu po upływie tego okresu oznacza akceptację nowego Regulaminu.</p>
-    </section>
-
-    <section>
-      <h2>§8. Postanowienia końcowe</h2>
-      <p>W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego, w szczególności <em>Kodeks cywilny</em>, <em>ustawa o świadczeniu usług drogą elektroniczną</em> oraz <em>RODO</em>. Wszelkie spory rozstrzygane będą przez sąd właściwy dla siedziby Administratora.</p>
+      <h2>§7. Postanowienia końcowe</h2>
+      <p>W sprawach nieuregulowanych zastosowanie mają przepisy prawa polskiego — Kodeks cywilny, ustawa o świadczeniu usług drogą elektroniczną oraz RODO.</p>
     </section>
   </div>
   }
 
-  <!-- ══════════════════════════════════════════════ -->
-  <!-- TAB: POLITYKA PRYWATNOŚCI                     -->
-  <!-- ══════════════════════════════════════════════ -->
   @if (activeTab === 'privacy') {
   <div class="legal-card tab-content">
     <h1>Polityka Prywatności</h1>
     <p class="legal-date">Ostatnia aktualizacja: 25 kwietnia 2026 r. &nbsp;·&nbsp; Zgodność z <strong>RODO (GDPR)</strong></p>
-
     <div class="rodo-highlight">
       <span class="rodo-icon">🇪🇺</span>
-      <p>Niniejsza Polityka Prywatności jest zgodna z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. (RODO / GDPR).</p>
+      <p>Niniejsza Polityka jest zgodna z Rozporządzeniem (UE) 2016/679 (RODO / GDPR).</p>
     </div>
-
     <section>
-      <h2>1. Administrator danych osobowych</h2>
-      <p>Administratorem Twoich danych osobowych jest zespół projektowy <strong>IT-Hell</strong>. W sprawach dotyczących ochrony danych osobowych możesz skontaktować się pod adresem e-mail: <strong>privacy&#64;cv-analizer.pl</strong></p>
+      <h2>1. Administrator danych</h2>
+      <p>Administratorem danych jest zespół <strong>IT-Hell</strong>. Kontakt: <strong>privacy&#64;cv-analizer.pl</strong></p>
     </section>
-
     <section>
-      <h2>2. Podstawa prawna przetwarzania</h2>
-      <p>Przetwarzamy Twoje dane osobowe na następujących podstawach prawnych:</p>
-      <ul>
-        <li><strong>Art. 6 ust. 1 lit. a RODO</strong> — Twoja dobrowolna zgoda (np. na analizę CV, spersonalizowane powiadomienia)</li>
-        <li><strong>Art. 6 ust. 1 lit. b RODO</strong> — niezbędność do wykonania umowy (świadczenie usług Serwisu)</li>
-        <li><strong>Art. 6 ust. 1 lit. c RODO</strong> — obowiązek prawny (np. wymogi podatkowe)</li>
-        <li><strong>Art. 6 ust. 1 lit. f RODO</strong> — prawnie uzasadniony interes Administratora (bezpieczeństwo systemu, statystyki anonimowe)</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>3. Kategorie przetwarzanych danych</h2>
+      <h2>2. Kategorie przetwarzanych danych</h2>
       <ul>
         <li><strong>Dane identyfikacyjne:</strong> imię, nazwisko, adres e-mail</li>
-        <li><strong>Dane zawodowe:</strong> treść CV, umiejętności techniczne, poziom doświadczenia, preferencje wynagrodzeniowe i zawodowe</li>
-        <li><strong>Dane techniczne:</strong> adres IP, identyfikator sesji, logi aktywności (zarządzane przez Keycloak)</li>
+        <li><strong>Dane zawodowe:</strong> treść CV, umiejętności, poziom doświadczenia</li>
+        <li><strong>Dane techniczne:</strong> adres IP, sesja (zarządzane przez Keycloak)</li>
       </ul>
-      <p>Nie przetwarzamy danych szczególnych kategorii (art. 9 RODO), tj. danych dotyczących zdrowia, poglądów politycznych, wyznania itp.</p>
     </section>
-
     <section>
-      <h2>4. Cel przetwarzania danych</h2>
+      <h2>3. Okres przechowywania danych</h2>
       <ul>
-        <li>Świadczenie usług Serwisu (rejestracja, logowanie, zarządzanie profilem)</li>
-        <li>Analiza CV i dopasowywanie ofert pracy</li>
-        <li>Komunikacja z użytkownikiem (powiadomienia e-mail, odpowiedzi na zapytania)</li>
-        <li>Zapewnienie bezpieczeństwa i integralności systemu</li>
-        <li>Anonimowe statystyki użytkowania Serwisu</li>
+        <li>Dane konta: przez czas korzystania z Serwisu + <strong>30 dni</strong> po usunięciu</li>
+        <li>CV i profil: do usunięcia przez użytkownika</li>
+        <li>Logi techniczne: maksymalnie <strong>90 dni</strong></li>
       </ul>
     </section>
-
     <section>
-      <h2>5. Okres przechowywania danych</h2>
+      <h2>4. Twoje prawa (RODO)</h2>
       <ul>
-        <li>Dane konta użytkownika: przez cały czas korzystania z Serwisu + <strong>30 dni</strong> po usunięciu konta</li>
-        <li>CV i profil zawodowy: do momentu ręcznego usunięcia przez użytkownika lub zamknięcia konta</li>
-        <li>Logi techniczne i sesje: maksymalnie <strong>90 dni</strong></li>
-        <li>Kopie zapasowe (backupy): do <strong>6 miesięcy</strong> od daty wykonania</li>
+        <li><span class="rodo-check">✅</span> <strong>Prawo dostępu</strong> do swoich danych (Art. 15)</li>
+        <li><span class="rodo-check">✅</span> <strong>Prawo do sprostowania</strong> danych (Art. 16)</li>
+        <li><span class="rodo-check">✅</span> <strong>Prawo do usunięcia</strong> — „prawo do bycia zapomnianym" (Art. 17)</li>
+        <li><span class="rodo-check">✅</span> <strong>Prawo do przenoszenia danych</strong> (Art. 20)</li>
+        <li><span class="rodo-check">✅</span> <strong>Prawo do wycofania zgody</strong> w dowolnym momencie</li>
       </ul>
+      <p>Masz również prawo złożyć skargę do <strong>UODO</strong>, ul. Stawki 2, 00-193 Warszawa.</p>
     </section>
-
     <section>
-      <h2>6. Twoje prawa (RODO)</h2>
-      <p>Na podstawie RODO przysługują Ci następujące prawa, z których możesz skorzystać w dowolnym momencie:</p>
+      <h2>5. Bezpieczeństwo danych</h2>
       <ul>
-        <li><span class="rodo-check">✅</span> <strong>Prawo dostępu</strong> do swoich danych (Art. 15 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do sprostowania</strong> nieprawidłowych lub niekompletnych danych (Art. 16 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do usunięcia</strong> danych — „prawo do bycia zapomnianym" (Art. 17 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do ograniczenia przetwarzania</strong> (Art. 18 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do przenoszenia danych</strong> w formacie JSON/CSV (Art. 20 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do sprzeciwu</strong> wobec przetwarzania na podstawie uzasadnionego interesu (Art. 21 RODO)</li>
-        <li><span class="rodo-check">✅</span> <strong>Prawo do wycofania zgody</strong> w dowolnym momencie, bez wpływu na zgodność z prawem wcześniejszego przetwarzania</li>
+        <li>Szyfrowanie bazy danych (PostgreSQL)</li>
+        <li>Uwierzytelnianie przez Keycloak (OAuth 2.0 / OpenID Connect)</li>
+        <li>Komunikacja przez HTTPS w środowisku produkcyjnym</li>
       </ul>
-      <p>Aby skorzystać z powyższych praw, skontaktuj się z nami: <strong>privacy&#64;cv-analizer.pl</strong></p>
-      <p>Masz również prawo wniesienia skargi do <strong>Prezesa Urzędu Ochrony Danych Osobowych (UODO)</strong>, ul. Stawki 2, 00-193 Warszawa, <a href="https://uodo.gov.pl" target="_blank" rel="noopener">uodo.gov.pl</a>.</p>
-    </section>
-
-    <section>
-      <h2>7. Pliki cookie i dane sesji</h2>
-      <p>Serwis wykorzystuje wyłącznie <strong>sesyjne pliki cookie</strong> niezbędne do działania systemu uwierzytelniania (Keycloak). Cookies wygasają po zamknięciu sesji przeglądarki.</p>
-      <p>Nie używamy plików cookie do celów reklamowych, marketingowych ani śledzenia zachowań między serwisami.</p>
-    </section>
-
-    <section>
-      <h2>8. Przekazywanie danych do państw trzecich</h2>
-      <p>Dane osobowe przechowywane są na serwerach zlokalizowanych w Europejskim Obszarze Gospodarczym (EOG) i <strong>nie są przekazywane do państw trzecich</strong>. Infrastruktura oparta jest na Docker i hostowana lokalnie lub w chmurze EOG.</p>
-    </section>
-
-    <section>
-      <h2>9. Bezpieczeństwo danych</h2>
-      <p>Stosujemy następujące środki techniczne i organizacyjne w celu ochrony Twoich danych:</p>
-      <ul>
-        <li>Szyfrowanie danych w bazie (PostgreSQL z encryption at rest)</li>
-        <li>Uwierzytelnianie i autoryzacja przez Keycloak (OAuth 2.0 / OpenID Connect)</li>
-        <li>Komunikacja wyłącznie przez HTTPS (w środowisku produkcyjnym)</li>
-        <li>Regularne kopie zapasowe bazy danych</li>
-        <li>Ograniczony dostęp do danych produkcyjnych (zasada minimalnych uprawnień)</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>10. Zmiany Polityki Prywatności</h2>
-      <p>O wszelkich istotnych zmianach niniejszej Polityki Prywatności poinformujemy Cię drogą e-mailową z wyprzedzeniem co najmniej <strong>14 dni</strong>. Aktualna wersja jest zawsze dostępna pod adresem <strong>/legal</strong>.</p>
     </section>
   </div>
   }
 
-  <!-- FOOTER -->
-  <footer class="legal-footer">
-    <a routerLink="/" class="back-btn">← Wróć do strony głównej</a>
-    <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER · Wersja 1.0</span>
-  </footer>
 
 </div>
+
+<app-footer></app-footer>

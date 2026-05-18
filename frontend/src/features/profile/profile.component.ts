@@ -1,9 +1,10 @@
-import { Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
+import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FiltersFormComponent],
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
@@ -27,6 +28,8 @@ export class ProfileComponent implements OnInit {
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
   email = '';
+  firstName = '';
+  lastName = '';
   currentCvFile: string | null = null;
   currentCvDate = '';
   isDragging = false;
@@ -36,7 +39,6 @@ export class ProfileComponent implements OnInit {
   scanStatus = '';
   scanComplete = false;
 
-  profileForm!: FormGroup;
   savedFilters: FiltersInitialState | null = null;
   private currentFilterValue: FiltersValue | null = null;
 
@@ -48,28 +50,25 @@ export class ProfileComponent implements OnInit {
   private profileExists = false;
 
   constructor(
-    private readonly fb: FormBuilder,
     private readonly authService: AuthService,
     private readonly userApi: UserApiService,
     private readonly cvApi: CvApiService,
+    private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.initFormFromToken();
+    this.initFromToken();
     await this.loadUserDataFromBackend();
   }
 
-  private initFormFromToken(): void {
+  private initFromToken(): void {
     const profile = this.authService.getProfile();
-
     this.email = profile.email;
-    this.profileForm = this.fb.group({
-      firstName: [profile.firstName, Validators.required],
-      lastName: [profile.lastName, Validators.required],
-    });
+    this.firstName = profile.firstName ?? '';
+    this.lastName = profile.lastName ?? '';
   }
 
   private async loadUserDataFromBackend(): Promise<void> {
@@ -103,11 +102,8 @@ export class ProfileComponent implements OnInit {
 
   private patchUserData(me: UserMeDto): void {
     this.email = me.email ?? this.email;
-
-    this.profileForm.patchValue({
-      firstName: me.first_name ?? this.profileForm.get('firstName')?.value ?? '',
-      lastName: me.last_name ?? this.profileForm.get('lastName')?.value ?? '',
-    });
+    this.firstName = me.first_name ?? this.firstName;
+    this.lastName = me.last_name ?? this.lastName;
   }
 
   private patchProfileData(profile: UserProfileDto): void {
@@ -265,11 +261,6 @@ export class ProfileComponent implements OnInit {
   }
 
   async onSave(): Promise<void> {
-    if (this.profileForm.invalid) {
-      this.profileForm.markAllAsTouched();
-      return;
-    }
-
     if (!this.currentFilterValue) {
       this.saveError = 'Najpierw wybierz poziom doświadczenia i technologie.';
       return;
@@ -302,15 +293,15 @@ export class ProfileComponent implements OnInit {
 
       this.patchProfileData(savedProfile);
       this.saveSuccess = 'Profil został zapisany.';
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Błąd podczas zapisu profilu:', error);
       this.saveError = 'Nie udało się zapisać profilu.';
+      this.cdr.detectChanges();
     } finally {
       this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 
-  async onLogout(): Promise<void> {
-    await this.authService.logout();
-  }
 }

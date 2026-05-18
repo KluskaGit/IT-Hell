@@ -1,3 +1,5 @@
+<app-navbar></app-navbar>
+
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -5,25 +7,103 @@
 
 <div class="about-wrapper">
 
-  <header class="about-header">
-    <a routerLink="/" class="logo-link">
-      <div class="logo-icon"></div>
-      <span class="logo-text">CV<span class="logo-accent">_ANALIZER</span></span>
-    </a>
-  </header>
+  <section class="hero-section">
+    <div class="badge">O projekcie</div>
+    <h1>Zespół <span class="text-gradient">IT-Hell</span></h1>
+    <p class="hero-sub">Budujemy narzędzie, które pomaga programistom trafiać na oferty pracy naprawdę dla nich — nie kolejny agregator, który zalewa Cię spamem.</p>
+  </section>
 
-  <div class="about-card">
-    <h1>O nas</h1>
-    <p class="subtitle">Strona w przygotowaniu — treść zostanie uzupełniona wkrótce.</p>
+  <section class="team-section">
+    <h2 class="section-label">Zespół</h2>
 
-    <div class="placeholder-block">
-      <span class="placeholder-icon">🚧</span>
-      <p>Tutaj znajdziesz informacje o zespole IT-Hell, historii projektu i misji CV_ANALIZER.</p>
+    <div class="team-group">
+      <div class="team-group-label">
+        <span class="team-group-dot" style="background:#6366f1"></span>Frontend
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar" style="background: linear-gradient(135deg,#6366f1,#a855f7)">MK</div>
+          <div class="team-info">
+            <strong>Marek K.</strong>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" style="background: linear-gradient(135deg,#06b6d4,#6366f1)">PB</div>
+          <div class="team-info">
+            <strong>Piotrek B.</strong>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <footer class="about-footer">
-    <a routerLink="/">← Wróć do strony głównej</a>
-  </footer>
+    <div class="team-group">
+      <div class="team-group-label">
+        <span class="team-group-dot" style="background:#10b981"></span>Backend
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4)">KK</div>
+          <div class="team-info">
+            <strong>Kamil K.</strong>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" style="background: linear-gradient(135deg,#f59e0b,#10b981)">MG</div>
+          <div class="team-info">
+            <strong>Marek G.</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nav-section">
+    <h2 class="section-label">Eksploruj serwis</h2>
+    <div class="nav-cards">
+      <a routerLink="/" class="nav-card">
+        <div class="nav-card-icon">🏠</div>
+        <div class="nav-card-body">
+          <strong>Strona główna</strong>
+          <span>Wgraj CV i znajdź oferty</span>
+        </div>
+        <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a routerLink="/offers" class="nav-card">
+        <div class="nav-card-icon">💼</div>
+        <div class="nav-card-body">
+          <strong>Oferty pracy</strong>
+          <span>Filtruj oferty z wielu portali IT</span>
+        </div>
+        <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a routerLink="/legal" [queryParams]="{tab:'how'}" class="nav-card">
+        <div class="nav-card-icon">⚡</div>
+        <div class="nav-card-body">
+          <strong>Jak to działa</strong>
+          <span>Przewodnik krok po kroku</span>
+        </div>
+        <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a routerLink="/legal" [queryParams]="{tab:'terms'}" class="nav-card">
+        <div class="nav-card-icon">📄</div>
+        <div class="nav-card-body">
+          <strong>Regulamin</strong>
+          <span>Zasady korzystania z serwisu</span>
+        </div>
+        <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a routerLink="/legal" [queryParams]="{tab:'privacy'}" class="nav-card">
+        <div class="nav-card-icon">🔒</div>
+        <div class="nav-card-body">
+          <strong>Polityka Prywatności</strong>
+          <span>Jak chronimy Twoje dane</span>
+        </div>
+        <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </section>
+
 
 </div>
+
+<app-footer></app-footer>

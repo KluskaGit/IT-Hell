@@ -1,42 +1,17 @@
-<nav class="navbar">
-  <div class="nav-container">
-    <a routerLink="/" class="logo">
-      <div class="logo-icon"></div>
-      <span>CV<span class="logo-accent">_ANALIZER</span></span>
-    </a>
-
-    <div class="nav-links">
-      <a routerLink="/">Strona główna</a>
-      <a routerLink="/profile">Mój profil</a>
-    </div>
-
-    <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedUserBlock">
-      <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
-      <button type="button" class="btn-primary" (click)="login()">Zaloguj się</button>
-    </div>
-
-    <ng-template #loggedUserBlock>
-      <div class="nav-actions nav-auth-logged">
-        <button type="button" class="btn-secondary" routerLink="/">Wróć</button>
-        <button type="button" class="btn-primary" (click)="logout()">Wyloguj się</button>
-      </div>
-    </ng-template>
-  </div>
-</nav>
+<app-navbar></app-navbar>
 
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
 </div>
 
-<div *ngIf="isLoading" class="loading-state">
-  <p>Ładowanie ofert...</p>
-</div>
-<div *ngIf="loadError" class="error-state">
-  <p>{{ loadError }}</p>
-</div>
-
 <div class="offers-page">
+  <div *ngIf="isLoading" class="loading-state">
+    <p>Ładowanie ofert...</p>
+  </div>
+  <div *ngIf="loadError" class="error-state">
+    <p>{{ loadError }}</p>
+  </div>
   <section class="hero-section animate-up">
     <span class="badge">Dopasowane oferty</span>
     <h1>Oferty pracy dopasowane do <span class="text-gradient">Twojego profilu</span></h1>
@@ -52,11 +27,14 @@
     [collapsible]="true"
     [initialCollapsed]="true"
     [showSummaryHeader]="true"
+    [showApplyButton]="false"
     summaryHeading="Filtry"
-applyButtonLabel="Szukaj ofert"
+    [showProfileFillButton]="isAuthenticated()"
+    profileFillButtonLabel="Uzupełnij z profilu"
+    profileFillButtonPosition="header-right"
     (ready)="onFiltersReady($event)"
     (filtersChange)="onFiltersChange($event)"
-    (applyClicked)="onApplyClicked($event)">
+    (profileFillClicked)="fillFromProfile()">
   </app-filters-form>
 
   <div class="searchbar-wrap animate-up delay-2">
@@ -78,13 +56,10 @@ applyButtonLabel="Szukaj ofert"
         </svg>
       </button>
     </div>
-    <span class="searchbar-count" *ngIf="!isLoading">
-      {{ displayedOffers.length }} {{ displayedOffers.length === 1 ? 'oferta' : (displayedOffers.length < 5 ? 'oferty' : 'ofert') }}
-    </span>
   </div>
 
   <section class="offers-list animate-up delay-3" *ngIf="displayedOffers.length > 0; else emptyState">
-    <article class="offer-card" *ngFor="let offer of displayedOffers">
+    <article class="offer-card" *ngFor="let offer of displayedOffers; trackBy: trackOffer">
       <div class="offer-top-row">
         <div class="offer-main-info">
           <div class="company-logo">
@@ -101,7 +76,7 @@ applyButtonLabel="Szukaj ofert"
               <span>•</span>
               <span>{{ offer.location }}</span>
               <span>•</span>
-              <span>{{ getWorkModeLabel(offer.workMode) }}</span>
+              <span>{{ getWorkModeLabel(offer.workTypeId, offer.workMode) }}</span>
               <span>•</span>
               <span>{{ formatSource(offer.source) }}</span>
             </div>
@@ -143,7 +118,6 @@ applyButtonLabel="Szukaj ofert"
       </div>
 
       <div class="offer-actions">
-        <button type="button" class="btn-outline">Zapisz ofertę</button>
         <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">Zobacz ofertę</button>
       </div>
     </article>
@@ -166,3 +140,5 @@ applyButtonLabel="Szukaj ofert"
     </section>
   </ng-template>
 </div>
+
+<app-footer></app-footer>
