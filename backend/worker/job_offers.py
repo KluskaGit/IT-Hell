@@ -1,8 +1,8 @@
 from typing import Dict
 from worker.core.deps import get_job_offers_service
+from worker.pipeline import normalize_offer
 
 from src.core.exceptions import DiscardException
-
 from src.schemas.job_offers import JobOfferScraperCreate
 
 
@@ -36,8 +36,12 @@ async def save_job_offer_to_db(payload: Dict) -> None:
                 salary_from=salary_from,
                 salary_to=salary_to
             )
+            # Normalization process
+            normalize_offer(offer)
+            
             await service.create_from_scraper(offer)
         except KeyError as e:
             raise KeyError(f"Missing required field: {e}")
         except DiscardException as e:
+            print(f"skipping offer, {e}")
             pass

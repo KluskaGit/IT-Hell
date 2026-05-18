@@ -5,6 +5,8 @@ import queue
 from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
 from src.pracuj_pl.scraper import ScraperPracujPL
+from src.theprotocol_it.scraper import ScraperTheProtocolIT
+
 
 def setup_logger(
         name: str,
@@ -35,15 +37,18 @@ def setup_logger(
 
 
 async def main():
-
-    # Logger
-    logger_pracuj_pl = setup_logger("PracujPL")
-
     # Pracuj.pl
+    tasks = []
+    logger_pracuj_pl = setup_logger("PracujPL")
     scraper_pracuj_pl = ScraperPracujPL(logger_pracuj_pl)
-    await scraper_pracuj_pl.run()
+    tasks.append(asyncio.create_task(scraper_pracuj_pl.run()))
 
-    # JustJoin.it
+    # TheProtocolIT
+    logger_theprotocol = setup_logger("TheProtocolIT")
+    scraper_theprtocol = ScraperTheProtocolIT(logger_theprotocol)
+    tasks.append(asyncio.create_task(scraper_theprtocol.run()))
+
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     asyncio.run(main())

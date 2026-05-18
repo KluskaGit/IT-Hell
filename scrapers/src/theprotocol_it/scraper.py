@@ -1,28 +1,27 @@
 import os
+import json
 import asyncio
 import random
 
-from dotenv import load_dotenv
 from typing import Dict
-
+from dotenv import load_dotenv
 from logging import Logger
 
 from curl_cffi.requests import AsyncSession
 
-from src.core.redis import redis_connect
-from src.pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
 from src.schemas import JobOffer
 from src.helpers import html_to_json
+from src.core.redis import redis_connect
+from src.theprotocol_it.offers import extract_job_offers, fill_out_offer
 
-DATA_PATH = "pracuj_pl/data"
-
-class ScraperPracujPL:
+class ScraperTheProtocolIT:
 
     def __init__(self, logger: Logger):
-        self.logger = logger
-        self.min_delay = 4
-        self.max_delay = 7
 
+        self.logger = logger
+        self.min_delay = 5
+        self.max_delay = 7
+        
         load_dotenv()
         self.redis_client = redis_connect()
         self.stream = os.environ["REDIS_STREAM"]
@@ -32,6 +31,7 @@ class ScraperPracujPL:
     async def fetch(self, session: AsyncSession, url: str) -> Dict | None:
         response = await session.get(url)
         self.logger.info(f"{response.status_code} fetching {url}")
+
         if response.status_code != 200:
             text = response.content
             self.logger.error(f"{response.status_code} Unexpected satatus code! \n Error message: {text}")
@@ -41,8 +41,9 @@ class ScraperPracujPL:
             raise RuntimeError(f"Fetch failed with status {response.status_code}: {text}")
         
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
-
+        
         return html_to_json(response.text)
+    
 
     async def redis_worker(self):
         while True:
@@ -76,6 +77,8 @@ class ScraperPracujPL:
             finally:
                 self.job_que.task_done()
 
+
+
     async def run(self) -> None:
         headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36'}
 
@@ -87,7 +90,7 @@ class ScraperPracujPL:
 
             page = 1
             while True:
-                url = f"https://it.pracuj.pl/praca?pn={page}"
+                url = f"https://theprotocol.it/praca?pageNumber={page}"
                 
                 try:
                     next_data = await self.fetch(session, url)
@@ -123,4 +126,3 @@ class ScraperPracujPL:
             self.logger.info("All tasks completed, canceling workers.")
             for w in workers:
                 w.cancel()
-
