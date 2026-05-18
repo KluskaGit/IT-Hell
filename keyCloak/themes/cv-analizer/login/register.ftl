@@ -88,7 +88,7 @@
               id="password"
               name="password"
               autocomplete="new-password"
-              placeholder="Minimum 6 znaków"
+              placeholder="Minimum 8 znaków"
               aria-invalid="<#if messagesPerField.existsError('password')>true<#else>false</#if>"
             />
             <#if messagesPerField.existsError('password')>

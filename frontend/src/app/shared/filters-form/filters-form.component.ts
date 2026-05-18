@@ -7,9 +7,16 @@ import { LocationItem, LocationPickerComponent } from '../location-picker/locati
 import { TechPickerComponent } from '../tech-picker/tech-picker.component';
 import { LookupsApiService } from '../../core/services/lookups-api.service';
 import { CvApiService } from '../../core/services/cv-api.service';
-import { FiltersInitialState, FiltersValue, SALARY_OPTIONS, MAX_SALARY_INDEX } from './filters-form.types';
+import { FiltersInitialState, FiltersValue } from './filters-form.types';
 
 type LookupItem = { key: string; label: string; id: string };
+
+export const SALARY_OPTIONS = [
+  0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
+  13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000,
+  25000, 30000, 35000, 40000, 45000, 50000,
+];
+export const MAX_SALARY_INDEX = SALARY_OPTIONS.length - 1;
 
 @Component({
   selector: 'app-filters-form',
@@ -26,11 +33,11 @@ export class FiltersFormComponent implements OnInit, OnChanges {
 
   @Input() initialFilters: FiltersInitialState | null = null;
   @Input() collapsible = false;
-  @Input() startCollapsed = false;
   @Input() showApplyButton = true;
   @Input() applyButtonLabel = 'Szukaj ofert';
   @Input() summaryHeading = 'Filtry';
   @Input() showSummaryHeader = false;
+  @Input() initialCollapsed = false;
 
 
   @Input() showLocation = true;
@@ -43,10 +50,12 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   @Input() singleExpLevelSelection = false;
   @Input() showCvUpload = false;
   @Input() techPickerMaxTags = 999;
-  /** Gdy true — każda sekcja filtrów ma nagłówek z chevronem do zwijania/rozwijania.
-   *  Domyślnie false — nie zmienia wyglądu na home ani profile. */
   @Input() collapsibleSections = false;
+  @Input() showProfileFillButton = false;
+  @Input() profileFillButtonLabel = 'Uzupełnij z profilu';
+  @Input() profileFillButtonPosition: 'top' | 'above-technologies' | 'header-right' = 'top';
 
+  @Output() profileFillClicked = new EventEmitter<void>();
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
   @Output() ready = new EventEmitter<FiltersValue>();
@@ -78,7 +87,12 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   cvScanStatus = '';
   cvScanComplete = false;
 
+  onProfileFillClick(): void {
+    this.profileFillClicked.emit();
+  }
+
   ngOnInit(): void {
+    this.collapsed = this.collapsible && this.initialCollapsed;
     this.loadSectionState();
     forkJoin({
       techs: this.showTechnologies ? this.lookupsApi.getTechnologies() : of([]),
@@ -424,7 +438,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
     for (const wt of this.availableWorkTypes) {
       workMode[wt.id] = workModeIds !== undefined
         ? workModeIds.includes(wt.id)
-        : (init.workMode?.[wt.id] ?? true);
+        : (init.workMode?.[wt.id] ?? false);
     }
 
     return {

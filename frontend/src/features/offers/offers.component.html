@@ -5,13 +5,9 @@
   <div class="bg-glow-2"></div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     TOP BAR  — sticky below navbar, z-index 90
-     ══════════════════════════════════════════════════════ -->
 <div class="top-bar">
   <div class="top-bar__inner">
 
-    <!-- Lewa część — szerokość identyczna jak sidebar; min. 160px żeby przycisk był zawsze widoczny -->
     <div class="top-bar__sidebar-space"
          [style.width.px]="isFiltersVisible ? sidebarWidth : 160"
          [class.top-bar__sidebar-space--hidden]="!isFiltersVisible">
@@ -30,7 +26,6 @@
       </button>
     </div>
 
-    <!-- Prawa część — wyrównana z obszarem ofert -->
     <div class="top-bar__main-space">
       <div class="searchbar" [class.searchbar--focused]="searchFocused">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
@@ -53,12 +48,10 @@
       </div>
     </div>
 
+
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     WORKSPACE  — CSS Grid: sidebar | main
-     ══════════════════════════════════════════════════════ -->
 <div class="workspace" [class.workspace--no-sidebar]="!isFiltersVisible">
 
   <!-- ── SIDEBAR ── -->
@@ -111,7 +104,7 @@
     <!-- Offers -->
     <section *ngIf="displayedOffers.length > 0; else emptyState">
 
-      <article class="offer-card" *ngFor="let offer of displayedOffers">
+      <article class="offer-card" *ngFor="let offer of displayedOffers; trackBy: trackOffer">
 
         <div class="offer-card__header">
           <div class="offer-card__logo">{{ offer.company.charAt(0) }}</div>
@@ -132,7 +125,7 @@
               <span class="dot">·</span>
               <span>{{ offer.location }}</span>
               <span class="dot">·</span>
-              <span>{{ getWorkModeLabel(offer.workMode) }}</span>
+              <span>{{ getWorkModeLabel(offer.workTypeId, offer.workMode) }}</span>
               <span class="dot">·</span>
               <span>{{ formatSource(offer.source) }}</span>
             </div>
@@ -172,9 +165,11 @@
       <div class="state-empty" *ngIf="!isLoading">
         <span class="state-empty__icon">🔍</span>
         <h3>Brak pasujących ofert</h3>
-        <p>Rozszerz kryteria lub wgraj CV, aby AI dobrało filtry za Ciebie.</p>
+        <p>Rozszerz kryteria lub wgraj CV, by system dopasował filtry do Twoich technologii.</p>
       </div>
     </ng-template>
 
   </main>
 </div>
+
+<app-footer></app-footer>

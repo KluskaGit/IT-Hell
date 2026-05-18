@@ -11,6 +11,7 @@ export interface MappedOffer {
   company: string;
   location: string;
   workMode: string;
+  workTypeId: string;
   salaryMin: number;
   salaryMax: number;
   technologies: string[];
@@ -67,6 +68,7 @@ export class JobOffersApiService {
       company: api.company?.name ?? 'Nieznana firma',
       location: locations.map(l => l.name).join(', ') || 'Zdalnie',
       workMode: api.work_type?.name ?? 'Nie podano',
+      workTypeId: api.work_type?.id ?? '',
       salaryMin: api.salary_from ?? 0,
       salaryMax: api.salary_to ?? 0,
       technologies: technologies.map(t => t.id),

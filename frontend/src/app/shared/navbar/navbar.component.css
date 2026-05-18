@@ -10,12 +10,11 @@
 }
 
 .nav-container {
-  max-width: 900px; margin: 0 auto; width: 100%;
+  max-width: 1200px; margin: 0 auto; width: 100%;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 1.5rem; gap: 1rem;
 }
 
-/* Logo */
 .logo {
   display: flex; align-items: center; gap: 10px;
   font-weight: 800; font-size: 1.2rem; color: #1e293b;
@@ -27,7 +26,6 @@
 }
 .logo-accent { color: #6366f1; }
 
-/* Nav links */
 .nav-links {
   display: none; align-items: center; justify-content: center; gap: 0.25rem; flex: 1; padding: 0 1rem;
 }
@@ -40,7 +38,6 @@
 .nav-links a:hover { color: #6366f1; background: #eef2ff; }
 .nav-links a.nav-active { color: #6366f1; background: #eef2ff; font-weight: 700; }
 
-/* Actions */
 .nav-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
 .nav-actions--logged { gap: 0.75rem; }
 
@@ -65,7 +62,6 @@
 }
 .btn-logout:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
 
-/* User badge */
 .user-badge {
   display: flex; align-items: center; gap: 0.5rem;
   text-decoration: none; color: #1e293b;

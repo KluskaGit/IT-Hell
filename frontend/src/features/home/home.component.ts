@@ -1,9 +1,10 @@
 import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
+import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
-import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import { CvApiService } from '../../app/core/services/cv-api.service';
 import { AuthService } from '../auth/auth.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
@@ -13,7 +14,7 @@ const STORAGE_KEY = 'cv_analizer_candidate_filters';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FiltersFormComponent, NavbarComponent],
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
@@ -35,35 +36,45 @@ export class HomeComponent implements OnInit {
   scanProgress = 0;
   scanStatus = '';
   scanComplete = false;
+  isFillingFromProfile = false;
+  fillProfileError: string | null = null;
 
   savedFilters: FiltersInitialState | null = null;
 
-  async ngOnInit(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) return;
+  ngOnInit(): void {}
 
-    const stored = this.loadSavedFilters();
-    if (stored) {
-      this.savedFilters = stored;
-      return;
-    }
+  async fillFromProfile(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || !this.isAuthenticated()) return;
 
-    if (this.authService.isAuthenticated()) {
-      await this.loadFiltersFromProfile();
-    }
-  }
+    this.isFillingFromProfile = true;
+    this.fillProfileError = null;
 
-  private async loadFiltersFromProfile(): Promise<void> {
     try {
       const profile = await this.userApi.getMyProfile();
-      const selectedTechnologies = profile.technologies.map(t => ({ id: t.id, name: t.name }));
+
+      const selectedTechnologies = profile.technologies.map(t => ({
+        id: t.id,
+        name: t.name,
+      }));
+
       const expLevelId = profile.exp_level?.id ?? '';
-      this.savedFilters = {
+
+      const nextFilters: FiltersInitialState = {
+        ...(this.savedFilters ?? this.loadSavedFilters() ?? {}),
         selectedTechnologies,
         technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
         seniority: expLevelId ? { [expLevelId]: true } : {},
       };
+
+      this.savedFilters = nextFilters;
+      this.filtersFormRef?.patchValue(nextFilters);
+      this.autoFillForm();
       this.cdr.markForCheck();
-    } catch { /* brak profilu — zostaw puste filtry */ }
+    } catch {
+      this.fillProfileError = 'Nie udało się pobrać danych z profilu.';
+    } finally {
+      this.isFillingFromProfile = false;
+    }
   }
 
   private loadSavedFilters(): FiltersInitialState | null {
@@ -166,11 +177,11 @@ export class HomeComponent implements OnInit {
         }, 150);
       },
       error: () => {
-        this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+        this.scanProgress = 100; this.scanStatus = 'Nie udało się przeanalizować CV';
         setTimeout(() => {
           this.isScanning = false;
-          this.scanComplete = true;
-          this.autoFillForm();
+          this.scanComplete = false;
+          this.selectedFile = null;
           this.cdr.markForCheck();
         }, 150);
       },
@@ -187,5 +198,4 @@ export class HomeComponent implements OnInit {
     const input = e.target as HTMLInputElement;
     if (input.files?.length) this.handleFile(input.files[0]);
   }
-
 }

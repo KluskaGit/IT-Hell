@@ -3,8 +3,9 @@
   font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
   color: #1e293b;
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; font-family: inherit; }
 
+/* BACKGROUND */
 .background-glow {
   position: fixed; inset: 0; z-index: -1;
   background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 60%, #fff 100%);
@@ -19,12 +20,9 @@
   background: radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%);
 }
 
-.about-wrapper {
-  max-width: 900px; margin: 0 auto;
-  padding: 96px 1.5rem 4rem;
-}
+.about-wrapper { max-width: 900px; margin: 0 auto; padding: 96px 1.5rem 4rem; }
 
-/* Hero */
+/* HERO */
 .hero-section { text-align: center; padding: 2.5rem 0 2rem; }
 .badge {
   display: inline-block; background: #eef2ff; color: #6366f1;
@@ -41,38 +39,21 @@
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.hero-sub {
-  font-size: 1rem; color: #64748b; max-width: 540px;
-  margin: 0 auto; line-height: 1.65;
-}
+.hero-sub { font-size: 1rem; color: #64748b; max-width: 540px; margin: 0 auto; line-height: 1.65; }
 
-/* Mission card */
-.mission-card {
-  display: flex; align-items: flex-start; gap: 1.25rem;
-  background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
-  border-radius: 20px; padding: 1.75rem;
-  box-shadow: 0 8px 32px -8px rgba(99,102,241,0.1);
-  margin: 1.5rem 0;
-  animation: fadeUp 0.5s ease both;
-}
-.mission-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
-.mission-body h2 { font-size: 1.1rem; font-weight: 800; margin: 0 0 0.5rem; }
-.mission-body p  { margin: 0; color: #475569; line-height: 1.65; font-size: 0.92rem; }
-
-/* Section label */
+/* SECTION LABEL */
 .section-label {
   font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
   letter-spacing: 0.1em; color: #94a3b8; margin: 0 0 0.9rem;
 }
 
-/* Team */
+/* TEAM */
 .team-section { margin: 2rem 0; }
 .team-group { margin-bottom: 1.25rem; }
 .team-group-label {
   display: flex; align-items: center; gap: 0.45rem;
   font-size: 0.78rem; font-weight: 700; color: #475569;
-  text-transform: uppercase; letter-spacing: 0.07em;
-  margin-bottom: 0.6rem;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.6rem;
 }
 .team-group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
@@ -91,21 +72,7 @@
 }
 .team-info { display: flex; flex-direction: column; }
 .team-info strong { font-size: 0.92rem; font-weight: 800; color: #1e293b; }
-.team-info span   { font-size: 0.74rem; color: #64748b; margin-top: 2px; }
-
-/* Stack */
-.stack-section { margin: 2rem 0; }
-.stack-grid { display: flex; flex-wrap: wrap; gap: 0.55rem; }
-.stack-item {
-  display: inline-flex; align-items: center; gap: 0.45rem;
-  background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
-  border-radius: 999px; padding: 0.3rem 0.8rem;
-  font-size: 0.82rem; font-weight: 600; color: #334155;
-  animation: fadeUp 0.5s ease 0.15s both;
-}
-.stack-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-/* Nav section */
+/* NAV SECTION */
 .nav-section { margin: 2rem 0; }
 .nav-cards { display: flex; flex-direction: column; gap: 0.6rem; }
 .nav-card {
@@ -128,22 +95,6 @@
 .nav-card-arrow { color: #94a3b8; flex-shrink: 0; transition: color 0.18s; }
 .nav-card:hover .nav-card-arrow { color: #6366f1; }
 
-/* Footer */
-.about-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 1rem;
-  padding-top: 1.75rem; border-top: 1px solid #e2e8f0; margin-top: 0.5rem;
-}
-.back-btn {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  color: #6366f1; text-decoration: none; font-weight: 700; font-size: 0.88rem;
-  padding: 0.5rem 1rem; border-radius: 10px;
-  border: 1.5px solid #e0e7ff; background: #eef2ff;
-  transition: all 0.2s;
-}
-.back-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: translateX(-2px); }
-.footer-copy { font-size: 0.8rem; color: #94a3b8; }
-
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -151,5 +102,4 @@
 
 @media (max-width: 600px) {
   .team-grid { grid-template-columns: 1fr; }
-  .about-footer { flex-direction: column; align-items: flex-start; }
 }

@@ -6,111 +6,135 @@
   <div class="glow-3"></div>
 </div>
 
-<div class="profile-wrapper">
-  <div class="profile-grid">
+<div class="profile-container">
 
-    <!-- ══ LEWA KOLUMNA: dane użytkownika + akcje ══ -->
-    <aside class="profile-left">
+  <div class="profile-top-grid animate-up">
 
-      <section class="glass-card hero-card animate-up">
-        <div class="hero-layout">
-          <div class="avatar-container">
-            <div class="avatar">
-              <svg viewBox="0 0 24 24" width="44" height="44" stroke="currentColor" stroke-width="1.3" fill="none">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-          </div>
-
-          <div class="hero-identity">
-            <span class="hero-display-name">
-              {{ profileForm.get('firstName')?.value }} {{ profileForm.get('lastName')?.value }}
-            </span>
-            <span class="hero-display-email">{{ email }}</span>
-          </div>
-
-          <div class="hero-info" [formGroup]="profileForm">
-            <div class="form-row">
-              <div class="input-group">
-                <label>Imię</label>
-                <input formControlName="firstName" readonly class="input-readonly">
-              </div>
-              <div class="input-group">
-                <label>Nazwisko</label>
-                <input formControlName="lastName" readonly class="input-readonly">
-              </div>
-            </div>
-            <div class="input-group">
-              <label>E-mail</label>
-              <input [value]="email" readonly class="input-readonly">
-            </div>
+    <!-- Dane osobowe -->
+    <section class="glass-card info-card">
+      <div class="card-label">Dane osobowe</div>
+      <div class="hero-layout">
+        <div class="avatar-container">
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
           </div>
         </div>
-      </section>
-
-      <!-- Alerty -->
-      <div class="alert alert-error animate-up" *ngIf="loadError">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        {{ loadError }}
+        <div class="hero-info">
+          <div class="form-row">
+            <div class="input-group">
+              <label>Imię</label>
+              <input [value]="firstName" readonly class="input-readonly">
+            </div>
+            <div class="input-group">
+              <label>Nazwisko</label>
+              <input [value]="lastName" readonly class="input-readonly">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>E-mail</label>
+            <input [value]="email" readonly class="input-readonly">
+          </div>
+        </div>
       </div>
-      <div class="alert alert-error animate-up" *ngIf="saveError">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        {{ saveError }}
+    </section>
+
+    <!-- CV Upload -->
+    <section class="glass-card cv-card">
+      <div class="card-label">Twoje CV</div>
+
+      <div class="upload-area" *ngIf="!scanComplete">
+        <ng-container *ngIf="!isScanning">
+          <input type="file" #fileInput hidden accept=".pdf,.doc,.docx" (change)="onFileSelected($event)">
+          <button
+            type="button"
+            class="dropzone"
+            [class.dragging]="isDragging"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="fileInput.click()">
+            <div class="dropzone-inner">
+              <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              <span>Wgraj CV (PDF, DOC, DOCX)</span>
+              <span class="dropzone-sub">System wyciągnie Twoje technologie z pliku</span>
+            </div>
+          </button>
+        </ng-container>
+
+        <div class="scanner-container" *ngIf="isScanning">
+          <div class="radar-box">
+            <div class="radar-sweep" [class.radar-done]="scanProgress === 100"></div>
+            <svg viewBox="0 0 24 24" width="40" height="40" stroke="#6366f1" stroke-width="1.5" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <h3 class="scanning-text">{{ scanStatus }}</h3>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" [style.width.%]="scanProgress"></div>
+          </div>
+          <p class="progress-percent">{{ scanProgress }}%</p>
+        </div>
       </div>
-      <div class="alert alert-success animate-up" *ngIf="saveSuccess">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        {{ saveSuccess }}
+
+      <div class="scan-success-banner" *ngIf="scanComplete">
+        <div class="success-icon">✓</div>
+        <div class="success-info">
+          <strong>{{ currentCvFile }}</strong>
+          <span>CV przeanalizowane pomyślnie</span>
+        </div>
+        <button type="button" class="remove-link" (click)="removeCv()">Usuń</button>
       </div>
 
-      <!-- Przyciski -->
-      <div class="actions-col animate-up delay-2">
-        <button type="button" class="submit-button" [disabled]="isSaving" (click)="onSave()">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
-          </svg>
-          {{ isSaving ? 'Zapisywanie…' : 'Zapisz zmiany' }}
-        </button>
-        <a class="secondary-button" routerLink="/">Anuluj</a>
-      </div>
-
-    </aside>
-
-    <!-- ══ PRAWA KOLUMNA: preferencje ══ -->
-    <div class="profile-right animate-up delay-1">
-
-      <div *ngIf="isProfileLoading" class="profile-loading">
-        <div class="profile-loading__spinner"></div>
-        <span>Ładowanie profilu…</span>
-      </div>
-
-      <app-filters-form
-        *ngIf="!isProfileLoading"
-        [initialFilters]="savedFilters"
-        [showApplyButton]="false"
-        summaryHeading="Preferencje i umiejętności"
-        [showSummaryHeader]="true"
-        [showLocation]="false"
-        [showWorkMode]="false"
-        [showSalary]="false"
-        [showRoles]="false"
-        [showSites]="false"
-        [showExpLevel]="true"
-        [showTechnologies]="true"
-        [singleExpLevelSelection]="true"
-        [showCvUpload]="true"
-        (filtersChange)="onFiltersChange($event)">
-      </app-filters-form>
-
-    </div>
+    </section>
 
   </div>
+
+  <app-filters-form
+    class="animate-up delay-1"
+    [initialFilters]="savedFilters"
+    [showApplyButton]="false"
+    summaryHeading="Technologie i doświadczenie"
+    [showSummaryHeader]="true"
+    [showLocation]="false"
+    [showWorkMode]="false"
+    [showSalary]="false"
+    [showRoles]="false"
+    [showSites]="false"
+    [showExpLevel]="true"
+    [showTechnologies]="true"
+    [singleExpLevelSelection]="true"
+    (filtersChange)="onFiltersChange($event)">
+  </app-filters-form>
+
+  <div *ngIf="loadError" class="profile-feedback animate-up">
+    <div class="profile-feedback-box error">{{ loadError }}</div>
+  </div>
+
+  <div *ngIf="saveError || saveSuccess" class="profile-feedback animate-up">
+    <div *ngIf="saveError" class="profile-feedback-box error">{{ saveError }}</div>
+    <div *ngIf="saveSuccess" class="profile-feedback-box success">{{ saveSuccess }}</div>
+  </div>
+
+  <div class="actions-row animate-up delay-2" [class.actions-row-with-feedback]="saveError || saveSuccess">
+    <button type="button" class="submit-button" (click)="onSave()" [disabled]="isSaving">
+      <ng-container *ngIf="!isSaving">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Zapisz zmiany
+      </ng-container>
+      <ng-container *ngIf="isSaving">Zapisywanie…</ng-container>
+    </button>
+    <button type="button" class="secondary-button" routerLink="/">Anuluj</button>
+  </div>
+
 </div>
+
+<app-footer></app-footer>

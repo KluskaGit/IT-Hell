@@ -11,7 +11,6 @@ import { AuthService } from '../../../features/auth/auth.service';
   styleUrls: ['./navbar.component.css'],
 })
 export class NavbarComponent {
-
   constructor(private readonly authService: AuthService) {}
 
   get isAuthenticated() { return this.authService.isAuthenticated; }

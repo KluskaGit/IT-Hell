@@ -1,18 +1,20 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../features/auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
+import { FooterComponent } from '../../app/shared/footer/footer.component';
 
 @Component({
   selector: 'app-legal',
   standalone: true,
-  imports: [CommonModule, RouterModule, NavbarComponent],
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent],
   templateUrl: './legal.component.html',
   styleUrls: ['./legal.component.css'],
 })
 export class LegalComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly authService = inject(AuthService);
 
   activeTab: 'how' | 'terms' | 'privacy' = 'how';
@@ -24,31 +26,20 @@ export class LegalComponent implements OnInit {
     }
   }
 
+  setTab(tab: 'how' | 'terms' | 'privacy'): void {
+    this.activeTab = tab;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      replaceUrl: true,
+    });
+  }
+
   readonly steps = [
-    {
-      number: '01',
-      icon: '🎛️',
-      title: 'Ustaw filtry preferencji',
-      desc: 'Wybierz interesujące Cię role, poziom doświadczenia, technologie, lokalizację, tryb pracy i widełki płacowe. Filtry działają w czasie rzeczywistym.',
-    },
-    {
-      number: '02',
-      icon: '📄',
-      title: 'Wgraj CV (opcjonalnie)',
-      desc: 'Prześlij plik PDF, DOC lub DOCX — backend wyciągnie z niego technologie i automatycznie uzupełni je w filtrach. Bez CV też zadziała.',
-    },
-    {
-      number: '03',
-      icon: '💼',
-      title: 'Przeglądaj oferty',
-      desc: 'Lista ofert z popularnych portali pracy ładuje się płynnie przez infinite scroll. Możesz zawęzić wyniki przez wyszukiwarkę po stanowisku, firmie lub lokalizacji.',
-    },
-    {
-      number: '04',
-      icon: '🚀',
-      title: 'Otwórz ofertę u źródła',
-      desc: 'Kliknięcie "Otwórz ofertę" przenosi Cię na oryginalną stronę ogłoszenia, gdzie możesz aplikować bezpośrednio u pracodawcy.',
-    },
+    { number: '01', icon: '🎛️', title: 'Ustaw filtry preferencji', desc: 'Wybierz interesujące Cię role, poziom doświadczenia, technologie, lokalizację, tryb pracy i widełki płacowe. Filtry działają w czasie rzeczywistym.' },
+    { number: '02', icon: '📄', title: 'Wgraj CV (opcjonalnie)', desc: 'Prześlij plik PDF, DOC lub DOCX — backend wyciągnie z niego technologie i uzupełni je w filtrach. Bez CV też zadziała.' },
+    { number: '03', icon: '💼', title: 'Przeglądaj oferty', desc: 'Lista ofert z popularnych portali pracy ładuje się płynnie przez infinite scroll. Możesz zawęzić wyniki przez wyszukiwarkę po stanowisku, firmie lub lokalizacji.' },
+    { number: '04', icon: '🚀', title: 'Otwórz ofertę u źródła', desc: 'Kliknięcie "Otwórz ofertę" przenosi Cię na oryginalną stronę ogłoszenia, gdzie możesz aplikować bezpośrednio u pracodawcy.' },
   ];
 
   readonly features = [

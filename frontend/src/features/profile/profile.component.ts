@@ -1,15 +1,14 @@
-import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectorRef, Component, Inject, OnInit, OnDestroy, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
+import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
-import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
-
-const STORAGE_KEY = 'cv_analizer_candidate_filters';
 import { AuthService } from '../auth/auth.service';
+import { CvApiService } from '../../app/core/services/cv-api.service';
 import {
   UserApiService,
   UserMeDto,
@@ -18,10 +17,12 @@ import {
   UserProfileUpdateDto,
 } from '../../app/core/services/user-api.service';
 
+const STORAGE_KEY = 'cv_analizer_candidate_filters';
+
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FiltersFormComponent, NavbarComponent],
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
@@ -29,8 +30,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
   email = '';
+  firstName = '';
+  lastName = '';
+  currentCvFile: string | null = null;
+  currentCvDate = '';
+  isDragging = false;
 
-  profileForm!: FormGroup;
+  isScanning = false;
+  scanProgress = 0;
+  scanStatus = '';
+  scanComplete = false;
+
   savedFilters: FiltersInitialState | null = null;
   private currentFilterValue: FiltersValue | null = null;
 
@@ -44,26 +54,29 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private readonly fb: FormBuilder,
     private readonly authService: AuthService,
     private readonly userApi: UserApiService,
+    private readonly cvApi: CvApiService,
     private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.initFormFromToken();
+
+    this.initFromToken();
     await this.loadUserDataFromBackend();
   }
 
-  private initFormFromToken(): void {
+  ngOnDestroy(): void {
+    if (this.saveSuccessTimer) clearTimeout(this.saveSuccessTimer);
+  }
+
+  private initFromToken(): void {
     const profile = this.authService.getProfile();
     this.email = profile.email;
-    this.profileForm = this.fb.group({
-      firstName: [profile.firstName, Validators.required],
-      lastName: [profile.lastName, Validators.required],
-    });
+    this.firstName = profile.firstName ?? '';
+    this.lastName = profile.lastName ?? '';
   }
 
   private async loadUserDataFromBackend(): Promise<void> {
@@ -84,7 +97,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
         throw error;
       }
     } catch (error) {
-      console.error('Błąd podczas pobierania danych użytkownika:', error);
       this.loadError = 'Nie udało się pobrać danych profilu z backendu.';
       this.savedFilters = { selectedTechnologies: [], technologies: {}, seniority: {} };
     } finally {
@@ -95,10 +107,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private patchUserData(me: UserMeDto): void {
     this.email = me.email ?? this.email;
-    this.profileForm.patchValue({
-      firstName: me.first_name ?? this.profileForm.get('firstName')?.value ?? '',
-      lastName: me.last_name ?? this.profileForm.get('lastName')?.value ?? '',
-    });
+    this.firstName = me.first_name ?? this.firstName;
+    this.lastName = me.last_name ?? this.lastName;
   }
 
   private loadStoredFilters(): FiltersInitialState | null {
@@ -173,10 +183,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   async onSave(): Promise<void> {
-    if (this.profileForm.invalid) {
-      this.profileForm.markAllAsTouched();
-      return;
-    }
     if (!this.currentFilterValue) {
       this.saveError = 'Najpierw wybierz poziom doświadczenia i technologie.';
       return;
@@ -206,8 +212,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.saveSuccess = 'Profil został zapisany.';
       if (this.saveSuccessTimer) clearTimeout(this.saveSuccessTimer);
       this.saveSuccessTimer = setTimeout(() => { this.saveSuccess = null; this.saveSuccessTimer = null; }, 4000);
-    } catch (error) {
-      console.error('Błąd podczas zapisu profilu:', error);
+    } catch {
       this.saveError = 'Nie udało się zapisać profilu.';
     } finally {
       this.isSaving = false;
@@ -215,8 +220,54 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    if (this.saveSuccessTimer) clearTimeout(this.saveSuccessTimer);
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) this.handleFile(input.files[0]);
   }
 
+  onDragOver(e: DragEvent): void { e.preventDefault(); this.isDragging = true; }
+  onDragLeave(e: DragEvent): void { e.preventDefault(); this.isDragging = false; }
+  onDrop(e: DragEvent): void {
+    e.preventDefault(); this.isDragging = false;
+    if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]);
+  }
+
+  private handleFile(file: File): void {
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    if (!allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!');
+      return;
+    }
+    this.analyzeCV(file);
+  }
+
+  private analyzeCV(file: File): void {
+    this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
+
+    this.cvApi.uploadCv(file).subscribe({
+      next: (techs) => {
+        this.scanProgress = 100; this.scanStatus = 'Zakończono!';
+        const selectedTechnologies = techs.map(t => ({ id: t.id, name: t.name }));
+        setTimeout(() => {
+          this.isScanning = false;
+          this.scanComplete = true;
+          this.currentCvFile = file.name;
+          this.filtersFormRef?.patchValue({ selectedTechnologies });
+          this.cdr.markForCheck();
+        }, 150);
+      },
+      error: () => {
+        this.scanProgress = 100; this.scanStatus = 'Nie udało się przeanalizować CV';
+        setTimeout(() => {
+          this.isScanning = false;
+          this.cdr.markForCheck();
+        }, 150);
+      },
+    });
+  }
+
+  removeCv(): void {
+    this.scanComplete = false;
+    this.currentCvFile = null;
+  }
 }

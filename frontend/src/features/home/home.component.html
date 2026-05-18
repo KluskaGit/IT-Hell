@@ -10,13 +10,13 @@
   <section class="hero-section animate-up">
     <span class="badge">Agregator ofert IT</span>
     <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
-    <p>Filtruj oferty IT z popularnych portali pracy po roli, technologiach, lokalizacji i widełkach. Wgraj CV — <strong>CV_ANALIZER</strong> wyciągnie z niego technologie i automatycznie ustawi filtry.</p>
+    <p>Filtruj oferty IT z popularnych portali pracy po roli, technologiach, lokalizacji i widełkach. Możesz też wgrać CV — system wyciągnie z niego technologie i wstawi je do filtrów.</p>
   </section>
 
   <!-- CV upload card -->
   <div class="main-card animate-up delay-1">
 
-    <div class="upload-area" *ngIf="!scanComplete">
+    <ng-container *ngIf="!scanComplete">
       <ng-container *ngIf="!isScanning">
         <input type="file" #fileInput id="cvUpload" hidden accept=".pdf, .doc, .docx" (change)="onFileSelected($event)">
         <button type="button" class="dropzone" [class.dragging]="isDragging"
@@ -24,7 +24,7 @@
           (drop)="onDrop($event)" (click)="fileInput.click()">
           <div class="dropzone-inner">
             <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            <span>Wgraj CV (PDF, DOC, DOCX) — automatycznie wykryjemy Twoje technologie</span>
+            <span>Wgraj CV (PDF, DOC, DOCX) — wyciągniemy z niego Twoje technologie</span>
           </div>
         </button>
       </ng-container>
@@ -40,13 +40,32 @@
         </div>
         <p class="progress-percent">{{ scanProgress }}%</p>
       </div>
-    </div>
+
+      <div class="or-divider" *ngIf="!isScanning && isAuthenticated()">
+        <span>lub</span>
+      </div>
+
+      <button
+        *ngIf="!isScanning && isAuthenticated()"
+        type="button"
+        class="profile-fill-btn"
+        [class.loading]="isFillingFromProfile"
+        [disabled]="isFillingFromProfile"
+        (click)="fillFromProfile()">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        {{ isFillingFromProfile ? 'Ładowanie…' : 'Uzupełnij filtry z profilu' }}
+      </button>
+      <div class="form-error" *ngIf="fillProfileError">{{ fillProfileError }}</div>
+    </ng-container>
 
     <div class="scan-success-banner" *ngIf="scanComplete">
       <div class="success-icon">✓</div>
       <div class="success-info">
         <strong>CV przeanalizowane: {{ selectedFile?.name }}</strong>
-        <span>Formularz został automatycznie wypełniony. Przejrzyj i popraw dane.</span>
+        <span>Filtry zostały uzupełnione. Przejrzyj i popraw dane poniżej.</span>
       </div>
       <button type="button" class="remove-link" (click)="removeFile($event)">Usuń CV</button>
     </div>
@@ -62,14 +81,7 @@
   </app-filters-form>
 
   <div class="actions-row animate-up delay-3">
-    <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj dopasowanych ofert</button>
-
-    <ng-container *ngIf="isAuthenticated(); else guestBtn">
-      <button type="button" class="secondary-button" (click)="saveToProfileAndSearch()">Zapisz w profilu i szukaj</button>
-    </ng-container>
-    <ng-template #guestBtn>
-      <button type="button" class="secondary-button" (click)="submitAndSignup()">Zapisz profil i załóż konto</button>
-    </ng-template>
+    <button type="button" class="submit-button" (click)="filtersFormRef?.applyFilters()">Szukaj ofert</button>
   </div>
 
   <section id="features" class="features-grid">
@@ -90,19 +102,6 @@
     </div>
   </section>
 
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo-icon"></div>
-        <span>CV<span class="footer-logo-accent">_ANALIZER</span></span>
-      </div>
-      <div class="footer-links">
-        <a routerLink="/about">O nas</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'how'}">Jak to działa</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'terms'}">Regulamin</a>
-        <a routerLink="/legal" [queryParams]="{tab: 'privacy'}">Polityka Prywatności</a>
-      </div>
-      <span class="footer-copy">&copy; 2026 IT-Hell · CV_ANALIZER</span>
-    </div>
-  </footer>
 </div>
+
+<app-footer></app-footer>
