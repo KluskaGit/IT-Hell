@@ -13,4 +13,4 @@ class JobOffer(BaseModel):
     locations: List[str] = []
     salary_from: Optional[float] = None
     salary_to: Optional[float] = None
-    description: str = ""
+    description: str = "Brak"
