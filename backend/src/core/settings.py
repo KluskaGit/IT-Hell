@@ -1,4 +1,6 @@
+from enum import Enum
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     POSTGRES_USER: str
@@ -21,5 +23,8 @@ class Settings(BaseSettings):
     REDIS_CONSUMER: str
 
     model_config = SettingsConfigDict(env_file=".env")
+
+class UnregisteredUserSettings(Enum):
+    SITE_NAME = "Pracuj.pl"
 
 settings = Settings() # type: ignore
