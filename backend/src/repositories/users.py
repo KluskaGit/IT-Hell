@@ -103,10 +103,3 @@ class UserProfileRepository:
         await self.session.refresh(profile)
         return profile
 
-    async def delete_profile(self, user_id: uuid.UUID) -> bool:
-        profile = await self.get_profile_by_user_id(user_id)
-        if profile:
-            await self.session.delete(profile)
-            await self.session.commit()
-            return True
-        return False

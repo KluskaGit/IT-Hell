@@ -3,7 +3,10 @@ from typing import List, Annotated
 from fastapi import APIRouter, Depends
 
 from src.services.lookups_service import LookupsService
-from src.api.v1.deps import get_lookups_service
+from src.api.v1.deps import get_lookups_service, get_optional_current_user
+
+from src.core.settings import UnregisteredUserSettings
+from src.core.exceptions import RecordNotFoundError
 
 from src.schemas.lookups import (
     LookupRead,
@@ -18,6 +21,8 @@ from src.models.lookups import (
     Location,
 )
 
+from src.models.users import User
+
 router = APIRouter(prefix="/lookups", tags=["Lookup Data"])
 
 @router.get("/experience-levels", response_model=List[LookupRead])
@@ -31,9 +36,22 @@ async def get_work_types(lookups_service: Annotated[LookupsService, Depends(get_
     return work_types
 
 @router.get("/sites", response_model=List[LookupRead])
-async def get_sites(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):
-    sites = await lookups_service.get_all(Site)
-    return sites
+async def get_sites(
+    lookups_service: Annotated[LookupsService, Depends(get_lookups_service)],
+    user: Annotated[User, Depends(get_optional_current_user)]
+):
+   
+    if user:
+        return await lookups_service.get_all(Site)
+    else:
+        try:
+            limited_site = await lookups_service.get_by_name(Site, UnregisteredUserSettings.SITE_NAME.value)
+            return [limited_site]
+        except RecordNotFoundError:
+            if all_sites := await lookups_service.get_all(Site):
+                return [all_sites[0]]
+            else:
+                return []
 
 @router.get("/companies", response_model=List[LookupRead])
 async def get_companies(lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]):

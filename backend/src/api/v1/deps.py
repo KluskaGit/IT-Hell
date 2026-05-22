@@ -22,6 +22,7 @@ from src.models.users import User
 
 
 security_scheme = HTTPBearer()
+optional_security_scheme = HTTPBearer(auto_error=False)
 
 # Lookups
 
@@ -63,6 +64,16 @@ async def get_current_user(
 ) -> User:
     
     return await auth_service.authorize(credentials)
+
+async def get_optional_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(optional_security_scheme)],
+    auth_service: AuthService = Depends(get_auth_service),
+) -> User | None:
+    
+    if credentials:
+       return await auth_service.authorize(credentials)
+    else:
+        return None
 
 def get_tech_extractor_service(
     lookups_service: Annotated[LookupsService, Depends(get_lookups_service)]

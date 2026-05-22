@@ -1,7 +1,7 @@
 from typing import Dict, List, Any
 
-from pracuj_pl.helpers import extract_query
-from pracuj_pl.schemas import JobOffer
+from src.helpers import extract_query
+from src.schemas import JobOffer
 
 
 def extract_job_offers(next_data: Dict) -> List[JobOffer]:
@@ -20,6 +20,7 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
         else:
             url = ""
         entity = JobOffer(
+            site="Pracuj.pl",
             title=offer.get("jobTitle", "No title").strip(),
             technologies=offer.get("technologies", [no_record]),
             company=offer.get("companyName",no_record).strip(),
@@ -69,5 +70,4 @@ def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
     if salary:
         job_offer.salary_from = salary.get("from")
         job_offer.salary_to = salary.get("to")
-    job_offer.description = "None"
 

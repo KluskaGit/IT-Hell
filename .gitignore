@@ -8,7 +8,7 @@ uv.lock
 # Angular 22k files stuff
 **/node_modules/
 # Scrapers
-scrapers/pracuj_pl/data/
+scrapers/src/data/
 *.log
 
 node_modules/

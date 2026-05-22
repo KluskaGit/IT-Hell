@@ -4,33 +4,51 @@ import queue
 
 from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
-from pracuj_pl.scraper import ScraperPracujPL
+from src.pracuj_pl.scraper import ScraperPracujPL
+from src.theprotocol_it.scraper import ScraperTheProtocolIT
 
 
-async def main():
+def setup_logger(
+        name: str,
+        max_bytes: int = 5*1024*1024,
+        backup_count: int = 3
+    ) -> logging.Logger:
 
-    # Logger
     log_que = queue.Queue()
     que_handler = QueueHandler(log_que)
-    
+
     handler = RotatingFileHandler(
-        'logs/Scrapers.log',
-        maxBytes=5*1024*1024,  # 5 MB per file
-        backupCount=3          # Keep last 3 backups
-    )
+        f'logs/{name}.log',
+        maxBytes=max_bytes,         # 5 MB per file
+        backupCount=backup_count    # Keep last 3 backups
+    )   
+    
+    listener = QueueListener(log_que, handler)
+    listener.start()
+    
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
-    listener = QueueListener(log_que, handler)
-    listener.start()
-
-    logger = logging.getLogger("TradeitScraper")
+    logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     logger.addHandler(que_handler)
 
+    return logger
+
+
+async def main():
     # Pracuj.pl
-    scraper_pracuj_pl = ScraperPracujPL(logger)
-    await scraper_pracuj_pl.run()
+    tasks = []
+    logger_pracuj_pl = setup_logger("PracujPL")
+    scraper_pracuj_pl = ScraperPracujPL(logger_pracuj_pl)
+    tasks.append(asyncio.create_task(scraper_pracuj_pl.run()))
+
+    # TheProtocolIT
+    logger_theprotocol = setup_logger("TheProtocolIT")
+    scraper_theprtocol = ScraperTheProtocolIT(logger_theprotocol)
+    tasks.append(asyncio.create_task(scraper_theprtocol.run()))
+
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     asyncio.run(main())
