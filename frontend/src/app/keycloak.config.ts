@@ -1,5 +1,7 @@
+import { environment } from '../environments/environment';
+
 export const keycloakConfig = {
-  url: 'http://localhost:8080',
-  realm: 'it-hell',
-  clientId: 'backend-client'
+  url: environment.keycloakUrl,
+  realm: environment.keycloakRealm,
+  clientId: environment.keycloakClientId,
 };

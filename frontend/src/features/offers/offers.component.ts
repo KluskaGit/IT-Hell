@@ -1,26 +1,23 @@
-import { ChangeDetectorRef, Component, NgZone, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, debounceTime, skip } from 'rxjs/operators';
 
-
-import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
-import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent, MAX_SALARY_INDEX } from '../../app/shared/filters-form/filters-form.component';
-import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
+import { FiltersInitialState, FiltersValue, FILTERS_STORAGE_KEY } from '../../app/shared/filters-form/filters-form.types';
+import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import {
   JobOffersApiService, MappedOffer,
 } from '../../app/core/services/job-offers-api.service';
 import { AuthService } from '../auth/auth.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
 
-const STORAGE_KEY = 'cv_analizer_candidate_filters';
+const MAX_SALARY = 50000;
 
-type JobOffer = MappedOffer;
-
-interface OfferViewModel extends JobOffer {
+interface OfferViewModel extends MappedOffer {
   matchedTech: string[];
   matchedRoles: string[];
 }
@@ -28,27 +25,27 @@ interface OfferViewModel extends JobOffer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FiltersFormComponent, NavbarComponent],
   templateUrl: './offers.component.html',
   styleUrls: ['./offers.component.css'],
 })
 export class OffersComponent implements OnInit, OnDestroy {
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-  private readonly platformId = inject(PLATFORM_ID);
+  private readonly router      = inject(Router);
+  private readonly route       = inject(ActivatedRoute);
+  private readonly platformId  = inject(PLATFORM_ID);
   private readonly jobOffersApi = inject(JobOffersApiService);
-  private readonly cdr = inject(ChangeDetectorRef);
-  private readonly ngZone = inject(NgZone);
+  private readonly cdr         = inject(ChangeDetectorRef);
   private readonly authService = inject(AuthService);
-  private readonly userApi = inject(UserApiService);
+  private readonly userApi     = inject(UserApiService);
 
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
+  @ViewChild('mainScroll') private mainScrollRef?: ElementRef<HTMLElement>;
 
-  private readonly destroy$ = new Subject<void>();
+  private readonly destroy$        = new Subject<void>();
+  private readonly filtersTrigger$ = new Subject<FiltersValue>();
+  private readonly searchTrigger$  = new Subject<string>();
   private intersectionObserver?: IntersectionObserver;
   private sentinelEl?: HTMLElement;
-  private isSentinelVisible = false;
-  private filterChangeTimer?: ReturnType<typeof setTimeout>;
 
   @ViewChild('scrollSentinel')
   set scrollSentinel(el: ElementRef | undefined) {
@@ -59,40 +56,117 @@ export class OffersComponent implements OnInit, OnDestroy {
     if (this.sentinelEl && isPlatformBrowser(this.platformId)) {
       this.intersectionObserver = new IntersectionObserver(
         (entries) => {
-          this.ngZone.run(() => {
-            this.isSentinelVisible = entries[0].isIntersecting;
-            if (entries[0].isIntersecting) this.loadMore();
-          });
+          if (entries[0].isIntersecting) this.loadMore();
         },
-        { rootMargin: '200px' }
+        {
+          root: this.mainScrollRef?.nativeElement ?? null,
+          rootMargin: '200px',
+          threshold: 0,
+        }
       );
       this.intersectionObserver.observe(this.sentinelEl);
     }
   }
 
-  initialFilters: FiltersInitialState | null = null;
-  cvFileName: string | null = null;
+  isFiltersVisible = true;
 
+  /* ── Resizable sidebar ── */
+  private readonly SIDEBAR_KEY     = 'cv_offers_sidebar_width';
+  private readonly SIDEBAR_MIN     = 240;
+  private readonly SIDEBAR_MAX     = 480;
+  private readonly SIDEBAR_DEFAULT = 340;
+
+  sidebarWidth      = this.SIDEBAR_DEFAULT;
+  isSidebarDragging = false;
+
+  private dragStartX     = 0;
+  private dragStartWidth = 0;
+  private readonly boundMove = this.onDragMove.bind(this);
+  private readonly boundEnd  = this.onDragEnd.bind(this);
+
+  onDragStart(event: MouseEvent): void {
+    event.preventDefault();
+    this.isSidebarDragging = true;
+    this.dragStartX     = event.clientX;
+    this.dragStartWidth = this.sidebarWidth;
+    document.addEventListener('mousemove', this.boundMove);
+    document.addEventListener('mouseup',   this.boundEnd);
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  private onDragMove(event: MouseEvent): void {
+    if (!this.isSidebarDragging) return;
+    const delta = event.clientX - this.dragStartX;
+    this.sidebarWidth = Math.min(
+      this.SIDEBAR_MAX,
+      Math.max(this.SIDEBAR_MIN, this.dragStartWidth + delta)
+    );
+    this.cdr.markForCheck();
+  }
+
+  private onDragEnd(): void {
+    this.isSidebarDragging = false;
+    document.removeEventListener('mousemove', this.boundMove);
+    document.removeEventListener('mouseup',   this.boundEnd);
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.SIDEBAR_KEY, String(this.sidebarWidth));
+    }
+  }
+
+  private loadSidebarWidth(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const raw = localStorage.getItem(this.SIDEBAR_KEY);
+    if (raw) {
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed)) {
+        this.sidebarWidth = Math.min(this.SIDEBAR_MAX, Math.max(this.SIDEBAR_MIN, parsed));
+      }
+    }
+  }
+
+  initialFilters: FiltersInitialState | null = null;
   currentFilters: FiltersValue | null = null;
-  allOffers: JobOffer[] = [];
+  allOffers: MappedOffer[] = [];
   matchedOffers: OfferViewModel[] = [];
 
-  searchQuery = '';
+  searchQuery  = '';
   searchFocused = false;
 
-  isLoading = false;
+  isLoading     = false;
   isLoadingMore = false;
   loadError: string | null = null;
 
   readonly pageSize = 20;
   currentPage = 0;
-  hasMore = true;
+  hasMore     = true;
+
+  get isAuthenticated() { return this.authService.isAuthenticated; }
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.loadSidebarWidth();
 
-    this.router.events.subscribe(() => {
+    this.router.events.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.cdr.markForCheck();
+    });
+
+    this.filtersTrigger$.pipe(
+      skip(1),
+      debounceTime(700),
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      this.updateUrl(value);
+      this.resetAndLoad(value);
+    });
+
+    this.searchTrigger$.pipe(
+      debounceTime(500),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      if (this.currentFilters) this.resetAndLoad(this.currentFilters);
     });
 
     this.route.queryParamMap
@@ -106,11 +180,10 @@ export class OffersComponent implements OnInit, OnDestroy {
           return;
         }
 
-        const navState = history.state as { filters?: FiltersInitialState; cvFileName?: string | null };
+        const navState = history.state as { filters?: FiltersInitialState };
         const stateFilters = navState?.filters;
         const filters = stateFilters ?? this.loadSavedFilters() ?? {};
 
-        this.cvFileName = navState?.cvFileName ?? null;
         this.initialFilters = filters;
       });
   }
@@ -132,7 +205,7 @@ export class OffersComponent implements OnInit, OnDestroy {
       sites:     value.siteIds.length            ? value.siteIds            : null,
       loc:       value.locationIds.length        ? value.locationIds        : null,
       tech:      value.technologyIds.length      ? value.technologyIds      : null,
-      salFrom:   value.salaryFromIndex > 0                ? String(value.salaryFromIndex) : null,
+      salFrom:   value.salaryFromIndex > 0              ? String(value.salaryFromIndex) : null,
       salTo:     value.salaryToIndex < MAX_SALARY_INDEX ? String(value.salaryToIndex)   : null,
     };
   }
@@ -141,7 +214,6 @@ export class OffersComponent implements OnInit, OnDestroy {
     const knownKeys = ['roles', 'seniority', 'wm', 'sites', 'loc', 'tech', 'salFrom', 'salTo'];
     if (!knownKeys.some(k => params.has(k))) return null;
 
-    // getAll handles ?key=v1&key=v2 (array format); flatMap+split handles legacy ?key=v1,v2 format
     const getIds = (key: string): string[] =>
       params.getAll(key).flatMap(v => v.split(',').filter(Boolean));
 
@@ -175,7 +247,7 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   private loadSavedFilters(): FiltersInitialState | null {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   }
@@ -188,24 +260,16 @@ export class OffersComponent implements OnInit, OnDestroy {
 
   onFiltersChange(value: FiltersValue): void {
     this.currentFilters = value;
-    this.updateUrl(value);
-    this.matchedOffers = this.computeMatchedOffers();
-  }
-
-  onApplyClicked(value: FiltersValue): void {
-    this.currentFilters = value;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: this.buildQueryParams(value),
-      queryParamsHandling: 'merge',
-    });
-    this.resetAndLoad(value);
+    this.matchedOffers  = this.computeMatchedOffers();
+    this.filtersTrigger$.next(value);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.intersectionObserver?.disconnect();
+    document.removeEventListener('mousemove', this.boundMove);
+    document.removeEventListener('mouseup',   this.boundEnd);
   }
 
   loadMore(): void {
@@ -214,9 +278,9 @@ export class OffersComponent implements OnInit, OnDestroy {
   }
 
   private resetAndLoad(value: FiltersValue): void {
-    this.currentPage = 0;
-    this.hasMore = true;
-    this.allOffers = [];
+    this.currentPage  = 0;
+    this.hasMore      = true;
+    this.allOffers    = [];
     this.matchedOffers = [];
     this.loadOffersFromApi(value, 0);
   }
@@ -231,39 +295,51 @@ export class OffersComponent implements OnInit, OnDestroy {
     this.loadError = null;
 
     const params: Parameters<typeof this.jobOffersApi.getOffers>[0] = {
-      skip: page * this.pageSize,
+      skip:  page * this.pageSize,
       limit: this.pageSize,
     };
-    if (value.expLevelIds.length > 0) params.exp_level_ids = value.expLevelIds;
+    if (value.expLevelIds.length > 0)      params.exp_level_ids     = value.expLevelIds;
     if (value.specializationIds.length > 0) params.specialization_ids = value.specializationIds;
-    if (value.technologyIds.length > 0) params.technology_ids = value.technologyIds;
-    if (value.siteIds.length > 0) params.site_ids = value.siteIds;
-    if (value.locationIds.length > 0) params.location_ids = value.locationIds;
-    if (value.workTypeIds.length > 0) params.work_type_ids = value.workTypeIds;
-    if (value.salaryFrom > 0) params.salary_from_min = value.salaryFrom;
-    if (value.salaryTo < 50000) params.salary_to_max = value.salaryTo;
+    if (value.technologyIds.length > 0)     params.technology_ids    = value.technologyIds;
+    if (value.siteIds.length > 0)           params.site_ids          = value.siteIds;
+    if (value.locationIds.length > 0)       params.location_ids      = value.locationIds;
+    if (value.workTypeIds.length > 0)       params.work_type_ids     = value.workTypeIds;
+    if (value.salaryFrom > 0)               params.salary_from_min   = value.salaryFrom;
+    if (value.salaryTo < MAX_SALARY)        params.salary_to_max     = value.salaryTo;
+    const q = this.searchQuery.trim();
+    if (q) params.title = q;
 
-    this.jobOffersApi.getOffers(params).subscribe({
+    this.jobOffersApi.getOffers(params).pipe(takeUntil(this.destroy$)).subscribe({
       next: (apiOffers) => {
-        const mapped = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as JobOffer);
+        const mapped = apiOffers.map(o => this.jobOffersApi.mapToOffer(o) as MappedOffer);
         const sorted = this.sortBatch(mapped);
-        this.allOffers = isFirstPage ? sorted : [...this.allOffers, ...sorted];
-        this.currentPage = page;
-        this.hasMore = apiOffers.length >= this.pageSize;
+        this.allOffers    = isFirstPage ? sorted : [...this.allOffers, ...sorted];
+        this.currentPage  = page;
+        this.hasMore      = apiOffers.length === this.pageSize;
         this.matchedOffers = this.computeMatchedOffers();
-        this.isLoading = false;
-        this.isLoadingMore = false;
-        this.cdr.markForCheck();
-        if (this.hasMore && this.isSentinelVisible) {
-          setTimeout(() => this.loadMore(), 0);
-        }
-      },
-      error: () => {
-        this.loadError = 'Nie udało się załadować ofert. Sprawdź czy backend jest uruchomiony.';
-        this.isLoading = false;
+        this.isLoading     = false;
         this.isLoadingMore = false;
         this.cdr.markForCheck();
       },
+      error: (err: HttpErrorResponse) => {
+        this.loadError = err.status === 0
+          ? 'Brak połączenia z serwerem. Sprawdź czy backend jest uruchomiony.'
+          : `Nie udało się załadować ofert (błąd ${err.status}).`;
+        this.isLoading     = false;
+        this.isLoadingMore = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private sortBatch(offers: MappedOffer[]): MappedOffer[] {
+    return [...offers].sort((a, b) => {
+      const aHas = a.salaryMax > 0;
+      const bHas = b.salaryMax > 0;
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      if (aHas && bHas && a.salaryMax !== b.salaryMax) return b.salaryMax - a.salaryMax;
+      return a.title.localeCompare(b.title, 'pl');
     });
   }
 
@@ -275,16 +351,16 @@ export class OffersComponent implements OnInit, OnDestroy {
       .map(offer => this.toOfferViewModel(offer, filters));
   }
 
-  private isSalaryInRange(offer: JobOffer, filters: FiltersValue): boolean {
+  private isSalaryInRange(offer: MappedOffer, filters: FiltersValue): boolean {
     if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;
     return offer.salaryMax >= filters.salaryFrom && offer.salaryMin <= filters.salaryTo;
   }
 
-  private toOfferViewModel(offer: JobOffer, filters: FiltersValue): OfferViewModel {
+  private toOfferViewModel(offer: MappedOffer, filters: FiltersValue): OfferViewModel {
     const selectedRoles = this.selectedKeys(filters.itArea);
-    const selectedTech = this.selectedKeys(filters.technologies);
-    const matchedRoles = offer.roles.filter(role => selectedRoles.includes(role));
-    const matchedTech = offer.technologies.filter(tech => selectedTech.includes(tech));
+    const selectedTech  = this.selectedKeys(filters.technologies);
+    const matchedRoles  = offer.roles.filter(role => selectedRoles.includes(role));
+    const matchedTech   = offer.technologies.filter(tech => selectedTech.includes(tech));
     return { ...offer, matchedRoles, matchedTech };
   }
 
@@ -292,29 +368,26 @@ export class OffersComponent implements OnInit, OnDestroy {
     return Object.entries(group).filter(([, v]) => v).map(([k]) => k);
   }
 
-  private sortBatch(offers: JobOffer[]): JobOffer[] {
-    return [...offers].sort((a, b) => {
-      const aHas = a.salaryMax > 0;
-      const bHas = b.salaryMax > 0;
-      if (aHas && !bHas) return -1;
-      if (!aHas && bHas) return 1;
-      if (aHas && bHas && a.salaryMax !== b.salaryMax) return b.salaryMax - a.salaryMax;
-      return a.title.localeCompare(b.title, 'pl');
-    });
+  get displayedOffers(): OfferViewModel[] {
+    return this.matchedOffers;
   }
 
   trackOffer(_index: number, offer: OfferViewModel): string {
     return offer.id;
   }
 
-  get displayedOffers(): OfferViewModel[] {
-    const q = this.searchQuery.trim().toLowerCase();
-    if (!q) return this.matchedOffers;
-    return this.matchedOffers.filter(o =>
-      o.title.toLowerCase().includes(q) ||
-      o.company.toLowerCase().includes(q) ||
-      o.location.toLowerCase().includes(q)
-    );
+  trackByString(_index: number, value: string): string {
+    return value;
+  }
+
+  onSearchChange(query: string): void {
+    this.searchQuery = query;
+    this.searchTrigger$.next(query);
+  }
+
+  onSearchClear(): void {
+    this.searchQuery = '';
+    this.searchTrigger$.next('');
   }
 
   hasSalary(offer: OfferViewModel): boolean {
@@ -339,38 +412,34 @@ export class OffersComponent implements OnInit, OnDestroy {
     return this.filtersFormRef?.availableSites.find(s => s.key === source)?.label ?? source;
   }
 
-  getWorkModeLabel(workTypeId: string, fallback: string): string {
-    return this.filtersFormRef?.availableWorkTypes.find(wt => wt.id === workTypeId)?.label ?? fallback;
+  getWorkModeLabel(workTypeId: string): string {
+    return this.filtersFormRef?.availableWorkTypes.find(w => w.id === workTypeId)?.label ?? workTypeId;
   }
-
-  get isAuthenticated() { return this.authService.isAuthenticated; }
 
   async fillFromProfile(): Promise<void> {
     if (!this.isAuthenticated()) return;
-
     try {
       const profile = await this.userApi.getMyProfile();
 
-      const selectedTechnologies = profile.technologies.map(t => ({
+      const selectedTechnologies = profile.technologies.map((t: { id: string; name: string }) => ({
         id: t.id,
         name: t.name,
       }));
-
       const expLevelId = profile.exp_level?.id ?? '';
 
       const nextFilters: FiltersInitialState = {
         ...(this.currentFilters ?? this.initialFilters ?? {}),
         selectedTechnologies,
-        technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
+        technologies: Object.fromEntries(selectedTechnologies.map((t: { id: string }) => [t.id, true])),
         seniority: expLevelId ? { [expLevelId]: true } : {},
       };
 
       this.initialFilters = nextFilters;
       this.currentFilters = this.filtersFormRef?.computeValue() ?? this.currentFilters;
-
       this.filtersFormRef?.patchValue(nextFilters);
     } catch (error) {
-      console.error('Nie udało się uzupełnić filtrów z profilu:', error);
+      console.error('Failed to fill filters from profile:', error);
     }
   }
+
 }

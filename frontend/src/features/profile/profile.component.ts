@@ -1,7 +1,9 @@
-import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import { FooterComponent } from '../../app/shared/footer/footer.component';
@@ -13,9 +15,11 @@ import {
   UserApiService,
   UserMeDto,
   UserProfileDto,
-  UserProfileCreateDto,
   UserProfileUpdateDto,
 } from '../../app/core/services/user-api.service';
+
+const MAX_CV_SIZE_MB = 10;
+const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
 
 @Component({
   selector: 'app-profile',
@@ -24,7 +28,7 @@ import {
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
   email = '';
@@ -46,8 +50,9 @@ export class ProfileComponent implements OnInit {
   loadError: string | null = null;
   saveError: string | null = null;
   saveSuccess: string | null = null;
-
-  private profileExists = false;
+  private saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
+  private scanTimers: ReturnType<typeof setTimeout>[] = [];
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly authService: AuthService,
@@ -80,23 +85,23 @@ export class ProfileComponent implements OnInit {
 
       try {
         const profile = await this.userApi.getMyProfile();
-        this.profileExists = true;
         this.patchProfileData(profile);
       } catch (error) {
         if (error instanceof HttpErrorResponse && error.status === 404) {
-          this.profileExists = false;
           this.savedFilters = {
             selectedTechnologies: [],
             technologies: {},
             seniority: {},
           };
+          this.cdr.markForCheck();
           return;
         }
         throw error;
       }
     } catch (error) {
-      console.error('Błąd podczas pobierania danych użytkownika:', error);
+      console.error('Failed to load user data:', error);
       this.loadError = 'Nie udało się pobrać danych profilu z backendu.';
+      this.cdr.detectChanges();
     }
   }
 
@@ -119,6 +124,8 @@ export class ProfileComponent implements OnInit {
       technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
       seniority: expLevelId ? { [expLevelId]: true } : {},
     };
+    this.filtersFormRef?.patchValue(this.savedFilters);
+    this.cdr.markForCheck();
 
     this.currentFilterValue = {
       itArea: {},
@@ -140,7 +147,7 @@ export class ProfileComponent implements OnInit {
       salaryTo: 50000,
     };
 
-    this.currentCvFile = null;
+    this.currentCvFile = profile.raw_cv !== null ? 'Plik CV' : null;
     this.currentCvDate = '';
   }
 
@@ -148,15 +155,10 @@ export class ProfileComponent implements OnInit {
     this.currentFilterValue = value;
   }
 
-  private buildProfilePayload(): UserProfileCreateDto {
-    const expLevelId =
-      this.currentFilterValue?.expLevelIds?.[0] ??
-      Object.entries(this.currentFilterValue?.seniority ?? {}).find(([, checked]) => checked)?.[0] ??
-      '';
-
+  private buildProfilePayload(): { exp_level_id: string; technology_ids: string[] } {
     return {
-      exp_level_id: expLevelId,
-      technology_ids: this.currentFilterValue?.technologyIds ?? []
+      exp_level_id: this.currentFilterValue?.expLevelIds?.[0] ?? '',
+      technology_ids: this.currentFilterValue?.technologyIds ?? [],
     };
   }
 
@@ -179,6 +181,7 @@ export class ProfileComponent implements OnInit {
   onFileSelected(e: Event): void {
     const input = e.target as HTMLInputElement;
     if (input.files?.length) this.handleFile(input.files[0]);
+    input.value = '';
   }
 
   private handleFile(file: File): void {
@@ -186,9 +189,16 @@ export class ProfileComponent implements OnInit {
     const name = file.name.toLowerCase();
 
     if (!allowed.some(ext => name.endsWith(ext))) {
-      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!');
+      this.saveError = 'Dozwolone są tylko pliki PDF, DOC, DOCX!';
       return;
     }
+
+    if (file.size > MAX_CV_SIZE_BYTES) {
+      this.saveError = `Plik jest za duży. Maksymalny rozmiar to ${MAX_CV_SIZE_MB} MB.`;
+      return;
+    }
+
+    this.saveError = null;
 
     this.currentCvFile = file.name;
     this.currentCvDate = 'Właśnie teraz';
@@ -201,11 +211,11 @@ export class ProfileComponent implements OnInit {
     this.scanStatus = 'Analiza CV...';
     this.saveError = null;
 
-    setTimeout(() => {
+    this.scanTimers.push(setTimeout(() => {
       this.scanProgress = 35;
-    }, 200);
+    }, 200));
 
-    this.cvApi.uploadCv(file).subscribe({
+    this.cvApi.uploadCv(file).pipe(takeUntil(this.destroy$)).subscribe({
       next: (techs) => {
         this.scanProgress = 100;
         this.scanStatus = 'Zakończono!';
@@ -215,7 +225,7 @@ export class ProfileComponent implements OnInit {
           name: t.name,
         }));
 
-        setTimeout(() => {
+        this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = true;
 
@@ -237,19 +247,19 @@ export class ProfileComponent implements OnInit {
             };
           }
 
-          this.currentCvDate = 'Przeanalizowano przed chwilą';
-        }, 150);
+          this.currentCvDate = new Date().toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
+        }, 150));
       },
       error: (error) => {
         console.error('Błąd analizy CV:', error);
         this.scanProgress = 100;
         this.scanStatus = 'Nie udało się przeanalizować CV';
 
-        setTimeout(() => {
+        this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = false;
           this.saveError = 'Nie udało się przeanalizować CV.';
-        }, 150);
+        }, 150));
       },
     });
   }
@@ -276,32 +286,34 @@ export class ProfileComponent implements OnInit {
     this.isSaving = true;
     this.saveError = null;
     this.saveSuccess = null;
+    clearTimeout(this.saveSuccessTimer ?? undefined);
 
     try {
-      let savedProfile: UserProfileDto;
-
-      if (this.profileExists) {
-        const updatePayload: UserProfileUpdateDto = {
-          exp_level_id: payload.exp_level_id,
-          technology_ids: payload.technology_ids
-        };
-        savedProfile = await this.userApi.updateMyProfile(updatePayload);
-      } else {
-        savedProfile = await this.userApi.createMyProfile(payload);
-        this.profileExists = true;
-      }
-
+      const updatePayload: UserProfileUpdateDto = {
+        exp_level_id: payload.exp_level_id,
+        technology_ids: payload.technology_ids,
+      };
+      const savedProfile = await this.userApi.updateMyProfile(updatePayload);
       this.patchProfileData(savedProfile);
       this.saveSuccess = 'Profil został zapisany.';
-      this.cdr.detectChanges();
+      this.saveSuccessTimer = setTimeout(() => {
+        this.saveSuccess = null;
+        this.cdr.detectChanges();
+      }, 3000);
     } catch (error) {
-      console.error('Błąd podczas zapisu profilu:', error);
+      console.error('Failed to save profile:', error);
       this.saveError = 'Nie udało się zapisać profilu.';
-      this.cdr.detectChanges();
     } finally {
       this.isSaving = false;
       this.cdr.detectChanges();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.scanTimers.forEach(t => clearTimeout(t));
+    clearTimeout(this.saveSuccessTimer ?? undefined);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 }

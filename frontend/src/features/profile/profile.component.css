@@ -23,7 +23,6 @@
 
   --radius-lg: 20px;
   --radius-md: 12px;
-  --radius-pill: 50px;
 
   --danger: #ef4444;
   --success: #10b981;
@@ -110,11 +109,6 @@
   margin-bottom: 1.25rem;
 }
 
-.info-card,
-.cv-card {
-  padding: 1.5rem;
-}
-
 .glass-card {
   position: relative;
   background: var(--glass-bg);
@@ -154,10 +148,6 @@
 .glass-card:hover {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
-}
-
-.hero-card {
-  padding: 2rem;
 }
 
 .hero-layout {
@@ -234,15 +224,6 @@
   background: rgba(241, 245, 249, 0.8) !important;
   color: var(--text-sub) !important;
   cursor: not-allowed;
-}
-
-.main-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
-  padding: 1.5rem;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  width: 100%;
 }
 
 .upload-area {

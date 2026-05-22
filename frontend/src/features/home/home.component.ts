@@ -1,15 +1,18 @@
-import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import { FooterComponent } from '../../app/shared/footer/footer.component';
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
-import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
+import { FiltersInitialState, FiltersValue, FILTERS_STORAGE_KEY } from '../../app/shared/filters-form/filters-form.types';
 import { AuthService } from '../auth/auth.service';
 import { CvApiService } from '../../app/core/services/cv-api.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
 
-const STORAGE_KEY = 'cv_analizer_candidate_filters';
+const MAX_CV_SIZE_MB = 10;
+const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
 
 @Component({
   selector: 'app-home',
@@ -18,8 +21,11 @@ const STORAGE_KEY = 'cv_analizer_candidate_filters';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
+
+  private readonly destroy$ = new Subject<void>();
+  private scanTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor(
     private readonly router: Router,
@@ -31,6 +37,7 @@ export class HomeComponent implements OnInit {
   ) {}
 
   selectedFile: File | null = null;
+  uploadError: string | null = null;
   isDragging = false;
   isScanning = false;
   scanProgress = 0;
@@ -58,7 +65,7 @@ export class HomeComponent implements OnInit {
       const expLevelId = profile.exp_level?.id ?? '';
 
       const nextFilters: FiltersInitialState = {
-        ...(this.savedFilters ?? this.loadSavedFilters() ?? {}),
+        ...(this.filtersFormRef?.computeValue() ?? {}),
         selectedTechnologies,
         technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
         seniority: expLevelId ? { [expLevelId]: true } : {},
@@ -69,7 +76,7 @@ export class HomeComponent implements OnInit {
       this.autoFillForm();
       this.cdr.markForCheck();
     } catch (error) {
-      console.error('Nie udało się uzupełnić formularza z profilu:', error);
+      console.error('Failed to fill form from profile:', error);
       this.fillProfileError = 'Nie udało się pobrać danych z profilu.';
     } finally {
       this.isFillingFromProfile = false;
@@ -78,18 +85,15 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.savedFilters = this.loadSavedFilters();
-    this.router.events.subscribe(() => {
+    this.router.events.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.cdr.markForCheck();
     });
   }
 
-  private loadSavedFilters(): FiltersInitialState | null {
-    if (!isPlatformBrowser(this.platformId)) return null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+  ngOnDestroy(): void {
+    this.scanTimers.forEach(t => clearTimeout(t));
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private saveFilters(value: FiltersValue): void {
@@ -98,7 +102,7 @@ export class HomeComponent implements OnInit {
       const { itArea, jobSites, workMode, seniority,
               salaryFromIndex, salaryToIndex,
               selectedLocations, selectedTechnologies } = value;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify({
         itArea, jobSites, workMode, seniority,
         salaryFromIndex, salaryToIndex,
         selectedLocations, selectedTechnologies,
@@ -122,44 +126,50 @@ export class HomeComponent implements OnInit {
     e.stopPropagation();
     this.selectedFile = null;
     this.scanComplete = false;
-    const saved = this.loadSavedFilters();
-    if (saved) this.filtersFormRef?.patchValue(saved, saved.selectedLocations);
+    this.filtersFormRef?.patchValue({ selectedTechnologies: [] });
   }
 
   private handleFile(file: File): void {
     const allowedExtensions = ['.pdf', '.doc', '.docx'];
     if (!allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
-      alert('Dozwolone są tylko pliki PDF, DOC, DOCX!');
+      this.uploadError = 'Dozwolone są tylko pliki PDF, DOC, DOCX!';
       return;
     }
+
+    if (file.size > MAX_CV_SIZE_BYTES) {
+      this.uploadError = `Plik jest za duży. Maksymalny rozmiar to ${MAX_CV_SIZE_MB} MB.`;
+      return;
+    }
+
+    this.uploadError = null;
     this.selectedFile = file;
     this.analyzeCV(file);
   }
 
   private analyzeCV(file: File): void {
     this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
-    setTimeout(() => { this.scanProgress = 35; this.cdr.markForCheck(); }, 200);
+    this.scanTimers.push(setTimeout(() => { this.scanProgress = 35; this.cdr.markForCheck(); }, 200));
 
-    this.cvApi.uploadCv(file).subscribe({
+    this.cvApi.uploadCv(file).pipe(takeUntil(this.destroy$)).subscribe({
       next: (techs) => {
         this.scanProgress = 100; this.scanStatus = 'Zakończono!';
         const selectedTechnologies = techs.map(t => ({ id: t.id, name: t.name }));
-        setTimeout(() => {
+        this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = true;
           this.filtersFormRef?.patchValue({ selectedTechnologies });
           this.autoFillForm();
           this.cdr.markForCheck();
-        }, 150);
+        }, 150));
       },
       error: () => {
         this.scanProgress = 100; this.scanStatus = 'Nie udało się przeanalizować CV';
-        setTimeout(() => {
+        this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = false;
           this.selectedFile = null;
           this.cdr.markForCheck();
-        }, 150);
+        }, 150));
       },
     });
   }

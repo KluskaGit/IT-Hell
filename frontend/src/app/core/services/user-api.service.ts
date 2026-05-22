@@ -27,11 +27,6 @@ export interface UserProfileDto {
   }>;
 }
 
-export interface UserProfileCreateDto {
-  exp_level_id: string;
-  technology_ids: string[];
-}
-
 export interface UserProfileUpdateDto {
   exp_level_id?: string | null;
   technology_ids?: string[] | null;
@@ -50,15 +45,7 @@ export class UserApiService {
     return firstValueFrom(this.http.get<UserProfileDto>(`${this.base}/me/profile`));
   }
 
-  createMyProfile(payload: UserProfileCreateDto): Promise<UserProfileDto> {
-    return firstValueFrom(this.http.post<UserProfileDto>(`${this.base}/me/profile`, payload));
-  }
-
   updateMyProfile(payload: UserProfileUpdateDto): Promise<UserProfileDto> {
     return firstValueFrom(this.http.put<UserProfileDto>(`${this.base}/me/profile`, payload));
-  }
-
-  deleteMyProfile(): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.base}/me/profile`));
   }
 }

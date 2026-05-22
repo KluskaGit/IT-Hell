@@ -13,10 +13,7 @@
       <span class="tab-icon">⚡</span> Jak to działa
     </button>
     <button [class.active]="activeTab === 'terms'" (click)="setTab('terms')">
-      <span class="tab-icon">📄</span> Regulamin
-    </button>
-    <button [class.active]="activeTab === 'privacy'" (click)="setTab('privacy')">
-      <span class="tab-icon">🔒</span> Polityka Prywatności
+      <span class="tab-icon">📄</span> Regulamin & Prywatność
     </button>
   </nav>
 
@@ -47,7 +44,7 @@
     <section class="features-section">
       <h2 class="section-title">Co wyróżnia nasz serwis?</h2>
       <div class="features-grid">
-        @for (feat of features; track feat.title) {
+        @for (feat of features; track $index) {
           <div class="feature-card">
             <div class="feature-icon">{{ feat.icon }}</div>
             <h4>{{ feat.title }}</h4>
@@ -73,7 +70,7 @@
     <section class="faq-section">
       <h2 class="section-title">Najczęstsze pytania</h2>
       <div class="faq-list">
-        @for (item of faq; track item.q; let i = $index) {
+        @for (item of faq; track $index; let i = $index) {
           <div class="faq-item" [class.open]="expandedFaq === i">
             <button class="faq-question" (click)="toggleFaq(i)">
               <span>{{ item.q }}</span>
@@ -153,11 +150,9 @@
       <h2>§7. Postanowienia końcowe</h2>
       <p>W sprawach nieuregulowanych zastosowanie mają przepisy prawa polskiego — Kodeks cywilny, ustawa o świadczeniu usług drogą elektroniczną oraz RODO.</p>
     </section>
-  </div>
-  }
 
-  @if (activeTab === 'privacy') {
-  <div class="legal-card tab-content">
+    <hr class="legal-divider">
+
     <h1>Polityka Prywatności</h1>
     <p class="legal-date">Ostatnia aktualizacja: 25 kwietnia 2026 r. &nbsp;·&nbsp; Zgodność z <strong>RODO (GDPR)</strong></p>
     <div class="rodo-highlight">
@@ -166,7 +161,7 @@
     </div>
     <section>
       <h2>1. Administrator danych</h2>
-      <p>Administratorem danych jest zespół <strong>IT-Hell</strong>. Kontakt: <strong>privacy&#64;cv-analizer.pl</strong></p>
+      <p>Administratorem danych jest zespół <strong>IT-Hell</strong>. Kontakt: <a href="mailto:privacy@cv-analizer.pl">privacy@cv-analizer.pl</a></p>
     </section>
     <section>
       <h2>2. Kategorie przetwarzanych danych</h2>

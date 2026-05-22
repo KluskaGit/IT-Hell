@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LocationItem } from '../location-picker/location-picker.component';
+import { highlightMatch } from '../highlight';
 
 @Component({
   selector: 'app-tech-picker',
@@ -275,15 +276,7 @@ export class TechPickerComponent {
   }
 
   highlight(name: string): string {
-    const q = this.query.trim();
-    if (!q) return name;
-    const idx = name.toLowerCase().indexOf(q.toLowerCase());
-    if (idx === -1) return name;
-    return (
-      name.slice(0, idx) +
-      `<strong style="color:#4338ca;font-weight:700">${name.slice(idx, idx + q.length)}</strong>` +
-      name.slice(idx + q.length)
-    );
+    return highlightMatch(name, this.query, '#4338ca');
   }
 
   toggle(): void {
@@ -331,7 +324,7 @@ export class TechPickerComponent {
     while (card && !card.classList.contains('ff-card')) {
       card = card.parentElement;
     }
-    const cardBottom = card ? card.getBoundingClientRect().bottom : window.innerHeight;
+    const cardBottom = card?.getBoundingClientRect().bottom ?? Infinity;
     const available = cardBottom - rect.bottom - 16;
     this.dropdownMaxHeight = Math.min(160, Math.max(100, available));
   }

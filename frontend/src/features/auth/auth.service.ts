@@ -73,6 +73,8 @@ export class AuthService {
   }
 
   async login(redirectPath?: string): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     if (!this.keycloak) {
       await this.init();
     }
@@ -81,23 +83,22 @@ export class AuthService {
       ? `${window.location.origin}${redirectPath}`
       : window.location.href;
 
-    await this.keycloak?.login({
-      redirectUri
-    });
+    try {
+      await this.keycloak?.login({ redirectUri });
+    } catch { /* keycloak unavailable */ }
   }
 
   async logout(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.stopTokenRefresh();
+
+    try {
+      await this.keycloak?.logout({ redirectUri: window.location.origin });
+    } catch { /* keycloak unavailable */ }
+
     this.isAuthenticated.set(false);
     this.username.set(null);
-
-    await this.keycloak?.logout({
-      redirectUri: window.location.origin
-    });
-  }
-
-  isLoggedIn(): boolean {
-    return this.isAuthenticated();
   }
 
   getUsername(): string | undefined {
@@ -118,12 +119,12 @@ export class AuthService {
         this.updateAuthState();
 
         if (refreshed) {
-        console.log('Access token został odświeżony.');
+        console.log('Access token refreshed.');
         }
 
         return true;
     } catch (error) {
-        console.error('Nie udało się odświeżyć tokena.', error);
+        console.error('Failed to refresh token.', error);
         this.isAuthenticated.set(false);
         this.username.set(null);
         this.stopTokenRefresh();
@@ -140,18 +141,16 @@ export class AuthService {
         return;
     }
 
-    // ===================== zmiana Marka =====================
-    // bez tego guarda interval pruł błędem co 20s nawet gdy nikt nie był zalogowany
+    // Guard prevents interval errors when no user is logged in
     this.refreshIntervalId = window.setInterval(async () => {
-        if (!this.isLoggedIn()) return;
+        if (!this.isAuthenticated()) return;
 
         const refreshed = await this.refreshToken(30);
 
-        if (!refreshed && !this.isLoggedIn()) {
+        if (!refreshed && !this.isAuthenticated()) {
         this.username.set(null);
         }
     }, 20000);
-    // ===================== zmiana Marka =====================
     }
 
     private stopTokenRefresh(): void {

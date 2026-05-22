@@ -17,16 +17,18 @@ export class LegalComponent implements OnInit {
   private readonly router = inject(Router);
   readonly authService = inject(AuthService);
 
-  activeTab: 'how' | 'terms' | 'privacy' = 'how';
+  activeTab: 'how' | 'terms' = 'how';
 
   ngOnInit(): void {
     const tab = this.route.snapshot.queryParamMap.get('tab');
-    if (tab === 'terms' || tab === 'privacy' || tab === 'how') {
-      this.activeTab = tab;
+    if (tab === 'how') {
+      this.activeTab = 'how';
+    } else if (tab === 'terms') {
+      this.activeTab = 'terms';
     }
   }
 
-  setTab(tab: 'how' | 'terms' | 'privacy'): void {
+  setTab(tab: 'how' | 'terms'): void {
     this.activeTab = tab;
     this.router.navigate([], {
       relativeTo: this.route,

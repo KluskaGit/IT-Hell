@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { highlightMatch } from '../highlight';
 
 export interface LocationItem {
   id: string;
@@ -226,15 +227,7 @@ export class LocationPickerComponent {
   }
 
   highlight(name: string): string {
-    const q = this.query.trim();
-    if (!q) return name;
-    const idx = name.toLowerCase().indexOf(q.toLowerCase());
-    if (idx === -1) return name;
-    return (
-      name.slice(0, idx) +
-      `<strong style="color:#4f46e5;font-weight:700">${name.slice(idx, idx + q.length)}</strong>` +
-      name.slice(idx + q.length)
-    );
+    return highlightMatch(name, this.query, '#4f46e5');
   }
 
   onInput(): void { this.showDropdown = this.query.trim().length > 0; }

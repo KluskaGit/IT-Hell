@@ -1,5 +1,7 @@
 import { LocationItem } from '../location-picker/location-picker.component';
 
+export const FILTERS_STORAGE_KEY = 'cv_analizer_candidate_filters';
+
 export type ContractType = 'uop' | 'b2b' | 'uz';
 
 export interface FiltersValue {

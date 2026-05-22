@@ -1,7 +1,8 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { LocationItem, LocationPickerComponent } from '../location-picker/location-picker.component';
 import { TechPickerComponent } from '../tech-picker/tech-picker.component';
@@ -24,7 +25,8 @@ export const MAX_SALARY_INDEX = SALARY_OPTIONS.length - 1;
   templateUrl: './filters-form.component.html',
   styleUrls: ['./filters-form.component.css'],
 })
-export class FiltersFormComponent implements OnInit, OnChanges {
+export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
   private readonly fb = inject(FormBuilder);
   private readonly lookupsApi = inject(LookupsApiService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -89,7 +91,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
       sites: this.showSites ? this.lookupsApi.getSites() : of([]),
       expLevels: this.showExpLevel ? this.lookupsApi.getExperienceLevels() : of([]),
       workTypes: this.showWorkMode ? this.lookupsApi.getWorkTypes() : of([]),
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: ({ techs, specs, locations, sites, expLevels, workTypes }) => {
         this.availableTechs = this.dedupeByKey(
           techs.map(t => ({ key: t.id, label: t.name, id: t.id }))
@@ -128,7 +130,7 @@ export class FiltersFormComponent implements OnInit, OnChanges {
         });
       },
       error: () => {
-        this.loadError = 'Nie udało się pobrać słowników z backendu.';
+        this.loadError = 'Nie udało się pobrać danych z serwera.';
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -163,9 +165,14 @@ export class FiltersFormComponent implements OnInit, OnChanges {
     return out;
   }
 
-  private buildForm(): FormGroup {
-    const init = this.initialFilters ?? {};
-
+  private buildFilterValues(init: FiltersInitialState): {
+    itArea: Record<string, boolean>;
+    jobSites: Record<string, boolean>;
+    seniority: Record<string, boolean>;
+    workMode: Record<string, boolean>;
+    salaryFromIndex: number;
+    salaryToIndex: number;
+  } {
     const itArea: Record<string, boolean> = {};
     for (const r of this.availableRoles) itArea[r.id] = init.itArea?.[r.id] ?? false;
 
@@ -181,23 +188,34 @@ export class FiltersFormComponent implements OnInit, OnChanges {
     for (const e of this.availableExpLevels) seniority[e.id] = init.seniority?.[e.id] ?? false;
 
     const workModeIds = init.workModeIds;
+    const workMode: Record<string, boolean> = {};
+    for (const wt of this.availableWorkTypes) {
+      workMode[wt.id] = workModeIds !== undefined
+        ? workModeIds.includes(wt.id)
+        : (init.workMode?.[wt.id] ?? false);
+    }
+
+    return {
+      itArea, jobSites, seniority, workMode,
+      salaryFromIndex: init.salaryFromIndex ?? 0,
+      salaryToIndex: init.salaryToIndex ?? this.maxSalaryIndex,
+    };
+  }
+
+  private buildForm(): FormGroup {
+    const v = this.buildFilterValues(this.initialFilters ?? {});
     return this.fb.group({
-      itArea: this.fb.group(itArea),
-      seniority: this.fb.group(seniority),
-      workMode: this.fb.group(
-        Object.fromEntries(this.availableWorkTypes.map(wt => [
-          wt.id,
-          [workModeIds !== undefined ? workModeIds.includes(wt.id) : (init.workMode?.[wt.id] ?? false)],
-        ]))
-      ),
-      salaryFromIndex: [init.salaryFromIndex ?? 0],
-      salaryToIndex: [init.salaryToIndex ?? this.maxSalaryIndex],
-      jobSites: this.fb.group(jobSites),
+      itArea: this.fb.group(v.itArea),
+      seniority: this.fb.group(v.seniority),
+      workMode: this.fb.group(v.workMode),
+      salaryFromIndex: [v.salaryFromIndex],
+      salaryToIndex: [v.salaryToIndex],
+      jobSites: this.fb.group(v.jobSites),
     });
   }
 
   private subscribeFormChanges(): void {
-    this.filtersForm?.valueChanges.subscribe(() => {
+    this.filtersForm?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.filtersChange.emit(this.computeValue());
     });
   }
@@ -348,46 +366,18 @@ export class FiltersFormComponent implements OnInit, OnChanges {
   }
 
   private buildPatchValue(init: FiltersInitialState): Record<string, unknown> {
-    const itArea: Record<string, boolean> = {};
-    for (const r of this.availableRoles) {
-      itArea[r.id] = init.itArea?.[r.id] ?? false;
-    }
-
-    const jobSites: Record<string, boolean> = {};
-    const jobSiteKeys = init.jobSiteKeys;
-    for (const s of this.availableSites) {
-      jobSites[s.key] = jobSiteKeys !== undefined
-        ? jobSiteKeys.includes(s.key)
-        : (init.jobSites?.[s.key] ?? false);
-    }
-
-    const seniority: Record<string, boolean> = {};
-    for (const e of this.availableExpLevels) {
-      seniority[e.id] = init.seniority?.[e.id] ?? false;
-    }
-
-    const workModeIds = init.workModeIds;
-    const workMode: Record<string, boolean> = {};
-    for (const wt of this.availableWorkTypes) {
-      workMode[wt.id] = workModeIds !== undefined
-        ? workModeIds.includes(wt.id)
-        : (init.workMode?.[wt.id] ?? false);
-    }
-
-    return {
-      itArea,
-      seniority,
-      workMode,
-      salaryFromIndex: init.salaryFromIndex ?? 0,
-      salaryToIndex: init.salaryToIndex ?? this.maxSalaryIndex,
-      jobSites,
-    };
+    return this.buildFilterValues(init);
   }
   isExpLevelSelected(id: string): boolean {
     const seniorityGroup = this.filtersForm?.get('seniority') as FormGroup | null;
     return !!seniorityGroup?.get(id)?.value;
   }
-  get seniorityGroup(): FormGroup {
-    return this.filtersForm?.get('seniority') as FormGroup;
+  get seniorityGroup(): FormGroup | null {
+    return (this.filtersForm?.get('seniority') as FormGroup) ?? null;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

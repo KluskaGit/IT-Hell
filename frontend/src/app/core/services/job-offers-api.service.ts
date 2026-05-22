@@ -24,6 +24,10 @@ export interface MappedOffer {
   url?: string;
 }
 
+const FALLBACK_COMPANY  = 'Nieznana firma';
+const FALLBACK_LOCATION = 'Zdalnie';
+const FALLBACK_UNKNOWN  = 'Nie podano';
+
 @Injectable({ providedIn: 'root' })
 export class JobOffersApiService {
   private readonly http = inject(HttpClient);
@@ -40,12 +44,14 @@ export class JobOffersApiService {
     exp_level_ids?: string[];
     site_ids?: string[];
     location_ids?: string[];
+    title?: string;
   }): Observable<JobOfferApiResponse[]> {
     let httpParams = new HttpParams();
     if (params?.salary_from_min != null) httpParams = httpParams.set('salary_from_min', params.salary_from_min);
     if (params?.salary_to_max != null) httpParams = httpParams.set('salary_to_max', params.salary_to_max);
     if (params?.skip != null) httpParams = httpParams.set('skip', params.skip);
     if (params?.limit != null) httpParams = httpParams.set('limit', params.limit);
+    if (params?.title) httpParams = httpParams.set('title', params.title);
     for (const id of params?.technology_ids ?? []) httpParams = httpParams.append('technology_ids', id);
     for (const id of params?.specialization_ids ?? []) httpParams = httpParams.append('specialization_ids', id);
     for (const id of params?.work_type_ids ?? []) httpParams = httpParams.append('work_type_ids', id);
@@ -63,16 +69,16 @@ export class JobOffersApiService {
     return {
       id: api.id,
       title: api.title ?? '',
-      company: api.company?.name ?? 'Nieznana firma',
-      location: locations.map(l => l.name).join(', ') || 'Zdalnie',
-      workMode: api.work_type?.name ?? 'Nie podano',
+      company: api.company?.name ?? FALLBACK_COMPANY,
+      location: locations.map(l => l.name).join(', ') || FALLBACK_LOCATION,
+      workMode: api.work_type?.name ?? FALLBACK_UNKNOWN,
       workTypeId: api.work_type?.id ?? '',
       salaryMin: api.salary_from ?? 0,
       salaryMax: api.salary_to ?? 0,
       technologies: technologies.map(t => t.id),
       technologyNames: technologies.map(t => t.name),
       roles: api.specialization ? [api.specialization.id] : [],
-      seniority: api.exp_level?.name ?? 'Nie podano',
+      seniority: api.exp_level?.name ?? FALLBACK_UNKNOWN,
       source: api.site?.id ?? '',
       postedLabel: '',
       description,
