@@ -1,12 +1,17 @@
+import argparse
 import asyncio
 import logging
 import queue
 
+from typing import Protocol, Callable
 from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
 from src.pracuj_pl.scraper import ScraperPracujPL
 from src.theprotocol_it.scraper import ScraperTheProtocolIT
 
+class Scraper(Protocol):
+    async def run(self) -> None:
+        ...
 
 def setup_logger(
         name: str,
@@ -35,21 +40,46 @@ def setup_logger(
 
     return logger
 
-
-async def main():
-    # Pracuj.pl
-    tasks = []
+def setup_pracuj_pl() -> Scraper:
     logger_pracuj_pl = setup_logger("PracujPL")
     scraper_pracuj_pl = ScraperPracujPL(logger_pracuj_pl)
-    tasks.append(asyncio.create_task(scraper_pracuj_pl.run()))
 
-    # TheProtocolIT
+    return scraper_pracuj_pl
+
+def setup_theprotocol() -> Scraper:
     logger_theprotocol = setup_logger("TheProtocolIT")
     scraper_theprtocol = ScraperTheProtocolIT(logger_theprotocol)
-    tasks.append(asyncio.create_task(scraper_theprtocol.run()))
 
-    await asyncio.gather(*tasks)
+    return scraper_theprtocol
+
+async def main(selected_scraper: str = "all"):
+    tasks = []
+
+    choice: dict[str, tuple[Callable[[], Scraper], ...]] = {
+        "pracuj_pl": (setup_pracuj_pl,),
+        "theprotocol_it": (setup_theprotocol,),
+        "all": (setup_pracuj_pl, setup_theprotocol)
+    }
+
+    scrapers = choice.get(selected_scraper, ())
+    
+    for set_scraper in scrapers:
+        scraper = set_scraper()
+        tasks.append(asyncio.create_task(scraper.run()))
+
+    if tasks:
+        await asyncio.gather(*tasks)
+    else:
+        raise ValueError(f"No scrapers found matching: {selected_scraper}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
-    pass
+    parser = argparse.ArgumentParser(description="Run job scrapers.")
+    parser.add_argument(
+        "-s", "--scraper",
+        choices=["pracuj_pl", "theprotocol_it", "all"],
+        default="all",
+        help="Specify which scraper to run (default: all)"
+    )
+    args = parser.parse_args()
+
+    asyncio.run(main(args.scraper))
