@@ -10,7 +10,7 @@ from logging import Logger
 from curl_cffi.requests import AsyncSession
 
 from src.core.redis import redis_connect
-from src.pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
+from src.pracuj_pl.offers import extract_job_offers, fill_out_offer
 from src.schemas import JobOffer
 from src.helpers import html_to_json
 
