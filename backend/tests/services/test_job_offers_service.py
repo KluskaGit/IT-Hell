@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -117,7 +118,9 @@ async def test_create_from_scraper_success():
         title="Python Dev",
         description="Desc",
         technology_names=["Python", "FastAPI"],
-        location_names=["Warsaw"]
+        location_names=["Warsaw"],
+        publication_date=datetime(2024, 5, 28),
+        expiration_date=datetime(2024, 6, 28)
     )
 
     # Zapewniamy przejście walidacji unikalności

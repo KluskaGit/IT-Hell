@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,6 +109,8 @@ class JobOffersRepository:
         description: str,
         salary_from: Optional[float] = None,
         salary_to: Optional[float] = None,
+        publication_date: Optional[datetime] = None,
+        expiration_date: Optional[datetime] = None,
     ) -> JobOffer:
         """
         Create a new job offer.
@@ -123,6 +126,8 @@ class JobOffersRepository:
             description=description,
             salary_from=salary_from,
             salary_to=salary_to,
+            publication_date=publication_date,
+            expiration_date=expiration_date,
         )
         self.session.add(job_offer)
         await self.session.commit()
@@ -139,6 +144,8 @@ class JobOffersRepository:
         salary_to: Optional[float] = None,
         work_type_id: Optional[UUID] = None,
         exp_level_id: Optional[UUID] = None,
+        publication_date: Optional[datetime] = None,
+        expiration_date: Optional[datetime] = None,
     ) -> Optional[JobOffer]:
         """
         Update a job offer's mutable fields.
@@ -162,6 +169,10 @@ class JobOffersRepository:
                 offer.work_type_id = work_type_id
             if exp_level_id is not None:
                 offer.exp_level_id = exp_level_id
+            if publication_date is not None:
+                offer.publication_date = publication_date
+            if expiration_date is not None:
+                offer.expiration_date = expiration_date
 
             await self.session.commit()
             await self.session.refresh(offer)
@@ -244,6 +255,8 @@ class JobOffersRepository:
         locations: List[Location],
         salary_from: Optional[float] = None,
         salary_to: Optional[float] = None,
+        publication_date: Optional[datetime] = None,
+        expiration_date: Optional[datetime] = None,
     ) -> JobOffer:
         """
         Create a new job offer with technologies and locations in ONE atomic transaction.
@@ -264,6 +277,8 @@ class JobOffersRepository:
             description=description,
             salary_from=salary_from,
             salary_to=salary_to,
+            publication_date=publication_date,
+            expiration_date=expiration_date,
         )
 
         # Add to session but don't commit yet
