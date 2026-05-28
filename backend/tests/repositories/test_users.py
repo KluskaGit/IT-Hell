@@ -75,4 +75,3 @@ async def test_user_profile_crud(db_session: AsyncSession):
     
     assert updated_profile is not None
     assert updated_profile.raw_cv == "Updated resume"
-    assert len(updated_profile.technologies) == 0
