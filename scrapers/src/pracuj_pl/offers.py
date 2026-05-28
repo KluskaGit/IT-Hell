@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict, List, Any
 
 from src.helpers import extract_query
@@ -7,7 +8,7 @@ from src.schemas import JobOffer
 def extract_job_offers(next_data: Dict) -> List[JobOffer]:
     raw_lookups = extract_query(next_data, {"jobOffers"})
 
-    offers = raw_lookups.get("jobOffers", {}).get("groupedOffers")
+    offers: List[Dict] = raw_lookups.get("jobOffers", {}).get("groupedOffers", [])
     no_record = "Other"
 
     result = []
@@ -27,6 +28,8 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
             exp_lvl=position_levels[0].strip() if position_levels else no_record,
             work_type= work_modes[0].strip() if work_modes else no_record,
             url=url.strip(),
+            publication_date=offer.get("lastPublicated"),
+            expiration_date=offer.get("expirationDate"),
         )
         result.append(entity)
 

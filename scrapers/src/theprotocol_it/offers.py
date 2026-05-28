@@ -61,17 +61,25 @@ def extract_job_offers(next_data: Dict) -> List[JobOffer]:
 def fill_out_offer(next_data: Dict, job_offer: JobOffer) -> None:
 
     try:
-        raw_offer = next_data["props"]["pageProps"]["offer"]
+        raw_offer: Dict = next_data["props"]["pageProps"]["offer"]
     except KeyError as e:
         raise KeyError(f"Invalid data structure, {e}")
     
     # Specialization
     no_record = "Other"
     speciazlization = no_record
-    if attrs := raw_offer.get("attributes"):
-        for spec in attrs.get("specializations", []):
-            if spec:
-                speciazlization = spec.get("name", no_record)
-                break
-
+    attrs: Dict = raw_offer.get("attributes", {})
+    for spec in attrs.get("specializations", []):
+        if spec:
+            speciazlization = spec.get("name", no_record)
+            break
+        
     job_offer.specialization = speciazlization
+
+    # Publication details
+    publication_details: Dict = raw_offer.get("publicationDetails", {})
+    publication_date = publication_details.get("dateOfInitialPublicationUtc")
+    expiration_date = publication_details.get("archivizationDateUtc")
+    
+    job_offer.publication_date = publication_date
+    job_offer.expiration_date = expiration_date
