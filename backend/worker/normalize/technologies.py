@@ -1,6 +1,4 @@
-import re
-
-SKILL_MAP = {
+TECHNOLOGIES = {
     # frontend frameworks
     r'angular': 'Angular',
     r'react': 'React',
@@ -77,17 +75,3 @@ SKILL_MAP = {
     r'active directory|\bad\b': 'Active Directory',
     r'analytical thinking|analityczne myślenie': 'Analytical Thinking',
 }
-
-
-def normalize_technologies(technologies: list[str]) -> list[str]:
-    normalized: list[str] = []
-
-    for technology in technologies:
-        skill = technology
-        for regex, value in SKILL_MAP.items():
-            if re.search(regex, technology, flags=re.IGNORECASE):
-               skill = value
-               break
-        normalized.append(skill)
-    
-    return list(set(normalized))
