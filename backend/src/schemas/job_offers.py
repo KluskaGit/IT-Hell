@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from uuid import UUID
+from datetime import datetime
 from src.schemas.lookups import LookupRead
 
 
@@ -12,6 +13,8 @@ class JobOfferResponse(BaseModel):
     description: str
     salary_from: Optional[float] = None
     salary_to: Optional[float] = None
+    publication_date: Optional[datetime] = None
+    expiration_date: Optional[datetime] = None
     
     site: Optional[LookupRead] = None
     company: Optional[LookupRead] = None
@@ -51,3 +54,5 @@ class JobOfferScraperCreate(BaseModel):
     location_names: List[str] = Field(default_factory=list)
     salary_from: Optional[float] = None
     salary_to: Optional[float] = None
+    publication_date: Optional[datetime] = None
+    expiration_date: Optional[datetime] = None

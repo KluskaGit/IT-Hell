@@ -1,5 +1,6 @@
 import uuid
 
+from datetime import datetime
 from typing import List, TYPE_CHECKING
 
 from sqlalchemy import (
@@ -9,7 +10,8 @@ from sqlalchemy import (
     Float,
     Uuid,
     Table,
-    Column
+    Column,
+    DateTime,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -60,6 +62,17 @@ class JobOffer(Base, TimestampMixin):
     url: Mapped[str] = mapped_column(String)
     title: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(Text)
+
+    publication_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    expiration_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
 
     # Relationships
     site: Mapped["Site"] = relationship(back_populates="job_offers")
