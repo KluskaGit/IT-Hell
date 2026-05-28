@@ -10,3 +10,8 @@ uv.lock
 # Scrapers
 scrapers/src/data/
 *.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
