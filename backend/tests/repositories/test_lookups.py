@@ -15,7 +15,7 @@ async def test_add_and_get_by_id(db_session: AsyncSession):
     assert added_tech.name == "Python"
     
     # Testujemy metodę get_by_id
-    fetched_tech = await repo.get_by_id(Technology, str(added_tech.id))
+    fetched_tech = await repo.get_by_id(Technology, added_tech.id)#type: ignore
     assert fetched_tech is not None
     assert fetched_tech.id == added_tech.id
     assert fetched_tech.name == "Python"
@@ -53,14 +53,14 @@ async def test_update_and_delete(db_session: AsyncSession):
     company = await repo.add(Company, "Old Company Name")
     
     # Testujemy update
-    updated_company = await repo.update(Company, str(company.id), "New Company Name")
+    updated_company = await repo.update(Company, company.id, "New Company Name")#type: ignore
     assert updated_company is not None
     assert updated_company.name == "New Company Name"
     
     # Testujemy delete
-    is_deleted = await repo.delete(Company, str(company.id))
+    is_deleted = await repo.delete(Company, company.id)#type: ignore
     assert is_deleted is True
     
     # Upewniamy się, że rekordu już nie ma
-    fetched_company = await repo.get_by_id(Company, str(company.id))
+    fetched_company = await repo.get_by_id(Company, company.id) #type: ignore
     assert fetched_company is None
