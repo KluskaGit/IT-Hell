@@ -15,6 +15,10 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 
 </div>
 
+<div align="center">
+  <img src="docs/images/Hero.png" alt="CV_ANALIZER - strona główna" width="900">
+</div>
+
 ---
 
 ## 📑 Spis treści
@@ -56,6 +60,31 @@ Ten folder (`frontend/`) zawiera **warstwę webową** napisaną w Angular 21 (st
 - 🌐 **SSR + Hydration** — Angular Universal na Expressie, prerender stron statycznych
 - 🎨 **Glassmorphism UI** — gradienty, glow effects, animowane tło
 - 🇵🇱 **Locale `pl`** — formatowanie dat, walut i tekstów w języku polskim
+
+### 📸 Zrzuty ekranu
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/cv-analysis.png" alt="Analiza CV" width="100%">
+      <p align="center"><sub><b>Analiza CV</b> — drop pliku PDF/DOCX, ekstrakcja technologii i auto-uzupełnienie filtrów</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/images/offers-list.png" alt="Lista ofert" width="100%">
+      <p align="center"><sub><b>Lista ofert</b> — sidebar z filtrami, infinite scroll, wyszukiwanie po tytule</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/offer-card-matched.png" alt="Karta oferty z dopasowaniami" width="100%">
+      <p align="center"><sub><b>Karta oferty</b> — podświetlenie technologii pasujących do filtrów (<code>matchedTech</code>)</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/images/profile-view.png" alt="Profil użytkownika" width="100%">
+      <p align="center"><sub><b>Profil użytkownika</b> — zapis CV i preferencji do bazy (dostępne po zalogowaniu)</sub></p>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -440,6 +469,8 @@ Szczegółowe opisy poszczególnych warstw projektu znajdziesz w folderze [`docs
 | [`docs/features.md`](docs/features.md) | Szczegółowy opis każdego feature (home, offers, profile, about, legal) + shared components |
 | [`docs/api-services.md`](docs/api-services.md) | Lista wszystkich serwisów API, DTO, endpointy backendu, proxy config |
 | [`docs/auth-flow.md`](docs/auth-flow.md) | Pełen flow Keycloak PKCE, interceptor, guard, refresh tokenu, troubleshooting |
+| [`docs/env-vars.md`](docs/env-vars.md) | Pełna referencja zmiennych środowiskowych (`.env`, `environment.ts`, proxy, Docker) |
+| [`docs/style-guide.md`](docs/style-guide.md) | Design tokens, paleta kolorów, typografia, glassmorphism, animacje, wzorzec pill cards |
 
 
 ---

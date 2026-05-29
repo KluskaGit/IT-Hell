@@ -44,6 +44,10 @@ Uzupełnienie [głównego README](../README.md) oraz [`docs/architecture.md`](ar
 
 ## 🏠 HOME — strona główna
 
+<div align="center">
+  <img src="images/cv-analysis.png" alt="Analiza CV na stronie głównej" width="800">
+</div>
+
 **Ścieżka:** `src/features/home/`
 **Route:** `/`
 **SSR mode:** `Prerender`
@@ -189,6 +193,11 @@ ngOnDestroy:
 ---
 
 ## 💼 OFFERS `/offers` — lista ofert
+
+<div align="center">
+  <img src="images/offers-list.png" alt="Lista ofert z sidebarem filtrów" width="800">
+  <p><sub>Pełen widok: sidebar z filtrami po lewej, lista ofert po prawej, pasek górny z wyszukiwarką</sub></p>
+</div>
 
 **Ścieżka:** `src/features/offers/`
 **Route:** `/offers`
@@ -387,6 +396,11 @@ toOfferViewModel(offer, filters):
 
 W szablonie tagi technologii dostają klasę `tag--match` jeśli `offer.matchedTech.includes(tech)` — wizualnie wyróżnione (border + glow).
 
+<div align="center">
+  <img src="images/offer-card-matched.png" alt="Karta oferty z podświetlonymi dopasowaniami" width="600">
+  <p><sub>Zbliżenie na kartę oferty — technologie zaznaczone w filtrach dostają klasę <code>tag--match</code> (kolorowa ramka)</sub></p>
+</div>
+
 ### Otwieranie ofert zewnętrznych
 
 ```typescript
@@ -433,6 +447,11 @@ ngOnDestroy:
 ---
 
 ## 👤 PROFILE `/profile` — profil użytkownika
+
+<div align="center">
+  <img src="images/profile-view.png" alt="Strona profilu użytkownika" width="800">
+  <p><sub>Dane z JWT (read-only) + dropzone CV + uproszczone filtry (seniority radio + technologie)</sub></p>
+</div>
 
 **Ścieżka:** `src/features/profile/`
 **Route:** `/profile` (chroniony `authGuard`)
