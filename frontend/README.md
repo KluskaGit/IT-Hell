@@ -11,7 +11,6 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.6-4D4D4D?style=for-the-badge&logo=keycloak&logoColor=white)](https://www.keycloak.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![SSR](https://img.shields.io/badge/Angular-SSR%20%2B%20Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://angular.dev/guide/ssr)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 </div>
 
