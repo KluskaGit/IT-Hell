@@ -82,6 +82,30 @@ services:
       - keycloak-data:/opt/keycloak/data
       - ./keycloak/themes:/opt/keycloak/themes
 
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    expose:
+      - "4000"
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  frontend-nginx:
+    build: ./frontend/nginx
+    container_name: frontend-nginx
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      - frontend
+      - backend
+
 
 volumes:
   db-data:

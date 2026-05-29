@@ -33,6 +33,7 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 - [Routing](#-routing)
 - [Autentykacja](#-autentykacja)
 - [Skrypty npm](#-skrypty-npm)
+- [Uruchomienie pełnego stacku w Dockerze](#-uruchomienie-pełnego-stacku-w-dockerze)
 - [Dokumentacja rozszerzona](#-dokumentacja-rozszerzona)
 
 ---
@@ -163,11 +164,13 @@ Zanim zaczniesz, zainstaluj następujące narzędzia:
 
 Aplikacja składa się z **trzech warstw**, które muszą działać równocześnie:
 
-1. **Docker** — backend FastAPI, Keycloak, PostgreSQL, Redis, worker, scrapery
-2. **Frontend Angular** — dev server na porcie 4200
-3. **Twoja przeglądarka** — `http://localhost:4200`
+1. **Docker** — backend FastAPI, Keycloak, PostgreSQL, Redis, worker, scrapery, **+ opcjonalnie frontend (SSR) i nginx**
+2. **Frontend Angular** — dev server na porcie 4200 (lub kontener Docker na porcie 80)
+3. **Twoja przeglądarka** — `http://localhost:4200` (dev) lub `http://localhost` (Docker)
 
 Wykonaj poniższe etapy **w kolejności**. Każdy etap zawiera komendy gotowe do skopiowania.
+
+> 💡 Masz dwie ścieżki: **(A)** dev mode z `npm start` na `:4200` (live reload, szybki feedback) lub **(B)** pełen stack w Dockerze przez `docker compose up` (produkcyjny build z SSR + nginx na `:80`). Sekcje **A–F** opisują tryb dev. Tryb pełnego Dockera jest na końcu w sekcji [Uruchomienie pełnego stacku w Dockerze](#-uruchomienie-pełnego-stacku-w-dockerze).
 
 ---
 
@@ -215,7 +218,7 @@ REDIS_PASSWORD=...
 docker compose up -d --build
 ```
 
-Komenda uruchamia **siedem kontenerów**:
+Komenda uruchamia **dziewięć kontenerów**:
 
 | Kontener | Port | Funkcja |
 |---|---|---|
@@ -226,6 +229,8 @@ Komenda uruchamia **siedem kontenerów**:
 | `migrations` | — | jednorazowo: `alembic upgrade head` |
 | `worker` | — | konsumer kolejki Redis |
 | `scrapers` | — | scrapery ofert (Pracuj/JJIT/NFJ) |
+| `frontend` | 4000 (wewnętrzny) | Angular SSR (Node + Express) |
+| `frontend-nginx` | 80 | Reverse proxy: `/` → SSR, `/v1/*` → backend |
 
 Sprawdź status:
 
@@ -455,6 +460,112 @@ Dostępne skrypty (`package.json`):
 | `npm test` | Uruchamia testy jednostkowe przez Vitest |
 | `npm run serve:ssr:cv-analizer` | Uruchamia serwer SSR z `dist/cv-analizer/server/server.mjs` (po `npm run build`) |
 | `npm run ng` | Surowy Angular CLI (np. `npm run ng -- generate component ...`) |
+
+---
+
+## 🐳 Uruchomienie pełnego stacku w Dockerze
+
+Frontend jest również skonteneryzowany — analogicznie do backendu. Pełen stack (backend + frontend + auth + DB) możesz uruchomić **jedną komendą**:
+
+```bash
+docker compose up -d --build
+```
+
+Po zakończeniu buildu (~3-5 minut przy pierwszym uruchomieniu) aplikacja jest dostępna pod **`http://localhost`** (port 80, bez `:4200`).
+
+### Architektura kontenerów frontendu
+
+| Kontener | Port (host → container) | Funkcja |
+|---|---|---|
+| `frontend` | — / `4000` | Angular SSR (Node + Express). Nie wystawia portu na zewnątrz, dostępny tylko przez wewnętrzną sieć Dockera (`app-network`) |
+| `frontend-nginx` | `80 → 80` | Reverse proxy: serwuje aplikację pod `/`, przepuszcza `/v1/*` do `backend:8000` |
+
+```mermaid
+flowchart LR
+    Browser([Przeglądarka]) -->|:80| Nginx[frontend-nginx<br/>nginx:1.27-alpine]
+    Nginx -->|"/"| SSR[frontend<br/>Node + Angular SSR<br/>:4000]
+    Nginx -->|"/v1/*"| Backend[backend<br/>FastAPI :8000]
+    SSR -.->|opcjonalnie| Backend
+    Backend --> DB[(PostgreSQL)]
+    Backend --> Keycloak[(Keycloak)]
+```
+
+### Pliki dockeryzacji frontendu
+
+| Plik | Opis |
+|---|---|
+| `frontend/Dockerfile` | Multi-stage build: `builder` (npm ci + npm run build) → `runtime` (node:20-alpine + dist + npm ci --omit=dev) |
+| `frontend/.dockerignore` | Wyklucza `node_modules`, `dist`, `.angular`, dokumentację, `.env*` z kontekstu build |
+| `frontend/nginx/Dockerfile` | `nginx:1.27-alpine` z podmienionym `default.conf` |
+| `frontend/nginx/nginx.conf` | Reverse proxy + gzip + keepalive upstream do `frontend:4000` i `backend:8000` |
+
+### Multi-stage Dockerfile — co się dzieje
+
+```dockerfile
+FROM node:20-alpine AS builder      # stage 1: build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci                          # pełne deps z lock file
+COPY . .
+RUN npm run build                   # tworzy dist/cv-analizer/{browser,server}
+
+FROM node:20-alpine AS runtime      # stage 2: runtime
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force  # tylko production deps
+COPY --from=builder /app/dist ./dist
+ENV NODE_ENV=production
+ENV PORT=4000
+EXPOSE 4000
+CMD ["node", "dist/cv-analizer/server/server.mjs"]
+```
+
+**Wynik:** final image waży ~250 MB (zamiast ~1.5 GB gdyby builder i runtime były w jednej warstwie z `node_modules` dev).
+
+### Komunikacja między kontenerami
+
+| Z → Do | Hostname | Port |
+|---|---|---|
+| `frontend-nginx` → `frontend` | `frontend` (DNS Dockera) | 4000 |
+| `frontend-nginx` → `backend` | `backend` | 8000 |
+| `frontend` (SSR) → `backend` | `backend` (jeśli SSR robi API call) | 8000 |
+| `backend` → `keycloak` | `keycloak` | 8080 |
+| `backend` → `database` | `database` | 5432 |
+| `backend` → `message-broker` | `message-broker` | 6379 |
+
+Wszystko przez **`app-network`** (bridge). Backend i frontend **nie wystawiają portów** poza `frontend-nginx:80` — atak surface minimalny.
+
+### Tryb dev vs full Docker — kiedy używać
+
+| Sytuacja | Tryb |
+|---|---|
+| Aktywny development frontendu | **`npm start`** — live reload, source maps, błędy w konsoli |
+| Demo / pokazanie projektu | **`docker compose up`** — jedna komenda, jeden URL |
+| Test produkcyjnego buildu | **`docker compose up frontend frontend-nginx`** |
+| CI / staging | **`docker compose up`** |
+| Test SSR hydratation | **Docker** (npm start nie symuluje SSR dokładnie) |
+
+### Częste komendy
+
+```bash
+docker compose up -d --build               # pełen stack w tle
+docker compose up -d --build frontend frontend-nginx  # tylko frontend (backend musi już działać)
+docker compose logs -f frontend             # logi SSR
+docker compose logs -f frontend-nginx       # logi nginx (debug proxy)
+docker compose restart frontend             # restart SSR po zmianie w runtime
+docker compose down                         # zatrzymaj wszystko
+docker compose down -v                      # + usuń volumes (UWAGA: kasuje DB i Keycloak)
+```
+
+### Troubleshooting Dockera frontendu
+
+| Problem | Przyczyna | Rozwiązanie |
+|---|---|---|
+| `404` na `/v1/*` w przeglądarce | Backend nie wstał przed nginxem | `docker compose logs backend` — sprawdź czy backend nasłuchuje na `:8000` |
+| Pusty hash w bundlach JS | Build cache Dockera | `docker compose build --no-cache frontend` |
+| `502 Bad Gateway` z nginx | SSR container crashował | `docker compose logs frontend` — sprawdź czy port 4000 słucha |
+| Bardzo długi build (10+ min) | Brak `.dockerignore` lub `node_modules` w kontekście | Sprawdź `frontend/.dockerignore` |
+| Aplikacja nie używa świeżego kodu | Builder cache nie został unieważniony | `docker compose build --no-cache frontend` lub zmień `package.json` |
 
 ---
 
