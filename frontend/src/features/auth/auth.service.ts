@@ -162,7 +162,7 @@ export class AuthService {
   }
 
   // Wylogowuje użytkownika - kończy sesję Keycloak i czyści stan lokalny.
-  // Kolejność: 1. stop refresh interval → 2. keycloak.logout() → 3. reset sygnałów.
+  // Kolejność: 1. stop refresh interval -> 2. keycloak.logout() -> 3. reset sygnałów.
   // keycloak.logout() przekierowuje przeglądarkę do Keycloak który kończy sesję SSO,
   // potem wraca na window.location.origin (strona główna)
   async logout(): Promise<void> {

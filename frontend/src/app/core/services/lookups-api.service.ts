@@ -1,3 +1,4 @@
+// Dane słownikowe pobierane w forkJoin przez FiltersFormComponent przy inicjalizacji
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';

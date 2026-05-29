@@ -24,6 +24,7 @@ export interface MappedOffer {
   url?: string;
 }
 
+// Fallbacki używane przez mapToOffer gdy pole z API jest null
 const FALLBACK_COMPANY  = 'Nieznana firma';
 const FALLBACK_LOCATION = 'Zdalnie';
 const FALLBACK_UNKNOWN  = 'Nie podano';
@@ -61,6 +62,8 @@ export class JobOffersApiService {
     return this.http.get<JobOfferApiResponse[]>(`${this.base}/get_offer_filter`, { params: httpParams });
   }
 
+  // Konwertuje surowe DTO z API na MappedOffer używany przez offers.component.ts.
+  // 'None' jako opis pojawia się gdy backend nie wyciągnął opisu ze scrapera - traktujemy jako pusty
   mapToOffer(api: JobOfferApiResponse): MappedOffer {
     const locations = api.locations ?? [];
     const technologies = api.technologies ?? [];

@@ -52,10 +52,7 @@
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <!-- Pole tekstowe powiązane z searchQuery przez [(ngModel)].
-             ngModelChange zamiast zwykłego [(ngModel)] bo potrzebujemy wywołać onSearchChange()
-             przy każdej zmianie (a nie tylko przy stracie focusu).
-             autocomplete="off" zapobiega podpowiedziom przeglądarki -->
+        <!-- ngModelChange zamiast [(ngModel)] bo onSearchChange() musi byc wywolane przy kazdej zmianie, nie tylko na blur -->
         <input
           class="searchbar__input"
           type="text"
@@ -102,17 +99,8 @@
       <span class="drag-handle__dots"></span>
     </div>
 
-    <!-- Formularz filtrów - komponent FiltersFormComponent (shared/filters-form/filters-form.component.ts).
-         Wejście:
-           [initialFilters]    - stan początkowy formularza (z URL, history.state lub localStorage)
-           [showSummaryHeader] - false = brak nagłówka z podsumowaniem filtrów
-           [showApplyButton]   - false = brak przycisku "Zastosuj" (filtry działają na żywo)
-           [collapsible]       - false = sekcje formularza zawsze rozwinięte
-           [showProfileFillButton] - przycisk "Uzupełnij z profilu" widoczny tylko dla zalogowanych
-         Wyjście:
-           (ready)             - emituje FiltersValue gdy formularz jest gotowy (pierwsze ładowanie)
-           (filtersChange)     - emituje FiltersValue przy każdej zmianie przez użytkownika
-           (profileFillClicked)- kliknięcie przycisku "Uzupełnij z profilu" -->
+    <!-- Formularz filtrow - filtry dzialaja na zywo (bez przycisku "Zastosuj").
+         "Uzupelnij z profilu" wyswietla sie tylko dla zalogowanych uzytkownikow -->
     <div class="sidebar__inner">
       <app-filters-form
         [initialFilters]="initialFilters"
@@ -156,8 +144,7 @@
          displayedOffers to getter zwracający matchedOffers (przefiltrowane i wzbogacone oferty) -->
     <section *ngIf="displayedOffers.length > 0; else emptyState">
 
-      <!-- Jedna karta oferty. trackBy: trackOffer używa offer.id jako klucza — Angular
-           nie niszczy i nie tworzy elementów DOM przy paginacji, tylko aktualizuje zmienione -->
+      <!-- Jedna karta oferty. trackBy: trackOffer uzywa offer.id - Angular nie niszczy DOM przy paginacji -->
       <article class="offer-card" *ngFor="let offer of displayedOffers; trackBy: trackOffer">
 
         <!-- Górna część karty: logo firmy (inicjał), tytuł stanowiska i widełki wynagrodzenia -->
@@ -169,10 +156,8 @@
           <div class="offer-card__content">
             <div class="offer-card__title-row">
               <h2 class="offer-card__title">{{ offer.title }}</h2>
-              <!-- Wynagrodzenie - pokazuje widełki PLN lub "Nie podano".
-                   offer-card__salary--na zmienia styl (szary tekst) gdy brak wynagrodzenia.
-                   hasSalary() sprawdza czy salaryMin > 0 lub salaryMax > 0.
-                   Pipe number:'1.0-0' formatuje liczby bez miejsc dziesiętnych (np. 10 000) -->
+              <!-- Wynagrodzenie - widełki PLN lub "Nie podano" gdy hasSalary() = false.
+                   Pipe number:'1.0-0' formatuje liczby bez miejsc dziesietnych (np. 10 000) -->
               <span class="offer-card__salary" [class.offer-card__salary--na]="!hasSalary(offer)">
                 <ng-container *ngIf="hasSalary(offer); else salNa">
                   {{ offer.salaryMin | number:'1.0-0' }}–{{ offer.salaryMax | number:'1.0-0' }} PLN
@@ -198,11 +183,8 @@
           </div>
         </div>
 
-        <!-- Tagi ról i technologii oferty.
-             Zielone tagi (tag--role) to role które pasują do filtrów użytkownika (matchedRoles).
-             Tagi technologii świecą się (tag--match) gdy dana technologia jest w matchedTech
-             (czyli użytkownik zaznaczył ją w filtrach) — wizualne dopasowanie oferty do profilu.
-             technologyNames[i] to czytelna nazwa z backendu, formatTech(tech) to fallback z lokalnego mapowania -->
+        <!-- Tagi rol i technologii - tag--match swieci sie gdy technologia pasuje do filtrow uzytkownika.
+             technologyNames[i] to czytelna nazwa z backendu, formatTech(tech) to fallback -->
         <div class="offer-card__tags">
           <span class="tag tag--role" *ngFor="let role of offer.matchedRoles; trackBy: trackByString">{{ formatRole(role) }}</span>
           <span class="tag" [class.tag--match]="offer.matchedTech.includes(tech)"
@@ -226,12 +208,8 @@
 
       </article>
 
-      <!-- Element sentinel - niewidoczny div na końcu listy ofert.
-           #scrollSentinel to referencja odczytywana przez setter w offers.component.ts,
-           który podpina IntersectionObserver obserwujący ten element.
-           Gdy sentinel wejdzie w pole widzenia, IntersectionObserver wywołuje loadMore()
-           i ładuje kolejną stronę ofert (infinite scroll).
-           Wewnątrz spinner widoczny gdy isLoadingMore = true (ładowanie kolejnych stron) -->
+      <!-- Sentinel na koncu listy - obserwowany przez IntersectionObserver,
+           ktory wywoluje loadMore() gdy element wejdzie w pole widzenia (infinite scroll) -->
       <div #scrollSentinel class="scroll-sentinel">
         <div *ngIf="isLoadingMore" class="state-loading state-loading--sm">
           <div class="spinner"></div>

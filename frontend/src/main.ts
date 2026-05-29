@@ -12,6 +12,7 @@ async function initializeApp() {
   const authService = appRef.injector.get(AuthService);
   const platformId = appRef.injector.get(PLATFORM_ID);
 
+  // Keycloak SDK wymaga przeglądarki - pomijamy init podczas SSR
   if (isPlatformBrowser(platformId)) {
     await authService.init();
   }

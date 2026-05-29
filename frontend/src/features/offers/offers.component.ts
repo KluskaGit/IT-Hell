@@ -152,7 +152,7 @@ export class OffersComponent implements OnInit, OnDestroy {
     if (!this.isSidebarDragging) return;
     // delta - o ile pikseli kursor przesunął się od momentu kliknięcia uchwytu
     const delta = event.clientX - this.dragStartX;
-    // Nowa szerokość = startowa + delta, ale ograniczona do zakresu MIN–MAX
+    // Nowa szerokość = startowa + delta, ale ograniczona do zakresu MIN-MAX
     this.sidebarWidth = Math.min(
       this.SIDEBAR_MAX,
       Math.max(this.SIDEBAR_MIN, this.dragStartWidth + delta)
@@ -181,7 +181,7 @@ export class OffersComponent implements OnInit, OnDestroy {
     const raw = localStorage.getItem(this.SIDEBAR_KEY);
     if (raw) {
       const parsed = parseInt(raw, 10);
-      // Clampujemy do MIN–MAX na wypadek gdyby stałe zmieniły się od poprzedniej wizyty
+      // Clampujemy do MIN-MAX na wypadek gdyby stałe zmieniły się od poprzedniej wizyty
       if (!isNaN(parsed)) {
         this.sidebarWidth = Math.min(this.SIDEBAR_MAX, Math.max(this.SIDEBAR_MIN, parsed));
       }

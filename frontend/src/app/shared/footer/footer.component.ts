@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router'; // routerLink w szablonie (linki do /legal, /about)
 
 @Component({
   selector: 'app-footer',

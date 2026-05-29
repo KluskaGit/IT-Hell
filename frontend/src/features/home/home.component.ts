@@ -97,7 +97,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   isDragging = false;
   // Flaga skanowania - true od momentu wysłania pliku do API do zakończenia animacji
   isScanning = false;
-  // Postęp animacji skanowania (0–100) - steruje paskiem w szablonie
+  // Postęp animacji skanowania (0-100) - steruje paskiem w szablonie
   scanProgress = 0;
   // Tekst statusu skanowania - zmienia się etapami ("Analiza CV...", "Zakończono!")
   scanStatus = '';
@@ -231,7 +231,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Prywatna metoda - zapisuje aktualny stan formularza do localStorage po programatycznym patchu.
   // Wywołana po fillFromProfile() i po analizie CV żeby localStorage był zawsze aktualny.
   // Bez tego: fillFromProfile() zmieniłby formularz ale localStorage zostałby z poprzednim stanem,
-  // a przy następnej nawigacji /offers→/home stan formularza cofnąłby się
+  // a przy następnej nawigacji /offers->/home stan formularza cofnąłby się
   private autoFillForm(): void {
     const value = this.filtersFormRef?.computeValue();
     if (value) this.saveFilters(value);
@@ -239,7 +239,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Usuwa wgrany plik CV i resetuje stan analizy.
   // e.stopPropagation() - przycisk "Usuń" jest wewnątrz elementu dropzone który ma (click).
-  // Bez stopPropagation kliknięcie "Usuń" wywołałoby też kliknięcie dropzone → otwarcie dialogu
+  // Bez stopPropagation kliknięcie "Usuń" wywołałoby też kliknięcie dropzone -> otwarcie dialogu
   removeFile(e: Event): void {
     e.stopPropagation();
     this.selectedFile = null;

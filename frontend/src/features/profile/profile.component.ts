@@ -1,10 +1,5 @@
-// Komponent strony /profile - edycja profilu zalogowanego użytkownika.
-// Pobiera dane z dwóch endpointów backendu:
-//   GET /v1/users/me         - podstawowe dane konta (email, imię, nazwisko)
-//   GET /v1/users/me/profile - preferencje zawodowe (technologie, poziom doświadczenia, CV)
-// Zapis przez PUT /v1/users/me/profile (UserApiService).
-// Formularz filtrów (FiltersFormComponent) reużywa tego samego komponentu co /home i /offers
-// ale w trybie uproszczonym: tylko seniority (radio) i technologie, bez lokalizacji i salary.
+// Strona /profile - edycja profilu zalogowanego użytkownika.
+// FiltersFormComponent reużywany w trybie uproszczonym: tylko seniority (radio) i technologie.
 import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -14,19 +9,15 @@ import { takeUntil } from 'rxjs/operators';
 
 import { NavbarComponent } from '../../app/shared/navbar/navbar.component';
 import { FooterComponent } from '../../app/shared/footer/footer.component';
-// FiltersFormComponent reużywany do wyboru technologii i poziomu doświadczenia
 import { FiltersFormComponent } from '../../app/shared/filters-form/filters-form.component';
-// FiltersInitialState - stan przekazywany do formularza, FiltersValue - stan odczytywany z formularza
 import { FiltersInitialState, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
-// AuthService - Keycloak, dostarcza dane z tokena JWT (email, imię, nazwisko)
 import { AuthService } from '../auth/auth.service';
-// CvApiService - upload CV do backendu POST /v1/cv/upload, zwraca wykryte technologie
 import { CvApiService } from '../../app/core/services/cv-api.service';
 import {
   UserApiService,
-  UserMeDto,          // DTO z GET /v1/users/me - podstawowe dane konta
-  UserProfileDto,     // DTO z GET /v1/users/me/profile - preferencje zawodowe
-  UserProfileUpdateDto, // DTO do PUT /v1/users/me/profile - payload zapisu
+  UserMeDto,
+  UserProfileDto,
+  UserProfileUpdateDto,
 } from '../../app/core/services/user-api.service';
 
 // Maksymalny rozmiar pliku CV - walidacja przed uploadem do backendu
@@ -41,44 +32,35 @@ const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit, OnDestroy {
-  // Referencja do FiltersFormComponent w szablonie - używana do ręcznego patchValue()
-  // gdy dane z backendu dotrą po tym jak formularz jest już zainicjowany
+  // Używana do ręcznego patchValue() gdy dane z backendu dotrą po inicjalizacji formularza
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
-  // Dane podstawowe użytkownika - wczytywane najpierw z tokena JWT (initFromToken),
-  // potem nadpisywane danymi z GET /v1/users/me (patchUserData)
   email     = '';
   firstName = '';
   lastName  = '';
 
-  // Informacje o aktualnie załadowanym CV
-  currentCvFile: string | null = null; // nazwa pliku lub null gdy brak CV
-  currentCvDate = '';                   // data wgrania (lub 'Właśnie teraz' po nowym uploadzie)
-  isDragging    = false;                // flaga drag&drop strefy uploadu CV
+  currentCvFile: string | null = null;
+  currentCvDate = '';
+  isDragging    = false;
 
-  // Stan animacji skanowania CV po uploadzie
-  isScanning    = false;  // true podczas uploadu i analizy CV przez backend
-  scanProgress  = 0;      // wartość 0-100 paska postępu (symulowana animacja)
-  scanStatus    = '';     // tekst wyświetlany pod paskiem (np. "Analiza CV..." / "Zakończono!")
-  scanComplete  = false;  // true gdy skanowanie zakończyło się sukcesem
+  isScanning    = false;
+  scanProgress  = 0;
+  scanStatus    = '';
+  scanComplete  = false;
 
-  // Stan formularza preferencji zawodowych (FiltersFormComponent)
   // savedFilters - przekazywane do [initialFilters] formularza przy jego inicjalizacji
   savedFilters: FiltersInitialState | null = null;
   // currentFilterValue - aktualizowane przez (filtersChange), używane przy zapisie profilu
   private currentFilterValue: FiltersValue | null = null;
 
-  // Stan operacji zapisu profilu
-  isSaving     = false;       // true podczas trwania PUT /v1/users/me/profile
-  loadError: string | null = null;   // błąd ładowania danych (GET /v1/users/me lub /profile)
-  saveError: string | null = null;   // błąd zapisu profilu lub walidacji pliku CV
-  saveSuccess: string | null = null; // komunikat sukcesu po udanym zapisie (znika po 3s)
+  isSaving     = false;
+  loadError: string | null = null;
+  saveError: string | null = null;
+  saveSuccess: string | null = null; // znika po 3 sekundach
 
-  // Timer do automatycznego ukrycia komunikatu sukcesu po 3 sekundach
   private saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
-  // Tablica timerów animacji skanowania CV - czyszczona w ngOnDestroy żeby nie wyciekać
+  // Tablica timerów animacji skanowania - czyszczona w ngOnDestroy żeby nie wyciekać
   private scanTimers: ReturnType<typeof setTimeout>[] = [];
-  // Subject do anulowania subskrypcji RxJS przy zniszczeniu komponentu
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -86,23 +68,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private readonly userApi: UserApiService,
     private readonly cvApi: CvApiService,
     private readonly cdr: ChangeDetectorRef,
-    // PLATFORM_ID - sprawdzamy czy kod działa w przeglądarce (nie podczas SSR)
+    // PLATFORM_ID - potrzebne bo localStorage i FileReader nie istnieją w SSR
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
-  // ngOnInit jest async bo loadUserDataFromBackend używa await (dwa kolejne requesty do API)
   async ngOnInit(): Promise<void> {
-    // Cały komponent wymaga przeglądarki - localStorage, FileReader itp. nie istnieją w SSR
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Etap 1: natychmiastowe wczytanie podstawowych danych z tokena JWT (bez requestu do API)
+    // Etap 1: dane z tokena JWT (natychmiast, bez requestu)
     this.initFromToken();
-    // Etap 2: wczytanie pełnych danych z backendu (może nadpisać dane z tokena)
+    // Etap 2: pełne dane z backendu (może nadpisać dane z tokena)
     await this.loadUserDataFromBackend();
   }
 
-  // Wczytuje email, imię i nazwisko z tokena Keycloak przez AuthService.getProfile().
-  // Wywoływane natychmiast w ngOnInit bez oczekiwania na backend - dane z tokena są dostępne od razu
   private initFromToken(): void {
     const profile = this.authService.getProfile();
     this.email     = profile.email;
@@ -110,11 +88,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.lastName  = profile.lastName  ?? '';
   }
 
-  // Pobiera dane użytkownika z backendu w dwóch krokach.
-  // Krok 1: GET /v1/users/me - dane konta (email, imię, nazwisko z bazy, nie z tokena)
-  // Krok 2: GET /v1/users/me/profile - preferencje zawodowe (technologie, exp_level, CV)
-  // Krok 2 jest zagnieżdżony w try/catch bo 404 jest oczekiwanym stanem dla nowych użytkowników
-  // którzy jeszcze nie skonfigurowali preferencji
+  // 404 z /users/me/profile jest oczekiwany dla nowych użytkowników bez profilu
   private async loadUserDataFromBackend(): Promise<void> {
     this.loadError = null;
 
@@ -126,8 +100,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const profile = await this.userApi.getMyProfile();
         this.patchProfileData(profile);
       } catch (error) {
-        // 404 z /users/me/profile = nowy użytkownik bez profilu - inicjalizujemy pusty stan
-        // zamiast pokazywać błąd, co pozwala użytkownikowi wypełnić profil od zera
         if (error instanceof HttpErrorResponse && error.status === 404) {
           this.savedFilters = {
             selectedTechnologies: [],
@@ -146,40 +118,32 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Nadpisuje podstawowe dane użytkownika danymi z GET /v1/users/me.
-  // ?? this.xxx - zachowujemy dane z tokena jeśli backend zwróci null dla danego pola
+  // ?? this.xxx - zachowujemy dane z tokena gdy backend zwróci null
   private patchUserData(me: UserMeDto): void {
     this.email     = me.email      ?? this.email;
     this.firstName = me.first_name ?? this.firstName;
     this.lastName  = me.last_name  ?? this.lastName;
   }
 
-  // Przetwarza dane z GET /v1/users/me/profile i ustawia stan formularza preferencji.
-  // Buduje savedFilters (dla [initialFilters] formularza) i currentFilterValue (dla zapisu).
-  // Wywoływane też po udanym zapisie profilu (onSave) żeby zsynchronizować stan z backendem
+  // Buduje savedFilters i currentFilterValue z danych profilu.
+  // Wywoływane też po udanym onSave() żeby zsynchronizować stan z odpowiedzią backendu
   private patchProfileData(profile: UserProfileDto): void {
-    // Konwertujemy technologie z backendu na format LocationItem {id, name} dla FiltersForm
     const selectedTechnologies = profile.technologies.map(t => ({
       id: t.id,
       name: t.name,
     }));
 
-    // expLevelId - ID wybranego poziomu doświadczenia (może być pusty gdy nie ustawiony)
     const expLevelId = profile.exp_level?.id ?? '';
 
-    // savedFilters - przekazywany do [initialFilters] formularza.
-    // Zawiera tylko pola które FiltersFormComponent rozumie jako stan seniority i technologii
     this.savedFilters = {
       selectedTechnologies,
       technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
       seniority: expLevelId ? { [expLevelId]: true } : {},
     };
-    // patchValue() aktualizuje formularz gdy już istnieje (np. gdy profil ładuje się po inicjalizacji formularza)
     this.filtersFormRef?.patchValue(this.savedFilters);
     this.cdr.markForCheck();
 
-    // currentFilterValue - pełny FiltersValue potrzebny przez buildProfilePayload() przy zapisie.
-    // Większość pól jest pusta/domyślna bo profil używa tylko seniority i technologii
+    // Pełny FiltersValue potrzebny przez buildProfilePayload() - większość pól domyślna
     this.currentFilterValue = {
       itArea: {},
       technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
@@ -205,15 +169,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.currentCvDate = '';
   }
 
-  // Wywoływane przez (filtersChange) z FiltersFormComponent przy każdej zmianie formularza.
-  // Aktualizuje currentFilterValue który jest używany przez onSave() przy zapisie profilu
   onFiltersChange(value: FiltersValue): void {
     this.currentFilterValue = value;
   }
 
-  // Buduje payload do PUT /v1/users/me/profile z aktualnego stanu formularza.
-  // Profil zapisuje tylko exp_level_id i technology_ids - pozostałe pola FiltersValue są ignorowane.
-  // expLevelIds[0] bo profil obsługuje tylko jeden poziom doświadczenia (singleExpLevelSelection = true)
+  // expLevelIds[0] bo profil obsługuje tylko jeden poziom (singleExpLevelSelection = true)
   private buildProfilePayload(): { exp_level_id: string; technology_ids: string[] } {
     return {
       exp_level_id:   this.currentFilterValue?.expLevelIds?.[0] ?? '',
@@ -221,8 +181,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     };
   }
 
-  // Obsługa drag&drop strefy uploadu CV - e.preventDefault() wymagane żeby przeglądarka
-  // nie otwierała pliku we własnym oknie zamiast przekazać go do handlera
+  // preventDefault() wymagane żeby przeglądarka nie otwierała pliku we własnym oknie
   onDragOver(e: DragEvent): void {
     e.preventDefault();
     this.isDragging = true;
@@ -240,8 +199,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]);
   }
 
-  // Obsługuje wybór pliku przez kliknięcie i standardowe okno dialogowe przeglądarki.
-  // input.value = '' czyści input po obsłudze - bez tego ten sam plik nie wywoła change event drugi raz
+  // input.value = '' czyści input - bez tego ten sam plik nie wywoła change event ponownie
   onFileSelected(e: Event): void {
     const input = e.target as HTMLInputElement;
     if (input.files?.length) this.handleFile(input.files[0]);
@@ -270,9 +228,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.analyzeCV(file);
   }
 
-  // Uploaduje CV do backendu POST /v1/cv/upload i odbiera listę wykrytych technologii.
-  // Animacja paska postępu jest sztuczna (API nie zwraca progress) - setTimeout symuluje etapy.
-  // Po sukcesie aktualizuje filtersForm przez patchValue() dodając wykryte technologie
+  // Animacja paska postępu jest sztuczna - API nie zwraca progress, setTimeout symuluje etapy
   private analyzeCV(file: File): void {
     this.isScanning   = true;
     this.scanProgress = 0;
@@ -346,9 +302,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.scanComplete  = false;
   }
 
-  // Zapisuje profil użytkownika przez PUT /v1/users/me/profile.
-  // Waliduje czy exp_level_id jest wybrany (wymagane pole backendu).
-  // Po sukcesie patchuje lokalny stan przez patchProfileData() i pokazuje komunikat sukcesu na 3 sekundy
   async onSave(): Promise<void> {
     if (!this.currentFilterValue) {
       this.saveError = 'Najpierw wybierz poziom doświadczenia i technologie.';
@@ -394,11 +347,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Czyścimy wszystkie timery animacji skanowania żeby nie wyciekały po opuszczeniu strony
     this.scanTimers.forEach(t => clearTimeout(t));
-    // Czyścimy timer komunikatu sukcesu
     clearTimeout(this.saveSuccessTimer ?? undefined);
-    // Anulujemy subskrypcję uploadCv - zatrzymuje request jeśli użytkownik opuści stronę podczas uploadu
+    // destroy$ anuluje uploadCv jeśli użytkownik opuści stronę podczas uploadu
     this.destroy$.next();
     this.destroy$.complete();
   }

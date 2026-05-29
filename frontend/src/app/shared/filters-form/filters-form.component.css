@@ -1,17 +1,13 @@
-/* Style dla FiltersFormComponent (shared/filters-form/filters-form.component.ts).
-   Komponent używany na trzech stronach: /home (główny formularz), /offers (sidebar), /profile.
-   W każdym kontekście wygląd jest nieco inny - offers.component.css nadpisuje część tych styli
-   przez ::ng-deep dla wersji sidebarowej (płaski wygląd bez kart i cieni). */
+/* Style dla FiltersFormComponent - używany na /home, /offers (sidebar) i /profile.
+   Wersja sidebarowa /offers nadpisuje część styli przez ::ng-deep (płaski wygląd bez kart) */
 
 
-/* :host = element <app-filters-form> w DOM - ustawiamy display: block
-   bo domyślnie elementy custom Angular są inline co łamie layout */
+/* display: block wymagane bo Angular renderuje komponenty jako inline domyślnie */
 :host {
   display: block;
 }
 
-/* Stan ładowania i błędu - wyświetlane zamiast formularza gdy dane z backendu nie są gotowe.
-   Wspólny styl (biała karta z zaokrąglonymi rogami) nadpisywany przez .ff-error dla wariantu błędu */
+/* Stan ładowania i błędu - wyświetlane zamiast formularza gdy dane z backendu nie są gotowe */
 .ff-loading,
 .ff-error {
   background: rgba(255, 255, 255, 0.95);
@@ -29,9 +25,7 @@
   border-color: #fecaca;
 }
 
-/* Główna karta formularza - biały zaokrąglony kontener z cieniem.
-   Używany na /home i /profile. W sidebarze /offers nadpisywany przez ::ng-deep w offers.component.css
-   (tło transparent, brak border i box-shadow żeby formularz wyglądał płasko w panelu) */
+/* Główna karta formularza - w sidebarze /offers nadpisywana przez ::ng-deep (tło transparent, brak cienia) */
 .ff-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24px;
@@ -41,8 +35,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* Nagłówek formularza z tytułem (np. "Filtry") i opcjonalnym przyciskiem akcji po prawej.
-   Widoczny tylko gdy showSummaryHeader = true (ustawiany przez @Input w TS) */
+/* Nagłówek formularza - widoczny gdy showSummaryHeader = true */
 .summary-header {
   display: flex;
   align-items: center;
@@ -168,9 +161,8 @@
   position: relative;
 }
 
-/* Ukrywamy natywny input checkbox/radio - zastępujemy go wizualnie przez .pill-content.
-   Technika "custom checkbox" - input jest niewidoczny ale nadal funkcjonalny (klawisz Space, Tab).
-   Selektor CSS :checked działa na ukrytym inpucie i zmienia styl sąsiedniego .pill-content */
+/* Ukryty input - zastąpiony wizualnie przez .pill-content, ale nadal funkcjonalny (Space, Tab).
+   :checked na ukrytym inpucie zmienia styl sąsiedniego .pill-content przez selektor + */
 .pill-card input[type="radio"],
 .pill-card input[type="checkbox"] {
   position: absolute;
@@ -351,9 +343,7 @@
   margin-top: 0.75rem;
 }
 
-/* Kolorowa belka wypełnienia między suwakami - pokazuje wybrany zakres salary.
-   position: absolute + top: 50% + translateY(-50%) centruje belkę pionowo w kontenerze.
-   Szerokość i pozycja ustawiane dynamicznie przez [style.width.%] i [style.left.%] w HTML.
+/* Kolorowa belka między suwakami - szerokość i pozycja ustawiane przez [style.width.%]/[style.left.%].
    pointer-events: none żeby belka nie blokowała kliknięć na suwaki pod nią */
 .salary-progress-fill {
   position: absolute;
@@ -366,8 +356,7 @@
   pointer-events: none;
 }
 
-/* Szare tło całej skali suwaka - linia od 0 do max.
-   ::before na kontenerze zamiast osobnego elementu żeby nie komplikować HTML */
+/* Szare tło skali suwaka przez ::before na kontenerze - nie dodaje elementu do HTML */
 .salary-range-slider::before {
   content: '';
   position: absolute;
@@ -381,11 +370,9 @@
   z-index: 0; /* pod belką fill i suwakami */
 }
 
-/* Suwaki range (input type="range") nakładające się jeden na drugi.
-   Obydwa zajmują całą szerokość kontenera - jeden kontroluje dolną granicę, drugi górną.
-   background: transparent i -webkit-appearance: none ukrywają domyślny track przeglądarki -
-   track rysujemy sami przez ::before i .salary-progress-fill.
-   pointer-events: none na całym suwaku - kliknięcia przekazywane do uchwytów (::-webkit-slider-thumb) */
+/* Dwa suwaki nakładające się - jeden kontroluje dolną granicę, drugi górną.
+   background: transparent i appearance: none ukrywają domyślny track - rysujemy własny.
+   pointer-events: none na tracku, przywrócone tylko dla uchwytu (::-webkit-slider-thumb) */
 .salary-input {
   position: absolute;
   top: 50%;
@@ -403,8 +390,7 @@
   pointer-events: none;    /* kliknięcia przechodzą przez track do elementów pod spodem */
 }
 
-/* Uchwyt suwaka (kulka do przeciągania) - Chrome/Safari/Edge.
-   pointer-events: auto przywraca interaktywność tylko dla uchwytu (nie całego tracka) */
+/* Uchwyt suwaka - Chrome/Safari/Edge. pointer-events: auto przywraca interaktywność tylko dla kulki */
 .salary-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -464,9 +450,8 @@
   box-shadow: 0 14px 22px -10px rgba(79, 70, 229, 0.55);
 }
 
-/* Stopka formularza z przyciskami "Zwiń filtry" i "Szukaj ofert".
-   Siatka 3 kolumn: [pusta lewa] [przycisk zwiń - wyśrodkowany] [przycisk szukaj - wyrównany do prawej].
-   grid-column: 1 / -1 sprawia że stopka rozciąga się na całą szerokość siatki sekcji */
+/* Stopka - siatka 3 kolumn: [pusta lewa] [przycisk zwiń - środek] [przycisk szukaj - prawa].
+   grid-column: 1 / -1 rozciąga stopkę na całą szerokość summary-grid */
 .filters-footer {
   display: grid;
   grid-template-columns: 1fr auto 1fr; /* lewa=elastyczna, środek=auto, prawa=elastyczna */
@@ -524,8 +509,7 @@
   box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.25);
 }
 
-/* Ikona strzałki w przycisku toggle - obraca się o 180deg gdy formularz jest rozwinięty.
-   Klasa .rotated dodawana przez Angular gdy collapsed = false ([class.rotated]="!collapsed") */
+/* Klasa .rotated dodawana przez [class.rotated]="!collapsed" - strzałka w górę gdy rozwinięty */
 .filters-toggle-icon {
   transition: transform 0.25s ease;
   flex-shrink: 0;
@@ -593,9 +577,8 @@
 }
 
 
-/* Sekcja przycisku "Uzupełnij z profilu" - ma przezroczyste tło i brak obramowania.
-   :has() sprawdza czy .summary-block zawiera .filters-profile-fill-row i usuwa szarą ramkę sekcji.
-   Dzięki temu przycisk "wisi" między sekcjami bez dodatkowego szarego boksu wokół niego */
+/* :has() usuwa szarą ramkę sekcji gdy blok zawiera tylko przycisk "Uzupełnij z profilu" -
+   dzięki temu przycisk wisi między sekcjami bez dodatkowego szarego boksu */
 .summary-block:has(.filters-profile-fill-row) {
   background: transparent;
   border: none;

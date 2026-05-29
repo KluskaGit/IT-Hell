@@ -10,6 +10,7 @@ import localePl from '@angular/common/locales/pl';
 
 registerLocaleData(localePl);
 
+// Dołącza Bearer token do wszystkich requestów do /v1/ gdy użytkownik jest zalogowany
 const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.getToken();
@@ -25,6 +26,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'pl' },
     {
+      // APP_INITIALIZER blokuje bootstrap do czasu inicjalizacji Keycloak.
+      // Promise.race z 5s timeout - aplikacja uruchamia się nawet gdy Keycloak jest niedostępny
       provide: APP_INITIALIZER,
       useFactory: (auth: AuthService) => async () => {
         const timeout = new Promise<void>(resolve => setTimeout(resolve, 5000));

@@ -9,6 +9,7 @@ export class CvApiService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/cv`;
 
+  // Wysyła plik jako multipart/form-data, zwraca listę wykrytych technologii ({id, name})
   uploadCv(file: File): Observable<LookupDto[]> {
     const formData = new FormData();
     formData.append('file', file);

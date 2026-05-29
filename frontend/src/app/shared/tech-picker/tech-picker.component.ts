@@ -1,3 +1,5 @@
+// Picker technologii - pole z tagami i dropdownem (identyczny styl jak location-picker).
+// Uzywa LocationItem z location-picker zamiast definiowac wlasny interfejs.
 import {
   Component, Input, Output, EventEmitter,
   HostListener, ElementRef, ViewChild, inject,
@@ -14,7 +16,7 @@ import { highlightMatch } from '../highlight';
   template: `
     <div class="tp-wrap" (keydown.escape)="close()">
 
-      <!-- Field -->
+      <!-- === field === -->
       <div class="tp-field" [class.tp-open]="showDropdown" (click)="toggle()">
         <svg class="tp-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -56,7 +58,7 @@ import { highlightMatch } from '../highlight';
         </svg>
       </div>
 
-      <!-- Dropdown -->
+      <!-- === dropdown === -->
       <div class="tp-dropdown"
            [class.tp-dropdown-up]="openUpward"
            [style.max-height.px]="dropdownMaxHeight"
@@ -90,7 +92,7 @@ import { highlightMatch } from '../highlight';
 
     .tp-wrap { position: relative; }
 
-    /* ── Field — identyczny styl jak location-picker ─ */
+    /* === field - identyczny styl jak location-picker === */
     .tp-field {
       display: flex;
       align-items: center;
@@ -154,7 +156,7 @@ import { highlightMatch } from '../highlight';
     }
     .tp-input::placeholder { color: #94a3b8; }
 
-    /* Badge licznika */
+    /* Badge z liczba wybranych technologii */
     .tp-badge {
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 20px; height: 20px; padding: 0 6px;
@@ -173,7 +175,7 @@ import { highlightMatch } from '../highlight';
     }
     .tp-clear:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
 
-    /* ── Dropdown ──────────────────────────────── */
+    /* === dropdown === */
     .tp-dropdown {
       position: absolute;
       left: 0; right: 0; z-index: 9999;
@@ -191,6 +193,7 @@ import { highlightMatch } from '../highlight';
     .tp-dropdown::-webkit-scrollbar { width: 4px; }
     .tp-dropdown::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
 
+    /* Dropdown otwiera sie w gore gdy brakuje miejsca ponizej (openUpward = true) */
     .tp-dropdown:not(.tp-dropdown-up) {
       top: calc(100% + 6px);
       animation: tp-fade-down 0.14s ease-out;
@@ -209,7 +212,7 @@ import { highlightMatch } from '../highlight';
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Nagłówek dropdownu */
+    /* Naglowek dropdownu z licznikiem wynikow */
     .tp-dd-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 6px 10px 5px;
@@ -243,19 +246,21 @@ import { highlightMatch } from '../highlight';
   `],
 })
 export class TechPickerComponent {
+  // ElementRef potrzebny do wykrywania klikniecia poza komponentem (onDocumentClick)
   private readonly host = inject(ElementRef);
 
   @Input() technologies: LocationItem[] = [];
-  @Input() selected: LocationItem[] = [];
+  @Input() selected:     LocationItem[] = [];
   @Output() selectedChange = new EventEmitter<LocationItem[]>();
 
   @ViewChild('inputEl') private inputEl?: ElementRef<HTMLInputElement>;
 
-  query = '';
-  showDropdown = false;
-  openUpward = false;
-  dropdownMaxHeight = 260;
+  query            = '';
+  showDropdown     = false;
+  openUpward       = false; // true gdy dropdown otwiera sie w gore (brakuje miejsca ponizej)
+  dropdownMaxHeight = 260;  // px - obliczane dynamicznie przez positionDropdown()
 
+  // Zamkniecie dropdownu po kliknieciu poza komponentem
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!(this.host.nativeElement as HTMLElement).contains(event.target as Node)) {
@@ -263,11 +268,13 @@ export class TechPickerComponent {
     }
   }
 
+  // Zamkniecie przy scrollowaniu - dropdown bylby wyrownany do starej pozycji fieldu
   @HostListener('window:scroll')
   onScroll(): void {
     if (this.showDropdown) this.close();
   }
 
+  // Zwraca technologie pasujace do query, wyklucza juz wybrane
   get filtered(): LocationItem[] {
     const q = this.query.trim().toLowerCase();
     const unselected = this.technologies.filter(t => !this.selected.some(s => s.id === t.id));
@@ -283,6 +290,7 @@ export class TechPickerComponent {
     this.showDropdown = !this.showDropdown;
     if (this.showDropdown) {
       this.positionDropdown();
+      // setTimeout(0) - focus po renderze dropdownu, nie przed
       setTimeout(() => this.inputEl?.nativeElement.focus(), 0);
     } else {
       this.query = '';
@@ -303,6 +311,7 @@ export class TechPickerComponent {
     this.selected = [...this.selected, item];
     this.selectedChange.emit(this.selected);
     this.query = '';
+    // Przywracamy fokus po wyborze - uzytkownik moze od razu wpisac kolejna technologie
     setTimeout(() => this.inputEl?.nativeElement.focus(), 0);
   }
 
@@ -316,6 +325,8 @@ export class TechPickerComponent {
     this.selectedChange.emit(this.selected);
   }
 
+  // Oblicza czy dropdown powinien otwierac sie w gore i jaka ma miec max-height.
+  // Szuka rodzica .ff-card zeby wiedziec gdzie konczy sie scrollowalny kontener filtrów.
   private positionDropdown(): void {
     this.openUpward = false;
     const el = this.host.nativeElement as HTMLElement;

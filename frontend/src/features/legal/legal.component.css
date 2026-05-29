@@ -1,3 +1,8 @@
+/* Strona /legal - dwie zakładki: "Jak to działa" i "Regulamin".
+   Zakładka zmienia się przez @if (DOM usuwany/tworzony), stąd fadeIn zamiast tranzycji wysokości. */
+
+/* display: block wymagane bo Angular renderuje komponenty jako inline domyślnie.
+   Zmienne tu zamiast w :root - zasięg ograniczony do tego komponentu. */
 :host {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -14,36 +19,53 @@
 
 * { box-sizing: border-box; font-family: inherit; }
 
-/* ── BACKGROUND ─────────────────────────────────── */
+
+/* === background === */
+
+/* Tlo strony przyklejone do viewportu - nie scrolluje sie wraz z trescia.
+   overflow: hidden zapobiega scrollbarowi gdy plamy wychodza poza viewport */
 .background-glow {
   position: fixed; width: 100vw; height: 100vh;
   top: 0; left: 0; z-index: -1;
   background: var(--bg); overflow: hidden;
 }
+
+/* Plama prawa gorna - indigo 12% opacity */
 .glow-1 {
   position: absolute; top: -10%; right: -5%;
   width: 50vw; height: 50vw;
   background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
 }
+
+/* Plama lewa dolna - ciemniejszy indigo, słabsza (8%) */
 .glow-2 {
   position: absolute; bottom: -15%; left: -10%;
   width: 45vw; height: 45vw;
   background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
 }
+
+/* Trzecia plama srodkowa - potrzebna przy dluzszej zakladce "Regulamin"
+   ktora scrolluje sie poza dolna krawedz dwoch pozostalych plam */
 .glow-3 {
   position: absolute; top: 40%; left: 30%;
   width: 30vw; height: 30vw;
   background: radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%);
 }
 
-/* ── LAYOUT ─────────────────────────────────────── */
+
+/* === layout === */
+
+/* padding-top: 88px zostawia miejsce na fixed navbar (identyczne jak /home i /offers) */
 .legal-wrapper {
   max-width: 900px;
   margin: 0 auto;
   padding: 88px 1.5rem 5rem;
 }
 
-/* ── TABS ───────────────────────────────────────── */
+
+/* === tabs === */
+
+/* padding 0.35rem zostawia miejsce na box-shadow aktywnej zakładki */
 .legal-tabs {
   display: flex; gap: 0.4rem;
   margin-bottom: 1.75rem;
@@ -53,6 +75,8 @@
   padding: 0.35rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
+
+/* flex: 1 sprawia ze oba przyciski maja rowna szerokosc niezaleznie od dlugosci tekstu */
 .legal-tabs button {
   flex: 1; padding: 0.75rem 0.75rem;
   border: none; border-radius: 12px;
@@ -62,14 +86,20 @@
   transition: all 0.2s; white-space: nowrap;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
+
 .tab-icon { font-size: 1rem; }
 .legal-tabs button:hover { background: #f1f5f9; color: var(--text-main); }
+
+/* Aktywna zakladka - pełne indigo z kolorowym cieniem pasujacym do tla przycisku */
 .legal-tabs button.active {
   background: var(--primary); color: #fff;
   box-shadow: 0 4px 14px rgba(99,102,241,0.35);
 }
 
-/* ── SHARED CARD ────────────────────────────────── */
+
+/* === karta dokumentu (zakladka "Regulamin") === */
+
+/* border-radius: 22px - większy niż reszta (16-18px) żeby wizualnie odróżnić "dokument" od kart interaktywnych */
 .legal-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -77,61 +107,75 @@
   padding: 2.75rem 2.5rem;
   box-shadow: 0 20px 40px -10px rgba(0,0,0,0.06);
 }
+
 .legal-card h1 {
   font-size: 1.75rem; font-weight: 900;
   color: var(--text-main); margin: 0 0 0.3rem;
   letter-spacing: -0.5px;
 }
+
 .legal-date {
   font-size: 0.83rem; color: var(--text-sub);
   margin-bottom: 2rem;
 }
+
 .legal-card section { margin-bottom: 2.25rem; }
+
+/* #f1f5f9 celowo jaśniejszy niż --border żeby linia nie konkurowała z ramką karty */
 .legal-card h2 {
   font-size: 1.05rem; font-weight: 800;
   color: var(--primary); margin: 0 0 0.85rem;
   padding-bottom: 0.45rem;
   border-bottom: 2px solid #f1f5f9;
 }
+
+/* line-height: 1.75 dla komfortowego czytania dlugich tekstow prawnych */
 .legal-card p {
   font-size: 0.95rem; line-height: 1.75;
   margin: 0 0 0.65rem; color: #334155;
 }
+
 .legal-card ul { padding-left: 1.5rem; margin: 0.4rem 0 0.7rem; }
-.legal-card li {
-  font-size: 0.95rem; line-height: 1.85; color: #334155;
-}
+.legal-card li { font-size: 0.95rem; line-height: 1.85; color: #334155; }
 .legal-card strong { color: var(--text-main); font-weight: 700; }
 .legal-card a { color: var(--primary); }
 
+/* border: none usuwa domyslny styl <hr>, border-top zastepuje tylko gorna krawedz */
 .legal-divider {
   border: none;
   border-top: 1.5px solid var(--border);
   margin: 2.5rem 0;
 }
 
-/* ── RODO HIGHLIGHT ─────────────────────────────── */
+
+/* === blok informacyjny RODO === */
+
+/* flex-start - ikona wyrównana do góry, nie do środka gdy tekst jest wieloliniowy */
 .rodo-highlight {
   display: flex; align-items: flex-start; gap: 1rem;
   background: var(--primary-light); border: 1px solid #c7d2fe;
   border-radius: 14px; padding: 1.1rem 1.3rem;
   margin-bottom: 1.75rem;
 }
+
 .rodo-icon { font-size: 1.6rem; flex-shrink: 0; }
+/* #3730a3 - ciemny indigo na jasnoindigo tle, kontrast WCAG AA */
 .rodo-highlight p { margin: 0; font-size: 0.9rem; line-height: 1.65; color: #3730a3; }
 .rodo-check { margin-right: 0.4rem; }
 
-/* ══════════════════════════════════════════════════ */
-/* HOW IT WORKS TAB                                  */
-/* ══════════════════════════════════════════════════ */
+
+/* === zakladka "Jak to dziala" === */
+
+/* 6px translateY - subtelniejszy niż na /about (14px) bo zmiana zakładki to szybka akcja */
 .tab-content { animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* HERO */
-.hero-block {
-  text-align: center;
-  padding: 2rem 1rem 2.5rem;
-}
+
+/* === hero === */
+
+.hero-block { text-align: center; padding: 2rem 1rem 2.5rem; }
+
+/* 100px = "zawsze okragle konce" niezaleznie od szerokosci elementu */
 .hero-badge {
   display: inline-block;
   background: var(--primary-light); color: var(--primary);
@@ -140,19 +184,28 @@
   border-radius: 100px; margin-bottom: 1rem;
   border: 1px solid #c7d2fe;
 }
+
 .hero-block h1 {
   font-size: 2.1rem; font-weight: 900;
   color: var(--text-main); margin: 0 0 0.75rem;
   letter-spacing: -0.75px;
 }
+
+/* max-width: 520px - optymalna dlugosc linii do czytania (ok. 70 znakow) */
 .hero-sub {
   font-size: 1.05rem; color: var(--text-sub);
   max-width: 520px; margin: 0 auto; line-height: 1.65;
 }
 
-/* STEPS */
+
+/* === kroki === */
+
 .steps-section { margin-bottom: 3rem; }
+
+/* column zamiast grid - kroki są sekwencyjne i opisy potrzebują pełnej szerokości */
 .steps-list { display: flex; flex-direction: column; gap: 1rem; }
+
+/* flex-start - ikona i numer wyrównują się do góry gdy opis jest wieloliniowy */
 .step-card {
   display: flex; align-items: flex-start; gap: 1.25rem;
   background: var(--card-bg);
@@ -161,10 +214,9 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.04);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.step-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(99,102,241,0.1);
-}
+.step-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.1); }
+
+/* flex-shrink: 0 na numerze i ikonie - nie kurczy sie gdy opis obok jest dlugi */
 .step-number {
   font-size: 0.75rem; font-weight: 900;
   color: var(--primary); background: var(--primary-light);
@@ -173,56 +225,47 @@
   flex-shrink: 0; letter-spacing: 0.05em;
 }
 .step-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; margin-top: 1px; }
-.step-body h3 {
-  font-size: 1rem; font-weight: 800;
-  color: var(--text-main); margin: 0 0 0.35rem;
-}
-.step-body p {
-  font-size: 0.9rem; color: var(--text-sub);
-  line-height: 1.65; margin: 0;
-}
+.step-body h3 { font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.35rem; }
+.step-body p { font-size: 0.9rem; color: var(--text-sub); line-height: 1.65; margin: 0; }
 
-/* FEATURES */
+
+/* === funkcjonalnosci === */
+
 .features-section { margin-bottom: 3rem; }
-.section-title {
-  font-size: 1.3rem; font-weight: 900;
-  color: var(--text-main); margin: 0 0 1.25rem;
-  letter-spacing: -0.3px;
-}
+.section-title { font-size: 1.3rem; font-weight: 900; color: var(--text-main); margin: 0 0 1.25rem; letter-spacing: -0.3px; }
+
+/* auto-fill zamiast auto-fit - kolumny nie rozciągają się gdy jest ich mniej niż mieści się w wierszu */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
+
 .feature-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
+  background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 16px; padding: 1.4rem 1.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.feature-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99,102,241,0.1);
-}
+.feature-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.1); }
 .feature-icon { font-size: 1.6rem; margin-bottom: 0.65rem; }
-.feature-card h4 {
-  font-size: 0.95rem; font-weight: 800;
-  color: var(--text-main); margin: 0 0 0.4rem;
-}
-.feature-card p {
-  font-size: 0.87rem; color: var(--text-sub);
-  line-height: 1.6; margin: 0;
-}
+.feature-card h4 { font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.4rem; }
+.feature-card p { font-size: 0.87rem; color: var(--text-sub); line-height: 1.6; margin: 0; }
 
-/* TECH STACK */
+
+/* === stack technologiczny === */
+
 .tech-section { margin-bottom: 3rem; }
 .tech-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+/* border: 1px solid bez wartosci - kolor pochodzi z podklas (.frontend, .backend itp.) */
 .tech-badge {
   font-size: 0.8rem; font-weight: 700;
   padding: 0.35rem 0.8rem; border-radius: 100px;
   border: 1px solid;
 }
+
+/* Kolor odznaki dobrany do "marki" technologii */
 .tech-badge.frontend  { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 .tech-badge.backend   { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
 .tech-badge.db        { background: #fefce8; color: #ca8a04; border-color: #fde68a; }
@@ -231,20 +274,20 @@
 .tech-badge.scraper   { background: #f0f9ff; color: #0284c7; border-color: #bae6fd; }
 .tech-badge.docker    { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
-/* FAQ */
+
+/* === FAQ === */
+
 .faq-section { margin-bottom: 1rem; }
 .faq-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+/* overflow: hidden potrzebne żeby border-radius działał na .faq-answer */
 .faq-item {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: box-shadow 0.2s;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; transition: box-shadow 0.2s;
 }
-.faq-item.open {
-  border-color: #c7d2fe;
-  box-shadow: 0 4px 16px rgba(99,102,241,0.1);
-}
+.faq-item.open { border-color: #c7d2fe; box-shadow: 0 4px 16px rgba(99,102,241,0.1); }
+
+/* background: transparent usuwa domyslne szare tlo <button> */
 .faq-question {
   width: 100%; display: flex; align-items: center;
   justify-content: space-between; gap: 1rem;
@@ -256,6 +299,8 @@
 }
 .faq-question:hover { background: #f8fafc; }
 .faq-chevron { color: var(--primary); flex-shrink: 0; font-size: 0.75rem; }
+
+/* padding-top osobno po border-top - shorthand padding musiałby być nadpisany */
 .faq-answer {
   padding: 0 1.4rem 1.1rem;
   font-size: 0.9rem; color: var(--text-sub);
@@ -263,54 +308,47 @@
   padding-top: 0.9rem;
 }
 
-/* ── CTA ────────────────────────────────────────── */
+
+/* === CTA === */
+
 .cta-section { margin-bottom: 1rem; }
+
+/* flex-wrap: wrap - na wąskich ekranach tekst i przyciski zawijaja sie do nowych wierszy */
 .cta-card {
   border-radius: 20px; padding: 2rem 2.25rem;
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 1.5rem;
 }
-.cta-logged {
-  background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
-  border: 1px solid #c7d2fe;
-}
-.cta-guest {
-  background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
-  border: 1px solid #c7d2fe;
-}
-.cta-text h3 {
-  font-size: 1.15rem; font-weight: 900;
-  color: var(--text-main); margin: 0 0 0.35rem;
-}
-.cta-text p {
-  font-size: 0.9rem; color: var(--text-sub);
-  margin: 0; line-height: 1.55;
-}
-.cta-actions {
-  display: flex; align-items: center;
-  gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0;
-}
+
+/* Gradient zalogowany: indigo -> zielony (konto aktywne / gotowe)
+   Gradient gosc: indigo -> fiolet (zacheta do rejestracji) */
+.cta-logged { background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%); border: 1px solid #c7d2fe; }
+.cta-guest  { background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%); border: 1px solid #c7d2fe; }
+
+.cta-text h3 { font-size: 1.15rem; font-weight: 900; color: var(--text-main); margin: 0 0 0.35rem; }
+.cta-text p  { font-size: 0.9rem; color: var(--text-sub); margin: 0; line-height: 1.55; }
+
+/* flex-shrink: 0 - przyciski nie kurczy sie gdy tekst obok zajmuje wiecej miejsca */
+.cta-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0; }
+
 .cta-btn {
   text-decoration: none; font-size: 0.88rem;
   font-weight: 700; border-radius: 10px;
-  padding: 0.6rem 1.25rem; transition: all 0.2s;
-  white-space: nowrap;
+  padding: 0.6rem 1.25rem; transition: all 0.2s; white-space: nowrap;
 }
-.cta-btn.primary {
-  background: var(--primary); color: #fff;
-  box-shadow: 0 4px 14px rgba(99,102,241,0.3);
-}
-.cta-btn.primary:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(99,102,241,0.4);
-}
-.cta-btn.secondary {
-  background: var(--card-bg); color: var(--primary);
-  border: 1px solid #c7d2fe;
-}
+
+/* Kolorowy cien pasuje do koloru tla przycisku (glow effect) */
+.cta-btn.primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
+.cta-btn.primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(99,102,241,0.4); }
+
+/* Ghost button - bialy z indigo ramka */
+.cta-btn.secondary { background: var(--card-bg); color: var(--primary); border: 1px solid #c7d2fe; }
 .cta-btn.secondary:hover { background: var(--primary-light); }
-/* ── RESPONSIVE ─────────────────────────────────── */
+
+
+/* === responsywnosc === */
+
+/* 640px - dostosowania tylko dla paddingu, font-size i ukrycia tab-icon żeby tekst się zmieścił */
 @media (max-width: 640px) {
   .legal-card { padding: 1.75rem 1.25rem; }
   .legal-card h1 { font-size: 1.4rem; }

@@ -1,5 +1,4 @@
 /* Architektura CSS strony głównej (/home)
-   ─────────────────────────────────────────────────────────────────────────
    Struktura wizualna:
      background-glow      - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
      home-container       - wyśrodkowany wrapper (max-width 900px)
@@ -7,7 +6,6 @@
        main-card          - karta z dropzoną CV lub animacją skanowania
        app-filters-form   - formularz filtrów (komponent zewnętrzny, nie stylowany tu)
        features-grid      - trzy karty informacyjne na dole strony
-   ─────────────────────────────────────────────────────────────────────────
    Motyw: jasny (light mode), biało-indigo. Brak efektu glassmorphism na kartach
    (profile używa backdrop-filter, tu karty mają zwykłe białe tło 95%).
    Animacje wejścia: fadeInUp ze staggeringiem (animate-up + delay-N).
@@ -156,7 +154,7 @@
 /* Ikona checkmark wewnątrz karty portalu - ukryta domyślnie, pojawia się po zaznaczeniu */
 .site-check { width: 18px; height: 18px; display: none; }
 .site-card input[type="checkbox"]:checked + .site-card-content .site-check { display: block; animation: popIn 0.3s; }
-/* Animacja "pop" ikony checkmark przy zaznaczeniu - scale 0.5→1 + opacity */
+/* Animacja "pop" ikony checkmark przy zaznaczeniu - scale 0.5->1 + opacity */
 @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
 /* Podwójny suwak wynagrodzenia - legacy (aktualnie używany przez FiltersFormComponent).
@@ -278,7 +276,7 @@ input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #ef444
 /* Obracające się "ramię" radaru.
    Startuje od top: 0, left: 50% (środek okręgu ku górze), zajmuje ćwiartkę koła.
    transform-origin: bottom left - obraca się wokół lewego dolnego rogu = centrum okręgu.
-   Gradient transparent→indigo symuluje "zamiatanie" radaru */
+   Gradient transparent->indigo symuluje "zamiatanie" radaru */
 .radar-sweep { position: absolute; top: 0; left: 50%; width: 50%; height: 50%; background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6)); transform-origin: bottom left; animation: radarSpin 1.5s linear infinite; }
 
 /* Stan "gotowe" - zatrzymuje kręcenie gdy scanProgress === 100.

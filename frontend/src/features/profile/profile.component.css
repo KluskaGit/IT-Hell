@@ -1,5 +1,4 @@
 /* Architektura CSS strony profilu (/profile)
-   ─────────────────────────────────────────────────────────────────────────
    Struktura wizualna:
      background-glow       - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
      profile-container     - wyśrodkowany wrapper strony (max-width 1100px)
@@ -7,7 +6,6 @@
        app-filters-form    - formularz technologii i doświadczenia (komponent zewnętrzny)
        profile-feedback    - banery błędów i sukcesów (loadError, saveError, saveSuccess)
        actions-row         - przyciski "Zapisz zmiany" i "Anuluj"
-   ─────────────────────────────────────────────────────────────────────────
    Motyw wizualny: jasny (light mode), szkło (glassmorphism) z gradientem #6366f1 (indigo).
    Animacje wejścia: fadeInUp ze staggeringiem (animate-up + delay-N).
    Głębokość: backdrop-filter na kartach tworzy efekt mlecznego szkła (glass-card).
@@ -410,7 +408,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* "Ramię" obracającego się radaru - ćwiartka koła ze stopniowaniem kolor → transparent.
+/* "Ramię" obracającego się radaru - ćwiartka koła ze stopniowaniem kolor -> transparent.
    position: absolute + top: 0 + left: 50% - zaczyna od środka okręgu ku górze.
    width: 50% + height: 50% - ćwiartka, bo transform-origin: bottom left obraca ją
    wokół lewego dolnego rogu (= centrum okręgu radar-box).
@@ -434,7 +432,7 @@
   opacity: 0;
 }
 
-/* Pełny obrót radaru - prosty 0° → 360° bez easing (linear) */
+/* Pełny obrót radaru - prosty 0° -> 360° bez easing (linear) */
 @keyframes radarSpin {
   from {
     transform: rotate(0deg);

@@ -1,5 +1,7 @@
 <app-navbar></app-navbar>
 
+<!-- trzy rozmyte plamy w tle, position:fixed - nie scrollują się z treścią.
+     glow-3 potrzebna przy dłuższej zakładce "Regulamin" która wychodzi poza dwie pozostałe -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -8,6 +10,7 @@
 
 <div class="legal-wrapper">
 
+  <!-- setTab() aktualizuje URL przez replaceUrl - "Wstecz" wraca do poprzedniej strony, nie zakładki -->
   <nav class="legal-tabs">
     <button [class.active]="activeTab === 'how'" (click)="setTab('how')">
       <span class="tab-icon">⚡</span> Jak to działa
@@ -17,6 +20,10 @@
     </button>
   </nav>
 
+  <!-- @if usuwa/tworzy blok DOM przy zmianie zakładki, stąd animacja fadeIn na .tab-content
+       zamiast tranzycji wysokości - nie ma czego animować gdy element nie istnieje -->
+
+  <!-- === zakładka: jak to działa === -->
   @if (activeTab === 'how') {
   <div class="tab-content">
 
@@ -26,6 +33,7 @@
       <p class="hero-sub">Agregator ofert IT z wielu portali pracy z mocnymi filtrami i automatycznym wykrywaniem technologii z Twojego CV — w czterech krokach.</p>
     </div>
 
+    <!-- track step.number zamiast $index bo mamy unikalne numery kroków "01"-"04" -->
     <section class="steps-section">
       <div class="steps-list">
         @for (step of steps; track step.number) {
@@ -41,6 +49,7 @@
       </div>
     </section>
 
+    <!-- track $index bo obiekty features nie mają unikalnego pola ID -->
     <section class="features-section">
       <h2 class="section-title">Co wyróżnia nasz serwis?</h2>
       <div class="features-grid">
@@ -67,6 +76,7 @@
       </div>
     </section>
 
+    <!-- let i = $index potrzebne żeby porównać indeks z expandedFaq w [class.open] i toggleFaq -->
     <section class="faq-section">
       <h2 class="section-title">Najczęstsze pytania</h2>
       <div class="faq-list">
@@ -76,6 +86,7 @@
               <span>{{ item.q }}</span>
               <span class="faq-chevron">{{ expandedFaq === i ? '▲' : '▼' }}</span>
             </button>
+            <!-- @if usuwa odpowiedź z DOM gdy zamknięta, nie tylko ukrywa przez display:none -->
             @if (expandedFaq === i) {
               <div class="faq-answer">{{ item.a }}</div>
             }
@@ -100,7 +111,7 @@
         <div class="cta-card cta-guest">
           <div class="cta-text">
             <h3>Gotowy żeby zacząć?</h3>
-            <p>Możesz od razu przeglądać oferty jako gość. Konto potrzebne tylko żeby zapisać profil i CV.</p>
+            <p>Jako gość widzisz oferty z Pracuj.pl. Zaloguj się żeby odblokować wszystkie portale, skaner CV i zapis profilu.</p>
           </div>
           <div class="cta-actions">
             <a routerLink="/offers" class="cta-btn primary">Przeglądaj oferty</a>
@@ -113,6 +124,7 @@
   </div>
   }
 
+  <!-- === zakładka: regulamin === -->
   @if (activeTab === 'terms') {
   <div class="legal-card tab-content">
     <h1>Regulamin Serwisu CV_ANALIZER</h1>
@@ -200,7 +212,6 @@
     </section>
   </div>
   }
-
 
 </div>
 

@@ -43,14 +43,14 @@
       <div class="team-grid">
         <!-- Karta członka zespołu: avatar z inicjałami + imię.
              Gradient avatara indywidualny dla każdej osoby (różne kolory gradientu).
-             MK = Marek K. (indigo → fiolet) -->
+             MK = Marek K. (indigo -> fiolet) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#6366f1,#a855f7)">MK</div>
           <div class="team-info">
             <strong>Marek K.</strong>
           </div>
         </div>
-        <!-- PB = Piotrek B. (cyan → indigo) -->
+        <!-- PB = Piotrek B. (cyan -> indigo) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#06b6d4,#6366f1)">PB</div>
           <div class="team-info">
@@ -67,14 +67,14 @@
         <span class="team-group-dot" style="background:#10b981"></span>Backend
       </div>
       <div class="team-grid">
-        <!-- KK = Kamil K. (zielony → cyan) -->
+        <!-- KK = Kamil K. (zielony -> cyan) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4)">KK</div>
           <div class="team-info">
             <strong>Kamil K.</strong>
           </div>
         </div>
-        <!-- MG = Marek G. (żółty → zielony) -->
+        <!-- MG = Marek G. (żółty -> zielony) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#f59e0b,#10b981)">MG</div>
           <div class="team-info">
@@ -92,8 +92,6 @@
     <h2 class="section-label">Eksploruj serwis</h2>
     <div class="nav-cards">
 
-      <!-- Link do strony głównej - routerLink="/" nawiguje do trasy zdefiniowanej
-           w app.routes.ts jako { path: '', component: HomeComponent } -->
       <a routerLink="/" class="nav-card">
         <div class="nav-card-icon">🏠</div>
         <div class="nav-card-body">
@@ -136,9 +134,7 @@
         <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
 
-      <!-- Link do Polityki Prywatności - również na /legal?tab=terms.
-           Uwaga: oba linki (Regulamin i Polityka Prywatności) prowadzą do tego samego tab=terms.
-           Jeśli polityka prywatności ma być osobną zakładką, należy dodać tab='privacy' w /legal -->
+      <!-- Polityka i Regulamin wskazuja ten sam tab=terms bo sa w jednym dokumencie -->
       <a routerLink="/legal" [queryParams]="{tab:'terms'}" class="nav-card">
         <div class="nav-card-icon">🔒</div>
         <div class="nav-card-body">

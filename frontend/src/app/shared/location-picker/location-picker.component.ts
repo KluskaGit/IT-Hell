@@ -1,6 +1,8 @@
+// Picker lokalizacji - pole tekstowe z dropdownem sugestii miast.
+// Eksportuje tez interfejs LocationItem uzyany przez FiltersFormComponent i ProfileComponent.
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms'; // [(ngModel)] na polu tekstowym query
 import { highlightMatch } from '../highlight';
 
 export interface LocationItem {
@@ -67,7 +69,7 @@ export interface LocationItem {
 
     .lp-root { position: relative; }
 
-    /* ── pole ── */
+    /* === pole === */
     .lp-field {
       display: flex;
       align-items: center;
@@ -104,7 +106,7 @@ export interface LocationItem {
       min-width: 0;
     }
 
-    /* chipsy — styl jak .pill-card:checked */
+    /* chipsy - styl jak .pill-card:checked */
     .lp-tag {
       display: inline-flex;
       align-items: center;
@@ -162,7 +164,7 @@ export interface LocationItem {
     }
     .lp-clear:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
 
-    /* ── dropdown ── */
+    /* === dropdown === */
     .lp-dropdown {
       position: absolute;
       top: calc(100% + 5px);
@@ -218,6 +220,7 @@ export class LocationPickerComponent {
   query = '';
   showDropdown = false;
 
+  // Zwraca max 8 dopasowań - wyklucza juz wybrane lokalizacje zeby nie pokazywac duplikatow
   get filtered(): LocationItem[] {
     const q = this.query.trim().toLowerCase();
     if (!q) return [];
@@ -232,6 +235,7 @@ export class LocationPickerComponent {
 
   onInput(): void { this.showDropdown = this.query.trim().length > 0; }
   onFocus(): void { if (this.query.trim()) this.showDropdown = true; }
+  // 160ms delay - daje czas na mousedown opcji z dropdownu zanim blur zamknie liste
   onBlur(): void { setTimeout(() => { this.showDropdown = false; }, 160); }
 
   select(loc: LocationItem): void {

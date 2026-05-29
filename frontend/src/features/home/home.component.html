@@ -1,66 +1,41 @@
-<!-- Wspólny pasek nawigacji - komponent app/shared/navbar/navbar.component.ts.
-     Wyświetla logo, linki i przycisk logowania/wylogowania (Keycloak przez AuthService) -->
+<!-- Nawigacja z logo i przyciskiem logowania Keycloak -->
 <app-navbar></app-navbar>
 
-<!-- Dekoracyjne rozmyte plamy w tle - tylko wizualne, brak logiki.
-     Dwie plamy glow-1 i glow-2 animowane CSS (glowFloat) w home.component.css.
-     position: fixed w CSS sprawia że pozostają nieruchome przy scrollowaniu strony -->
+<!-- Dekoracyjne plamy kolorow w tle - dwie plamy glow animowane CSS (glowFloat), bez logiki -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
 </div>
 
-<!-- Główny wrapper strony - wyśrodkowany kontener z max-width i paddingiem.
-     Wszystkie sekcje: hero, karta CV, formularz filtrów, siatka features -->
+<!-- Glowny wrapper strony - wyśrodkowany kontener z max-width -->
 <div class="home-container">
 
-  <!-- Sekcja nagłówkowa (hero) - tytuł i opis aplikacji.
-       animate-up to klasa CSS z home.component.css która nadaje animację wejścia
-       (fadeInUp: przesuwa element o 28px w górę + opacity 0→1) -->
+  <!-- Sekcja hero z tytulem i opisem aplikacji -->
   <section class="hero-section animate-up">
-    <!-- Mała etykieta nad tytułem - styl "badge" z CSS -->
     <span class="badge">Skaner Kompetencji</span>
-    <!-- text-gradient to klasa CSS z gradientem indigo nałożonym na tekst przez
-         background-clip: text + color: transparent - patrz: home.component.css -->
+    <!-- text-gradient nakłada gradient indigo przez background-clip: text (patrz CSS) -->
     <h1>Twoja kariera na <span class="text-gradient">wyższym poziomie</span></h1>
     <p>Przestań tracić czas na przeglądanie setek ofert. <strong>CV_ANALIZER</strong> przeanalizuje Twoje CV i wybierze tylko te ogłoszenia, które realnie pasują do Twoich umiejętności i oczekiwań.</p>
   </section>
 
-  <!-- Karta uploadu CV - zarządza trzema stanami:
-         1. Dropzone (upload)       - gdy !scanComplete i !isScanning
-         2. Animacja skanowania     - gdy isScanning = true (po wysłaniu do API)
-         3. Baner sukcesu           - gdy scanComplete = true (analiza zakończona)
-       animate-up delay-1: animacja wejścia z opóźnieniem 70ms (po hero-section) -->
+  <!-- Karta uploadu CV - trzy stany: dropzone, animacja skanowania, baner sukcesu.
+       Logika stanow w analyzeCV() i removeFile() w home.component.ts -->
   <div class="main-card animate-up delay-1">
 
-    <!-- Obszar uploadu - widoczny tylko gdy analiza nie zakończyła się sukcesem.
-         Gdy scanComplete = true, ten div znika i pojawia się baner sukcesu poniżej -->
+    <!-- Obszar uploadu - ukrywany gdy analiza zakonczyla sie sukcesem (scanComplete) -->
     <div class="upload-area" *ngIf="!scanComplete">
 
-      <!-- Komunikat błędu uploadu - pojawia się gdy handleFile() w home.component.ts
-           odrzuci plik (zły format lub przekroczony limit 10 MB) -->
+      <!-- Blad walidacji pliku - ustawiany przez handleFile() gdy zly format lub za duzy plik -->
       <div class="form-error" *ngIf="uploadError">{{ uploadError }}</div>
 
-      <!-- Dropzone (strefa przeciągania) - widoczna gdy plik nie jest aktualnie skanowany.
-           Gdy isScanning = true (plik w trakcie analizy API), ng-container znika
-           i pokazuje się animacja radaru poniżej -->
+      <!-- Dropzone - widoczna gdy brak aktywnego skanowania -->
       <ng-container *ngIf="!isScanning">
 
-        <!-- Ukryty input type="file" - standardowa technika żeby ukryć natywny brzydki input.
-             #fileInput to referencja template używana przez button niżej ((click)="fileInput.click()").
-             accept=".pdf, .doc, .docx" ogranicza okno wyboru do dozwolonych formatów.
-             (change)="onFileSelected($event)" wywołuje metodę w home.component.ts
-             która przekazuje plik do handleFile() - walidacja rozmiaru i formatu -->
+        <!-- Ukryty input - klikniecie otwierane przez dropzone (fileInput.click()) -->
         <input type="file" #fileInput id="cvUpload" hidden accept=".pdf, .doc, .docx" (change)="onFileSelected($event)">
 
-        <!-- Przycisk dropzone - wygląda jak strefa drag&drop, ale jest <button> dla dostępności.
-             (click)="fileInput.click()" - kliknięcie otwiera natywny dialog wyboru pliku.
-             [class.dragging]="isDragging" - dodaje klasę CSS gdy użytkownik przeciąga plik
-             nad obszar (isDragging ustawiany przez onDragOver / onDragLeave w home.component.ts).
-             (dragover) + (dragleave) + (drop) - handlery drag&drop:
-               dragover: e.preventDefault() KONIECZNE żeby drop zadziałał (bez tego przeglądarka
-                         otworzyłaby plik bezpośrednio zamiast przekazać go do aplikacji)
-               drop: pobiera plik z e.dataTransfer.files[0] i wywołuje handleFile() -->
+        <!-- Widoczny obszar drag&drop - klikniecie otwiera dialog wyboru pliku.
+             Klasa .dragging pojawia sie gdy uzytkownik przeciaga plik nad obszar (isDragging) -->
         <button type="button" class="dropzone" [class.dragging]="isDragging"
           (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
           (drop)="onDrop($event)" (click)="fileInput.click()">
@@ -71,28 +46,19 @@
         </button>
       </ng-container>
 
-      <!-- Animacja skanowania - widoczna gdy isScanning = true.
-           Pojawia się po wysłaniu pliku do API (POST /v1/cv/analyze przez CvApiService).
-           Animacja jest "fałszywa" - API nie zwraca postępu w czasie rzeczywistym,
-           więc scanProgress jest napędzany przez setTimeout w analyzeCV() (home.component.ts):
-             po 200ms: skacze do 35%
-             po odpowiedzi API + 150ms: skacze do 100% i znika -->
+      <!-- Animacja skanowania - widoczna podczas uploadu do API.
+           Pasek postepu symulowany przez setTimeout - API nie zwraca postepu w czasie rzeczywistym -->
       <div class="scanner-container" *ngIf="isScanning">
         <div class="radar-box">
-          <!-- Obracający się "sweep" radaru - CSS animation (radarSpin) w home.component.css.
-               [class.radar-done]="scanProgress === 100" dodaje klasę gdy skanowanie kończy się,
-               co zatrzymuje animację (animation: none) żeby nie kręciła się po zakończeniu -->
+          <!-- radar-done zatrzymuje animacje krecenia gdy skanowanie sie konczy (scanProgress === 100) -->
           <div class="radar-sweep" [class.radar-done]="scanProgress === 100"></div>
           <svg viewBox="0 0 24 24" width="40" height="40" stroke="#6366f1" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </div>
 
-        <!-- scanStatus to string zmieniany etapami w analyzeCV():
-             "Analiza CV..." → "Zakończono!" lub "Nie udało się przeanalizować CV" -->
+        <!-- Tekst statusu aktualizowany etapami przez analyzeCV() -->
         <h3 class="scanning-text">{{ scanStatus }}</h3>
 
-        <!-- Pasek postępu - szerokość w % sterowana przez [style.width.%]="scanProgress".
-             Angular przelicza wartość liczbową (np. 35) na "width: 35%" automatycznie.
-             transition: width w CSS daje płynne "rośnięcie" paska zamiast skoku -->
+        <!-- Pasek postepu - szerokosc sterowana przez scanProgress (0-100) -->
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" [style.width.%]="scanProgress"></div>
         </div>
@@ -100,12 +66,8 @@
       </div>
     </div>
 
-    <!-- Baner sukcesu - widoczny gdy scanComplete = true (analiza zakończyła się powodzeniem).
-         Zastępuje upload-area dzięki *ngIf="!scanComplete" / *ngIf="scanComplete".
-         selectedFile?.name - opcjonalne pobranie nazwy pliku (?. bo selectedFile może być null).
-         Przycisk "Usuń CV" wywołuje removeFile($event):
-           $event przekazany bo removeFile() wywołuje e.stopPropagation() żeby nie
-           wyzwolić przypadkowo kliknięcia w element rodzica (główna karta) -->
+    <!-- Baner sukcesu - widoczny gdy analiza CV sie powiodla (scanComplete = true).
+         removeFile($event) przekazuje zdarzenie zeby stopPropagation() zapobiegl klinkieciu rodzica -->
     <div class="scan-success-banner" *ngIf="scanComplete">
       <div class="success-icon">✓</div>
       <div class="success-info">
@@ -117,26 +79,8 @@
 
   </div>
 
-  <!-- Formularz filtrów - współdzielony komponent FiltersFormComponent.
-       Zdefiniowany w app/shared/filters-form/filters-form.component.ts.
-       Konfiguracja przez @Input dostosowana do strony /home:
-         [initialFilters]="savedFilters"         - pre-wypełnienie z fillFromProfile() lub localStorage.
-                                                    savedFilters = null przy pierwszej wizycie,
-                                                    FiltersFormComponent sam odczyta localStorage w ngOnInit
-         [showApplyButton]="true"                - pokazuje przycisk "Szukaj ofert" (brak na /offers i /profile)
-         applyButtonLabel="..."                  - własna etykieta przycisku
-         [showProfileFillButton]="isAuthenticated()" - przycisk "Uzupełnij z profilu" tylko dla zalogowanych.
-                                                       isAuthenticated() to getter z home.component.ts
-                                                       delegujący do AuthService (Keycloak)
-         profileFillButtonLabel="..."            - etykieta przycisku "Uzupełnij z profilu"
-         (profileFillClicked)="fillFromProfile()" - zdarzenie emitowane gdy użytkownik kliknie
-                                                    "Uzupełnij z profilu" - wywołuje fillFromProfile()
-                                                    w home.component.ts który pobiera dane z API
-         (applyClicked)="onSubmit($event)"       - zdarzenie emitowane gdy kliknięty "Szukaj ofert".
-                                                    $event to FiltersValue (patrz: filters-form.types.ts)
-                                                    z całym stanem formularza.
-                                                    onSubmit() zapisuje do localStorage i nawiguje do /offers
-       animate-up delay-2: animacja wejścia z opóźnieniem 140ms (po main-card) -->
+  <!-- Formularz filtrow - konfiguracja dla /home: pokazuje przycisk "Szukaj ofert"
+       i "Uzupelnij z profilu" (tylko dla zalogowanych). Wynik trafia do onSubmit() -->
   <app-filters-form
       class="animate-up delay-2"
       [initialFilters]="savedFilters"
@@ -148,15 +92,13 @@
       (applyClicked)="onSubmit($event)">
     </app-filters-form>
 
-    <!-- Komunikat błędu gdy fillFromProfile() nie zdoła pobrać danych z API.
-         fillProfileError ustawiany w bloku catch() w home.component.ts -->
+    <!-- Blad gdy fillFromProfile() nie zdola pobrac danych z API -->
     <div class="form-error" *ngIf="fillProfileError">
       {{ fillProfileError }}
     </div>
 
-  <!-- Siatka kart z funkcjonalnościami aplikacji - czysto informacyjna sekcja marketingowa.
-       id="features" pozwala na scrollowanie do tej sekcji przez anchor link (#features).
-       Trzy karty z opóźnionymi animacjami (delay-2, delay-3, delay-4) wchodzą po kolei -->
+  <!-- Siatka kart z funkcjonalnosciami aplikacji - sekcja marketingowa.
+       id="features" pozwala na anchor link (#features) -->
   <section id="features" class="features-grid">
     <div class="feature-card animate-up delay-2">
       <div class="icon-box">🔍</div>
@@ -177,5 +119,5 @@
 
 </div>
 
-<!-- Stopka strony - komponent app/shared/footer/footer.component.ts -->
+<!-- Stopka strony -->
 <app-footer></app-footer>

@@ -585,7 +585,7 @@ section { display: flex; flex-direction: column; gap: .75rem; }
   gap: .28rem; font-size: .77rem; color: var(--ink-3);
 }
 .offer-card__company { font-weight: 700; color: var(--ink-2); } /* nazwa firmy pogrubiona */
-.dot  { color: var(--ink-4); font-size: .6rem; } /* separator "·" między metadanymi */
+.dot  { color: var(--ink-4); font-size: .6rem; } /* separator kropkowy miedzy metadanymi */
 
 /* Kontener tagów ról i technologii */
 .offer-card__tags { display: flex; flex-wrap: wrap; gap: .28rem; margin-bottom: .875rem; }

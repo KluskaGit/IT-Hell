@@ -1,12 +1,10 @@
 /* Architektura CSS strony "O nas" (/about)
-   ─────────────────────────────────────────────────────────────────────────
    Struktura wizualna:
      background-glow   - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
      about-wrapper     - wyśrodkowany kontener (max-width 900px)
        hero-section    - nagłówek z badge i tytułem
        team-section    - siatka kart członków zespołu (Frontend / Backend)
        nav-section     - lista kart nawigacyjnych do innych stron
-   ─────────────────────────────────────────────────────────────────────────
    Motyw: jasny (light), indigo-fioletowy. Brak glassmorphism (backdrop-filter)
    - karty mają zwykłe białe tło rgba(255,255,255,0.9).
    Animacje wejścia: fadeUp (14px) z animation shorthand w klasach .team-card i .nav-card.
@@ -28,7 +26,7 @@
 /* Tło strony - stały wrapper przyklejony do viewportu.
    inset: 0 to skrót dla top: 0; right: 0; bottom: 0; left: 0 (nowszy CSS).
    z-index: -1 - pod wszystkimi elementami strony, tylko dekoracja.
-   gradient 135deg: lewy górny róg jasnofioletowy (#eef2ff) → środek jasny (#f8fafc) → prawy dolny biały.
+   gradient 135deg: lewy górny róg jasnofioletowy (#eef2ff) -> środek jasny (#f8fafc) -> prawy dolny biały.
    overflow: hidden - zapobiega scrollbarowi gdy plamy wychodzą poza viewport */
 .background-glow {
   position: fixed; inset: 0; z-index: -1;
@@ -193,7 +191,7 @@
 .nav-card-arrow { color: #94a3b8; flex-shrink: 0; transition: color 0.18s; }
 .nav-card:hover .nav-card-arrow { color: #6366f1; }
 
-/* Animacja wejścia - przesuwa element o 14px w górę + opacity 0→1.
+/* Animacja wejścia - przesuwa element o 14px w górę + opacity 0->1.
    14px to mniejsza odległość niż fadeInUp na /home (40px) - subtelniejszy efekt
    pasuje do gęstszej listy kart (duże przesunięcie wyglądałoby zbyt dynamicznie).
    "both" fill-mode użyty w animation shorthand na .team-card i .nav-card zapewnia
