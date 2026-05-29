@@ -23,13 +23,15 @@ Uzupełnienie [głównego README](../README.md) oraz [`docs/architecture.md`](ar
 
 ## 🗺️ Mapa features
 
-| Strona | Route | SSR mode | Auth | Główne zadanie |
+| Strona | Route | Tryb renderowania | Auth | Główne zadanie |
 |---|---|---|---|---|
-| Home | `/` | Prerender | — | Drop CV + analiza + przejście do ofert |
-| Offers | `/offers` | **Client** | — | Lista ofert z filtrami + infinite scroll + resizable sidebar |
-| Profile | `/profile` | Prerender | ✅ `authGuard` | Edycja danych + zapis CV + preferencji do bazy |
-| About | `/about` | Prerender | — | Statyczna prezentacja projektu |
-| Legal | `/legal` | Prerender | — | Regulamin, FAQ, instrukcja użytkowania (2 zakładki) |
+| Home | `/` | CSR | — | Drop CV + analiza + przejście do ofert |
+| Offers | `/offers` | CSR | — | Lista ofert z filtrami + infinite scroll + resizable sidebar |
+| Profile | `/profile` | CSR | ✅ `authGuard` | Edycja danych + zapis CV + preferencji do bazy |
+| About | `/about` | CSR | — | Statyczna prezentacja projektu |
+| Legal | `/legal` | CSR | — | Regulamin, FAQ, instrukcja użytkowania (2 zakładki) |
+
+> 💡 Produkcja w Dockerze serwuje wszystko jako **klasyczną SPA (CSR)** przez nginx. `app.routes.server.ts` ma zdefiniowane `RenderMode` per trasa (Prerender/Client) **na wypadek** włączenia SSR w przyszłości — szczegóły w [`docs/architecture.md`](architecture.md).
 
 | Shared | Plik | Cel |
 |---|---|---|
@@ -50,7 +52,7 @@ Uzupełnienie [głównego README](../README.md) oraz [`docs/architecture.md`](ar
 
 **Ścieżka:** `src/features/home/`
 **Route:** `/`
-**SSR mode:** `Prerender`
+**Tryb renderowania:** CSR (SSR `RenderMode.Prerender` zdefiniowany dla przyszłości, obecnie nieaktywny)
 
 ### Pliki
 
@@ -201,7 +203,7 @@ ngOnDestroy:
 
 **Ścieżka:** `src/features/offers/`
 **Route:** `/offers`
-**SSR mode:** `Client` ⚠️ (wymaga `IntersectionObserver`, `localStorage`, `history.state`)
+**Tryb renderowania:** CSR (wymaga `IntersectionObserver`, `localStorage`, `history.state` — niedostępne w Node.js, dlatego SSR mode jest `Client` na wypadek aktywacji SSR)
 
 ### Pliki
 
@@ -455,7 +457,7 @@ ngOnDestroy:
 
 **Ścieżka:** `src/features/profile/`
 **Route:** `/profile` (chroniony `authGuard`)
-**SSR mode:** `Prerender`
+**Tryb renderowania:** CSR (SSR `RenderMode.Prerender` zdefiniowany dla przyszłości, obecnie nieaktywny)
 
 ### Pliki
 
@@ -582,7 +584,7 @@ ngOnDestroy:
 
 **Ścieżka:** `src/features/about/`
 **Route:** `/about`
-**SSR mode:** `Prerender`
+**Tryb renderowania:** CSR (SSR `RenderMode.Prerender` zdefiniowany dla przyszłości, obecnie nieaktywny)
 
 ### Pliki
 
@@ -607,7 +609,7 @@ export class AboutComponent {}
 
 **Brak:** logiki, API, OnInit, Signals. Wszystkie dane statyczne w HTML.
 
-**Korzyść z Prerender:** strona generowana raz przy buildzie → idealny SEO i TTFB.
+**Po aktywacji SSR (`outputMode: "server"` w `angular.json`):** strona byłaby generowana raz przy buildzie (Prerender) → idealny SEO i TTFB. Obecnie serwowana jako CSR.
 
 ---
 
@@ -615,7 +617,7 @@ export class AboutComponent {}
 
 **Ścieżka:** `src/features/legal/`
 **Route:** `/legal`
-**SSR mode:** `Prerender`
+**Tryb renderowania:** CSR (SSR `RenderMode.Prerender` zdefiniowany dla przyszłości, obecnie nieaktywny)
 
 ### Pliki
 

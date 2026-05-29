@@ -7,7 +7,7 @@ Dokument opisuje wzorce architektoniczne i decyzje projektowe użyte w aplikacji
 - [Standalone Components](#standalone-components)
 - [Angular Signals zamiast RxJS Subject](#angular-signals-zamiast-rxjs-subject)
 - [OnPush Change Detection](#onpush-change-detection)
-- [SSR i Hydration](#ssr-i-hydration)
+- [SSR — setup w kodzie, nieużywany w produkcji](#ssr--setup-w-kodzie-nieużywany-w-produkcji)
 - [Zarządzanie stanem](#zarządzanie-stanem)
 - [Memory leak prevention](#memory-leak-prevention)
 - [Debouncing i throttling](#debouncing-i-throttling)
@@ -107,33 +107,32 @@ W efekcie lista 500+ ofert z filtrami nie powoduje przerenderowania całego drze
 
 ---
 
-## SSR i Hydration
+## SSR — setup w kodzie, nieużywany w produkcji
 
-Projekt używa **Angular SSR** (`@angular/ssr`) serwowanego przez **Express** (`src/server.ts`). Build produkcyjny daje dwa artefakty: `dist/cv-analizer/browser/` (CSR) i `dist/cv-analizer/server/server.mjs` (SSR).
+Projekt ma w pełni przygotowany **setup SSR** (`@angular/ssr` + Express + `src/server.ts` + `src/main.server.ts` + `src/app/app.config.server.ts` + `src/app/app.routes.server.ts`), ale **produkcyjny build go nie aktywuje** — `angular.json` w `options` zawiera tylko `browser`, bez kluczy `server`, `outputMode: "server"`, `ssr.entry`. Wynik `npm run build` to czysta SPA pod `dist/cv-analizer/browser/`.
 
-### Konfiguracja serwera (`src/app/app.config.server.ts`)
+### Dlaczego SSR jest wyłączony w produkcji
 
-Plik mergeuje `appConfig` z dodatkowymi providerami dla SSR — `provideServerRendering(withRoutes(serverRoutes))`.
+Próba aktywacji SSR + prerenderingu **crashowała build w Dockerze**, bo Angular przy budowie próbował wywołać `/v1/lookups/technologies` (i 5 innych) — backend wtedy jeszcze nie istnieje (build kontenera odbywa się przed startem `compose up`), a `apiUrl: '/v1'` to relative URL nieobsługiwany w Node.js bez bazowego URL.
 
-### RenderMode per route (`src/app/app.routes.server.ts`)
+Plus dla `/profile` i `/offers` — wymagają `keycloak-js`, `localStorage`, `IntersectionObserver` — niedostępne w Node.js. Te trasy musiałyby być `RenderMode.Client`, co w praktyce sprowadza je do CSR i tak.
 
-```typescript
-export const serverRoutes: ServerRoute[] = [
-  { path: 'offers', renderMode: RenderMode.Client },  // browser-only
-  { path: '**', renderMode: RenderMode.Prerender }    // statyczny prerender przy buildzie
-];
-```
+### Co zostaje w kodzie SSR
 
-**Dlaczego `/offers` musi być `Client`:**
-- `IntersectionObserver` (infinite scroll) — brak w Node.js
-- `localStorage` (cache filtrów) — brak w Node.js
-- `history.state` (filtry z `/`) — niedostępne w SSR
+Pliki `server.ts`, `main.server.ts`, `app.config.server.ts`, `app.routes.server.ts` **istnieją** i są kompatybilne z `@angular/ssr` API. Jeśli kiedyś projekt będzie potrzebował SSR (np. dla SEO landing page'a):
 
-**Pozostałe trasy są prerenderowane** przy buildzie — szybki time-to-first-byte, dobry SEO.
+1. Dodać do `angular.json` w sekcji `options`:
+   ```json
+   "server": "src/main.server.ts",
+   "outputMode": "server",
+   "ssr": { "entry": "src/server.ts" }
+   ```
+2. Zastąpić `relative URL` w API services absolute URL z runtime config (zobacz „Cloud deployment" w README)
+3. Zbudować backend przed buildem frontendu (multi-stage compose) ALBO zmienić `apiUrl` na URL osiągalny z buildera
 
-### Krytyczna pułapka — Keycloak + SSR
+### Ślady SSR-defensywne w kodzie
 
-`AuthService.init()` ma early-return gdy `!isPlatformBrowser(platformId)`. W przeciwnym razie Keycloak próbowałby użyć `window`/`document` w Node.js i crashował SSR proces.
+Mimo że SSR jest wyłączony w produkcji, kod **nadal jest SSR-safe** — `AuthService.init()` i wiele innych miejsc używa guarda `isPlatformBrowser()`:
 
 ```typescript
 async init(): Promise<void> {
@@ -141,6 +140,8 @@ async init(): Promise<void> {
   // ... reszta init
 }
 ```
+
+To jest bezpieczne podejście — gdyby kiedyś ponownie włączyć SSR, kod nie crashuje. Dodatkowo `app.routes.server.ts` ma poprawnie ustawione `/offers` na `RenderMode.Client` (na wypadek użycia trybu serwera).
 
 ---
 

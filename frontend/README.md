@@ -10,7 +10,8 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.6-4D4D4D?style=for-the-badge&logo=keycloak&logoColor=white)](https://www.keycloak.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![SSR](https://img.shields.io/badge/Angular-SSR%20%2B%20Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://angular.dev/guide/ssr)
+[![nginx](https://img.shields.io/badge/nginx-1.27_alpine-009639?style=for-the-badge&logo=nginx&logoColor=white)](https://nginx.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 </div>
 
@@ -33,6 +34,8 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 - [Routing](#-routing)
 - [Autentykacja](#-autentykacja)
 - [Skrypty npm](#-skrypty-npm)
+- [Uruchomienie pełnego stacku w Dockerze](#-uruchomienie-pełnego-stacku-w-dockerze)
+- [Deployment na chmurę](#%EF%B8%8F-deployment-na-chmurę)
 - [Dokumentacja rozszerzona](#-dokumentacja-rozszerzona)
 
 ---
@@ -45,7 +48,7 @@ Aplikacja webowa, która automatycznie analizuje Twoje CV (PDF/DOCX), wykrywa te
 2. **Dopasowuje oferty pracy** z portali IT do profilu kandydata na podstawie filtrów (technologie, widełki wynagrodzenia, tryb pracy, lokalizacja).
 3. **Integruje konta** przez Keycloak (SSO + social login Google/GitHub) z opcją zapisania CV do profilu na stałe.
 
-Ten folder (`frontend/`) zawiera **warstwę webową** napisaną w Angular 21 (standalone components + Signals + SSR przez Express). Backend (FastAPI), Keycloak i PostgreSQL stoją w Dockerze (`compose.yaml` w katalogu głównym).
+Ten folder (`frontend/`) zawiera **warstwę webową** napisaną w Angular 21 (standalone components + Signals). W produkcji aplikacja jest builduowana jako klasyczna SPA i serwowana przez nginx (który równocześnie pełni rolę reverse proxy do API). Backend (FastAPI), Keycloak i PostgreSQL stoją w Dockerze (`compose.yaml` w katalogu głównym).
 
 ---
 
@@ -56,7 +59,7 @@ Ten folder (`frontend/`) zawiera **warstwę webową** napisaną w Angular 21 (st
 - ♾️ **Infinite scroll** ofert (IntersectionObserver) z resizable sidebarem
 - 🔐 **Logowanie przez Keycloak** — PKCE S256, social login (Google, GitHub), auto-refresh tokenu co 20 s
 - 💾 **Stały profil użytkownika** — zapis CV (base64) i preferencji do bazy, gotowy do jednego kliknięcia
-- 🌐 **SSR + Hydration** — Angular Universal na Expressie, prerender stron statycznych
+- 🐳 **Dockerized** — multi-stage build (Node → nginx), cały stack jedną komendą `docker compose up`
 - 🎨 **Glassmorphism UI** — gradienty, glow effects, animowane tło
 - 🇵🇱 **Locale `pl`** — formatowanie dat, walut i tekstów w języku polskim
 
@@ -97,7 +100,8 @@ Ten folder (`frontend/`) zawiera **warstwę webową** napisaną w Angular 21 (st
 | Forms | `@angular/forms` (Reactive Forms) | 21.2 |
 | Routing | `@angular/router` z server routes | 21.2 |
 | Auth | `keycloak-js` (PKCE S256) | 26.2 |
-| SSR | `@angular/ssr` + Express | 21.2 / 5.1 |
+| Server (produkcja) | nginx (Docker) | 1.27-alpine |
+| Server (dev) | Angular Dev Server | 21.2 |
 | HTTP | `HttpClient` + Fetch + interceptors | 21.2 |
 | Build | `@angular/build` | 21.2 |
 | Testy | Vitest + jsdom | 4.0 / 28 |
@@ -112,19 +116,16 @@ Frontend komunikuje się z dwoma niezależnymi serwisami: **Keycloak** (autoryza
 ```mermaid
 flowchart LR
     User([Użytkownik])
-    Browser[Angular SPA<br/>localhost:4200]
-    SSR[Express SSR<br/>node server.mjs]
+    Nginx[nginx :80<br/>+ Angular SPA static]
     Keycloak[(Keycloak 26.6<br/>localhost:8080)]
-    Backend[FastAPI<br/>localhost:8000]
+    Backend[FastAPI<br/>backend:8000]
     DB[(PostgreSQL 18)]
     Redis[(Redis 8.4)]
     Worker[Worker<br/>scrapers]
 
-    User --> Browser
-    User --> SSR
-    SSR --> Browser
-    Browser -->|PKCE redirect| Keycloak
-    Browser -->|Bearer JWT<br/>/v1/*| Backend
+    User --> Nginx
+    Nginx -->|"/v1/* proxy"| Backend
+    User -->|PKCE redirect| Keycloak
     Backend --> Keycloak
     Backend --> DB
     Backend --> Redis
@@ -163,11 +164,13 @@ Zanim zaczniesz, zainstaluj następujące narzędzia:
 
 Aplikacja składa się z **trzech warstw**, które muszą działać równocześnie:
 
-1. **Docker** — backend FastAPI, Keycloak, PostgreSQL, Redis, worker, scrapery
-2. **Frontend Angular** — dev server na porcie 4200
-3. **Twoja przeglądarka** — `http://localhost:4200`
+1. **Docker** — backend FastAPI, Keycloak, PostgreSQL, Redis, worker, scrapery, **+ opcjonalnie frontend (nginx)**
+2. **Frontend Angular** — dev server na porcie 4200 (lub kontener Docker na porcie 80)
+3. **Twoja przeglądarka** — `http://localhost:4200` (dev) lub `http://localhost` (Docker)
 
 Wykonaj poniższe etapy **w kolejności**. Każdy etap zawiera komendy gotowe do skopiowania.
+
+> 💡 Masz dwie ścieżki: **(A)** dev mode z `npm start` na `:4200` (live reload, szybki feedback) lub **(B)** pełen stack w Dockerze przez `docker compose up` (produkcyjny build SPA + nginx na `:80`). Sekcje **A–F** opisują tryb dev. Tryb pełnego Dockera jest opisany w sekcji [Uruchomienie pełnego stacku w Dockerze](#-uruchomienie-pełnego-stacku-w-dockerze).
 
 ---
 
@@ -215,7 +218,7 @@ REDIS_PASSWORD=...
 docker compose up -d --build
 ```
 
-Komenda uruchamia **siedem kontenerów**:
+Komenda uruchamia **osiem kontenerów**:
 
 | Kontener | Port | Funkcja |
 |---|---|---|
@@ -226,6 +229,7 @@ Komenda uruchamia **siedem kontenerów**:
 | `migrations` | — | jednorazowo: `alembic upgrade head` |
 | `worker` | — | konsumer kolejki Redis |
 | `scrapers` | — | scrapery ofert (Pracuj/JJIT/NFJ) |
+| `frontend` | 80 | nginx serwujący Angular SPA + reverse proxy `/v1/*` → `backend:8000` |
 
 Sprawdź status:
 
@@ -242,7 +246,7 @@ docker compose logs backend
 docker compose logs keycloak
 ```
 
-**Pierwszy start Keycloaka trwa ~30-60 sekund** — importuje realm `it-hell` z pliku `backend/keycloak/import/it-hell-realm.json`. Poczekaj aż w logach pojawi się `Listening on: http://0.0.0.0:8080`.
+**Pierwszy start Keycloaka trwa ~30-60 sekund** — importuje realm `it-hell` z pliku `keyCloak/import/it-hell-realm.json` (mountowany do kontenera przez `compose.yaml`). Poczekaj aż w logach pojawi się `Listening on: http://0.0.0.0:8080`.
 
 **Health checki:**
 
@@ -450,11 +454,284 @@ Dostępne skrypty (`package.json`):
 | Komenda | Co robi |
 |---|---|
 | `npm start` | Uruchamia dev server na `:4200` z proxy `/v1 -> :8000` i live reload |
-| `npm run build` | Build produkcyjny (CSR + SSR) do `dist/cv-analizer/` |
+| `npm run build` | Build produkcyjny (statyczne SPA) do `dist/cv-analizer/browser/` |
 | `npm run watch` | Build w trybie watch (development config, bez optymalizacji) |
 | `npm test` | Uruchamia testy jednostkowe przez Vitest |
-| `npm run serve:ssr:cv-analizer` | Uruchamia serwer SSR z `dist/cv-analizer/server/server.mjs` (po `npm run build`) |
+| `npm run serve:ssr:cv-analizer` | Uruchamia serwer SSR (tylko po aktywacji SSR w `angular.json` — patrz [`docs/architecture.md`](docs/architecture.md#ssr--setup-w-kodzie-nieużywany-w-produkcji)) |
 | `npm run ng` | Surowy Angular CLI (np. `npm run ng -- generate component ...`) |
+
+---
+
+## 🐳 Uruchomienie pełnego stacku w Dockerze
+
+Frontend jest skonteneryzowany — Angular SPA budowany jest w trakcie tworzenia obrazu, a w runtime serwowany przez **nginx** który równocześnie pełni funkcję reverse proxy do backendu. Pełen stack (backend + frontend + auth + DB) możesz uruchomić **jedną komendą**:
+
+```bash
+docker compose up -d --build
+```
+
+Po zakończeniu buildu (~2-4 minuty przy pierwszym uruchomieniu) aplikacja jest dostępna pod **`http://localhost`** (port 80, bez `:4200`).
+
+### Architektura kontenera frontendu
+
+Jeden kontener `frontend` realizuje **dwa zadania** dzięki multi-stage buildowi:
+
+| Stage | Image | Co robi |
+|---|---|---|
+| **builder** | `node:20-alpine` | Instaluje deps (`npm ci`), buduje Angular SPA (`npm run build` → `dist/cv-analizer/browser/`) |
+| **runtime** | `nginx:1.27-alpine` | Serwuje statyczne pliki z `/usr/share/nginx/html` + reverse proxy `/v1/*` → `backend:8000` |
+
+Finalny obraz waży **~50 MB** (sam nginx + statyczne assets) — node_modules i toolchain Angulara zostają w warstwie buildera i są odrzucane.
+
+```mermaid
+flowchart LR
+    Browser([Przeglądarka :80]) -->|"GET /, /offers, ..."| Nginx[frontend<br/>nginx + static SPA]
+    Nginx -->|"/v1/*"| Backend[backend<br/>FastAPI :8000]
+    Backend --> DB[(PostgreSQL)]
+    Backend --> Keycloak[(Keycloak)]
+    Backend --> Redis[(Redis)]
+```
+
+### Pliki dockeryzacji frontendu
+
+| Plik | Opis |
+|---|---|
+| `frontend/Dockerfile` | Multi-stage: `builder` (node:20-alpine, build SPA) → `runtime` (nginx:1.27-alpine, statyczne pliki + proxy) |
+| `frontend/.dockerignore` | Wyklucza `node_modules`, `dist`, `.angular`, dokumentację, `.env*` z kontekstu build |
+| `frontend/nginx.conf` | Konfiguracja nginx: SPA fallback (`try_files`), proxy `/v1/*` → backend, gzip, cache statycznych assetów (1 rok), Docker DNS resolver |
+
+### Multi-stage Dockerfile — co się dzieje
+
+```dockerfile
+FROM node:20-alpine AS builder      # stage 1: build SPA
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci                          # pełne deps z lock file
+COPY . .
+RUN npm run build                   # tworzy dist/cv-analizer/browser/
+
+FROM nginx:1.27-alpine AS runtime   # stage 2: serwowanie
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist/cv-analizer/browser /usr/share/nginx/html
+EXPOSE 80
+```
+
+**Dlaczego SPA + nginx, a nie SSR + Node?** Strony `/profile` i `/offers` wymagają Keycloak (PKCE) i `localStorage` / `IntersectionObserver` — wszystkie API niedostępne w Node.js. Próba SSR + prerender w buildzie powodowała crash bo Angular podczas budowy próbował wywołać `/v1/lookups/*` na nieistniejący jeszcze backend. Klasyczna SPA + nginx eliminuje cały ten problem.
+
+### Konfiguracja nginx — szczegóły
+
+```nginx
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    resolver 127.0.0.11 valid=10s ipv6=off;   # Docker internal DNS
+
+    # API proxy do backendu — lazy resolve przez zmienną
+    location /v1/ {
+        set $backend_upstream "http://backend:8000";
+        proxy_pass $backend_upstream;
+        # + standardowe X-Forwarded-* headers
+    }
+
+    # Cache statycznych assetów — Angular hashuje nazwy bundli
+    location ~* \.(?:css|js|woff2|svg|png|...)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # SPA fallback — Angular Router obsługuje routing klient-side
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+> 💡 **Lazy DNS resolve** (`set $backend_upstream ...` + `resolver`) jest świadomy — bez tego nginx próbowałby rozwiązać hostname `backend` przy starcie. Gdy backend jeszcze nie wstał, nginx by crashował.
+
+### Auto-import realmu Keycloak
+
+Keycloak startuje z `start-dev --import-realm` i automatycznie wczytuje realm `it-hell` z `keyCloak/import/it-hell-realm.json` przy **pierwszym** starcie kontenera. Plik zawiera kompletną konfigurację: klienta `backend-client` z PKCE, dozwolone redirect URIs (`http://localhost/*` dla Dockera + `http://localhost:4200/*` dla dev mode), mappery JWT, role.
+
+```yaml
+keycloak:
+  command: start-dev --import-realm
+  volumes:
+    - keycloak-data:/opt/keycloak/data            # persistencja userów
+    - ./keyCloak/import:/opt/keycloak/data/import:ro  # JSON realmu (read-only)
+```
+
+> ⚠️ **Ważne:** import realmu odbywa się **raz**, przy pierwszym tworzeniu volumu `keycloak-data`. Jeśli volume już istnieje (np. po wcześniejszym `docker compose up`), Keycloak **silent-skip** import i używa zapisanego realmu z volumu. Żeby wymusić ponowny import po zmianie JSON-a:
+>
+> ```bash
+> docker compose down -v   # UWAGA: kasuje wszystkich userów Keycloak i bazę
+> docker compose up -d --build
+> ```
+
+### Healthchecki i kolejność startu
+
+`compose.yaml` używa **`depends_on` z warunkami zdrowia**, żeby uniknąć race conditions („start ≠ ready"):
+
+```yaml
+database:
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+
+backend:
+  depends_on:
+    database: { condition: service_healthy }
+    migrations: { condition: service_completed_successfully }
+  healthcheck:
+    test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/docs').status==200 else 1)\""]
+
+frontend:
+  depends_on:
+    backend: { condition: service_healthy }   # ⚡ frontend startuje DOPIERO gdy /docs zwraca 200
+```
+
+**Kolejność startu** wymuszona przez warunki:
+
+```
+database (healthcheck: pg_isready)
+   ↓ service_healthy
+migrations (alembic upgrade head)
+   ↓ service_completed_successfully
+backend (healthcheck: GET /docs → 200)
+   ↓ service_healthy
+frontend (nginx)
+```
+
+Dzięki temu **nie ma już 502 Bad Gateway** na początku — frontend wstaje dopiero, gdy backend rzeczywiście odpowiada.
+
+### Restart policy
+
+Wszystkie długo żyjące serwisy mają `restart: unless-stopped` — automatyczny restart po crashu, ale **bez** restartu po `docker compose down` (świadome zatrzymanie). Wyjątek: `migrations` ma `restart: "no"` (jednorazowy task — sukces = `exit 0`, nie ma co restartować).
+
+| Serwis | Restart policy |
+|---|---|
+| `database`, `message-broker`, `keycloak` | `unless-stopped` |
+| `backend`, `frontend`, `worker`, `scrapers` | `unless-stopped` |
+| `migrations` | `"no"` (jednorazowy) |
+
+### Komunikacja między kontenerami
+
+| Z → Do | Hostname | Port |
+|---|---|---|
+| Przeglądarka → `frontend` | `localhost` | 80 |
+| `frontend` (nginx) → `backend` | `backend` (Docker DNS) | 8000 |
+| `backend` → `keycloak` | `keycloak` | 8080 |
+| `backend` → `database` | `database` | 5432 |
+| `backend` / `worker` → `message-broker` | `message-broker` | 6379 |
+
+Wszystko przez sieć **`app-network`** (bridge). Backend wystawia port `8000` na hosta tylko dla dev/debug (Swagger pod `http://localhost:8000/docs`) — w produkcji można go usunąć i ograniczyć do sieci wewnętrznej.
+
+### Tryb dev vs full Docker — kiedy używać
+
+| Sytuacja | Tryb |
+|---|---|
+| Aktywny development frontendu | **`npm start`** — live reload, source maps, błędy w konsoli, proxy `/v1 → :8000` |
+| Demo / pokazanie projektu | **`docker compose up`** — jedna komenda, jeden URL `http://localhost` |
+| Test produkcyjnego buildu | **`docker compose up -d --build frontend`** (backend musi już działać) |
+| CI / staging | **`docker compose up`** z healthcheckami |
+
+### Częste komendy
+
+```bash
+docker compose up -d --build           # pełen stack w tle (z buildem)
+docker compose up -d --build frontend  # tylko frontend (rebuild po zmianach w SPA)
+docker compose logs -f frontend        # logi nginx (requesty + ewentualne błędy proxy)
+docker compose logs -f backend         # logi FastAPI
+docker compose restart frontend        # restart nginx (np. po zmianie nginx.conf)
+docker compose ps                      # status wszystkich kontenerów + healthcheck
+docker compose down                    # zatrzymaj wszystko
+docker compose down -v                 # + usuń volumes (UWAGA: kasuje DB i userów Keycloak)
+```
+
+### Troubleshooting Dockera frontendu
+
+| Problem | Przyczyna | Rozwiązanie |
+|---|---|---|
+| `502 Bad Gateway` na `/v1/*` przy pierwszym requeście | Backend jeszcze nie odpowiada (healthcheck nie zaliczył) | Poczekaj 10-20 s. Sprawdź `docker compose ps` — backend powinien być `(healthy)`. Jeśli `(unhealthy)`: `docker compose logs backend` |
+| `host not found in upstream` w logach nginx | Backend kontener nie istnieje lub `app-network` nieosiągalna | `docker compose ps` — backend nie startuje? Sprawdź jego logi |
+| Bardzo długi build (10+ min) | Brak `.dockerignore` lub `node_modules` w kontekście | Sprawdź `frontend/.dockerignore` |
+| Aplikacja nie używa świeżego kodu | Builder cache nie został unieważniony | `docker compose build --no-cache frontend` lub zmień `package.json` |
+| `404` na ścieżkach `/offers`, `/profile` po przeładowaniu | Brak SPA fallback w nginx | Sprawdź `frontend/nginx.conf` — powinno mieć `try_files $uri $uri/ /index.html` |
+| Kontener `migrations` w statusie `(exited 0)` | **To normalne** — migrations to jednorazowy task | Sukces. Backend startuje dopiero po `service_completed_successfully` |
+
+---
+
+## ☁️ Deployment na chmurę
+
+Stack jest **prawie** cloud-ready — wszystko działa w kontenerach, ma healthchecki i restart policy. Przed deploymentem na chmurę (AWS ECS, GCP Cloud Run, DigitalOcean, Azure Container Apps, Kubernetes) trzeba jeszcze rozwiązać **trzy** rzeczy:
+
+### 1. Konfiguracja URI w 3 miejscach
+
+Aktualnie URL Keycloak jest na wielu poziomach **hardcoded** jako `http://localhost:8080`. Na chmurze będzie to np. `https://auth.example.com`. Trzeba je sparametryzować przez env vars:
+
+| Miejsce | Aktualnie | Na cloud |
+|---|---|---|
+| `frontend/src/environments/environment.ts` | `keycloakUrl: 'http://localhost:8080'` | Runtime config z `assets/config.json` (patrz niżej) |
+| `.env` → `KEYCLOAK_URL` | `http://localhost:8080` | `https://auth.example.com` (publiczny URL — **musi pasować do issuer w JWT**) |
+| Keycloak `KC_HOSTNAME` | nieustawione (dev mode) | `KC_HOSTNAME=auth.example.com`, `KC_HOSTNAME_STRICT=true` |
+| `it-hell-realm.json` → `redirectUris` | `http://localhost/*`, `http://localhost:4200/*` | `https://app.example.com/*` |
+
+> 🛑 **Krytyczne:** backend waliduje JWT przez porównanie `iss` (issuer) w tokenie z `KEYCLOAK_URL`. Frontend, backend i Keycloak **muszą używać identycznego publicznego URL** — inaczej walidacja JWT padnie.
+
+### 2. Runtime config dla frontendu (zamiast build-time)
+
+Aktualnie `environment.ts` jest **kompilowany w bundlu** — żeby zmienić URL w innej chmurze, trzeba rebuild Angulara. Cloud-friendly rozwiązanie: dynamiczny `assets/config.json` ładowany przez `APP_INITIALIZER`:
+
+```typescript
+// app.config.ts (TO DO)
+const initConfig = (http: HttpClient) => async () => {
+  const config = await firstValueFrom(http.get('/assets/config.json'));
+  Object.assign(environment, config);
+};
+```
+
+```sh
+# nginx Dockerfile: entrypoint podmienia env vars w config.json przy starcie
+#!/bin/sh
+envsubst < /usr/share/nginx/html/assets/config.template.json \
+  > /usr/share/nginx/html/assets/config.json
+exec nginx -g 'daemon off;'
+```
+
+Dzięki temu **ten sam obraz Docker** uruchamia się w dev/staging/prod — różnią się tylko env vars.
+
+### 3. Bezpieczeństwo i secrety
+
+| Obecnie | Cloud |
+|---|---|
+| `KC_BOOTSTRAP_ADMIN_USERNAME=admin` hardcoded w `compose.yaml` | Secret z Docker Secrets / AWS Secrets Manager / GCP Secret Manager |
+| `POSTGRES_PASSWORD=1234` w `.env` | Secret + długie losowe hasło |
+| `REDIS_PASSWORD` puste | Wygenerowane hasło (32+ znaki) |
+| Brak TLS — wszystko HTTP | Reverse proxy z certyfikatem Let's Encrypt (Traefik, nginx-proxy) lub Cloud Load Balancer z managed cert |
+| Brak rate limiting | nginx `limit_req` lub WAF (Cloudflare, AWS WAF) |
+| Keycloak `start-dev` | `start --optimized` (produkcyjny tryb z prekompilacją providerów) |
+| Backend port `:8000` na hoście | Usuń `ports:`, dostęp tylko przez nginx proxy |
+
+### Sugerowane platformy
+
+| Platforma | Co dostajesz | Trudność |
+|---|---|---|
+| **Docker Swarm** na VPS (Hetzner, DigitalOcean Droplet) | Najbliżej obecnego `compose.yaml` — minimum zmian | ⭐ |
+| **DigitalOcean App Platform** | Managed, auto-deploy z git, ale max 1 kontener per service | ⭐⭐ |
+| **AWS ECS Fargate** + RDS Postgres + ElastiCache Redis | Skalowanie, managed DB/Redis, healthcheckami `compose.yaml` (`ecs-cli compose convert`) | ⭐⭐⭐ |
+| **Google Cloud Run** | Per-request billing, ale stateless (PostgreSQL → Cloud SQL, Redis → MemoryStore) | ⭐⭐⭐ |
+| **Kubernetes** (GKE, EKS, AKS) | Pełna kontrola, multi-region, autoscaling | ⭐⭐⭐⭐ |
+
+### Roadmap cloud-ready
+
+- [ ] **P1** — przepisać `environment.ts` na runtime config (`assets/config.json` + `APP_INITIALIZER`)
+- [ ] **P1** — entrypoint w nginx Dockerfile podmieniający env vars w `config.json`
+- [ ] **P1** — przenieść Keycloak admin credentials do Docker Secrets
+- [ ] **P1** — wygenerować silne hasła PostgreSQL i Redis
+- [ ] **P2** — nginx z Let's Encrypt (np. Traefik jako reverse proxy przed nginxem) lub Cloud LB
+- [ ] **P2** — Keycloak w trybie `start --optimized` z `KC_HOSTNAME`
+- [ ] **P2** — CI/CD pipeline (GitHub Actions): build + push obrazów do registry przy każdym merge
+- [ ] **P3** — monitorowanie (Prometheus + Grafana) i logi (Loki / ELK)
+- [ ] **P3** — backupy bazy (np. `pgbackrest` lub managed RDS snapshot)
 
 ---
 

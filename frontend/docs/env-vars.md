@@ -173,6 +173,44 @@ environment:
 
 Usunięcie obu: `docker compose down -v`. ⚠️ Tracisz **wszystkich userów Keycloaka i wszystkie oferty z DB**.
 
+### Auto-import realmu Keycloak
+
+Keycloak startuje z `start-dev --import-realm` i mountuje katalog z plikiem realmu:
+
+```yaml
+keycloak:
+  command: start-dev --import-realm
+  volumes:
+    - keycloak-data:/opt/keycloak/data
+    - ./keyCloak/themes:/opt/keycloak/themes
+    - ./keyCloak/import:/opt/keycloak/data/import:ro
+```
+
+Plik `keyCloak/import/it-hell-realm.json` zawiera kompletną konfigurację realmu (klient `backend-client` z PKCE S256, dozwolone redirect URIs dla `:80` i `:4200`, role, mappery JWT). Import odbywa się **automatycznie przy pierwszym starcie** — żaden krok ręczny nie jest potrzebny.
+
+> ⚠️ Import działa **tylko gdy volume `keycloak-data` nie istnieje**. Po pierwszym uruchomieniu Keycloak silent-skip kolejne importy. Żeby wymusić ponowny import (np. po zmianie URL-i w JSON):
+>
+> ```bash
+> docker compose down -v
+> docker compose up -d --build
+> ```
+
+### Healthchecki
+
+| Serwis | Test | Interval | Start period |
+|---|---|---|---|
+| `database` | `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` | 5 s | 5 s |
+| `backend` | `python urllib` → `GET /docs` → 200 | 5 s | 10 s |
+| `frontend` | `wget --spider http://localhost/` | 10 s | 5 s |
+
+Dzięki `depends_on: condition: service_healthy` kolejność startu wymuszona:
+
+```
+database → migrations (exit 0) → backend (healthy) → frontend
+```
+
+Backend startuje **dopiero gdy DB jest gotowa** i migracje przeszły. Frontend startuje **dopiero gdy backend zwraca 200 na `/docs`**. Eliminuje to race conditions typu „start ≠ ready" — żadnych 502 Bad Gateway na początku.
+
 ---
 
 ## 🔐 Keycloak Admin
@@ -188,9 +226,9 @@ Wartości używane przez Keycloak Admin Console (`http://localhost:8080`):
 | Flow | OAuth 2.0 Authorization Code + PKCE S256 |
 | Token expiry | 5 min (default) |
 
-Konfiguracja realmu jest w `backend/keycloak/import/it-hell-realm.json`.
+Konfiguracja realmu jest w `keyCloak/import/it-hell-realm.json` (mountowana do kontenera Keycloak przy starcie).
 
-> ⚠️ **Zmiana realmu po pierwszym starcie:** edycja JSON **nie ma efektu** dopóki nie zrobisz `docker compose down -v` (wipe volume). Modyfikuj przez Admin Console.
+> ⚠️ **Zmiana realmu po pierwszym starcie:** edycja JSON **nie ma efektu** dopóki nie zrobisz `docker compose down -v` (wipe volume). Alternatywa: modyfikuj przez Admin Console + REST API (zmiany od razu, ale nie persystują w repo).
 
 ---
 

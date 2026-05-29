@@ -35,7 +35,7 @@ Pełen opis przepływu autoryzacji w aplikacji CV_ANALIZER. Uzupełnienie [głó
 }
 ```
 
-> ℹ️ Konfiguracja realmu jest auto-importowana z `backend/keycloak/import/it-hell-realm.json` przy pierwszym starcie Keycloak. Późniejsze zmiany w JSON nie mają efektu — patrz [Troubleshooting](#troubleshooting).
+> ℹ️ Konfiguracja realmu jest auto-importowana z `keyCloak/import/it-hell-realm.json` przy pierwszym starcie Keycloak (`compose.yaml` mountuje katalog jako `:ro` do `/opt/keycloak/data/import`). Późniejsze zmiany w JSON nie mają efektu — patrz [Troubleshooting](#troubleshooting).
 
 ---
 
@@ -278,6 +278,8 @@ Wywoływane w `logout()` — bez tego po wylogowaniu interval próbowałby co 20
 ---
 
 ## SSR — pułapka i obejście
+
+> 💡 **Stan obecny:** SSR jest **wyłączony w produkcji** (build w Dockerze tworzy SPA + nginx). Ta sekcja opisuje kod defensywny, który zostaje w razie ponownej aktywacji SSR — zobacz [`docs/architecture.md`](architecture.md#ssr--setup-w-kodzie-nieużywany-w-produkcji).
 
 `keycloak-js` używa `window`, `localStorage`, `document.cookie` — **wszystkie niedostępne w Node.js** (SSR).
 
