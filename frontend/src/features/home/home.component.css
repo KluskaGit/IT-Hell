@@ -1,99 +1,150 @@
-/**
- * ============================================================================
- * OPIS:
- * ============================================================================
- * 
- * Główny arkusz stylów dla komponentu strony startowej. Zaprojektowany w stylu 
- * nowoczesnego "SaaS / Premium", wykorzystujący efekty Glassmorphism, 
- * CSS Variables (zmienne) oraz zaawansowane animacje CSS.
- * * ARCHITEKTURA I CECHY:
- * - Zmienne CSS (:host) dla łatwego zarządzania paletą kolorów (gotowe pod Dark Mode).
- * - Dostępność (A11y & WCAG): Kontrast kolorów zoptymalizowany pod lintery (np. SonarQube), 
- * oraz obsługa 'prefers-reduced-motion' (wyłączenie animacji dla wrażliwych).
- * - Responsywność: CSS Grid i Flexbox automatycznie dopasowujące się do ekranów (Mobile-First).
- * - Custom UI: Stylowanie natywnych elementów (Input Range, Checkboxy, Select) na styl kart/odznak.
- * * STRUKTURA PLIKU (Użyj Ctrl+F, aby szybko znaleźć):
- * 1. GLOBAL RESET & FONTS    - Zmienne CSS i podstawy
- * 2. NAVBAR GLASSMORPHISM    - Górne menu nawigacyjne z rozmyciem tła
- * 3. BACKGROUND GLOWS        - Rozmyte, animowane gradienty w tle (Mesh)
- * 4. CONTAINER & HERO        - Nagłówek i główne sekcje tekstowe
- * 5. MAIN CARD & UPLOAD      - Karta formularza i strefa Drag & Drop dla PDF
- * 6. INTERAKTYWNE KARTY      - Kafelki wyboru portali (zamiast checkboxów)
- * 7. PERFEKCYJNE PRZYCISKI   - Przyciski nawigacyjne na dole formularza
- * 8. FORM ELEMENTS           - Pola tekstowe, selecty i walidacja (czerwone ramki)
- * 9. FEATURES SECTION        - Sekcja 3 kafelków informacyjnych na dole
- * 10. CZYSTE ANIMACJE CSS    - Definicje klatek kluczowych (@keyframes)
- * 11. SKANER AI              - Efekt radaru i pasek postępu (Fake Loading)
- * 12. AI SLIDER              - Niestandardowy suwak precyzji dopasowania
- * 13. RESPONSIVE             - Media queries dla urządzeń mobilnych
- * ============================================================================
- */
+/* Architektura CSS strony głównej (/home)
+   ─────────────────────────────────────────────────────────────────────────
+   Struktura wizualna:
+     background-glow      - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
+     home-container       - wyśrodkowany wrapper (max-width 900px)
+       hero-section       - nagłówek z badge, tytułem i opisem
+       main-card          - karta z dropzoną CV lub animacją skanowania
+       app-filters-form   - formularz filtrów (komponent zewnętrzny, nie stylowany tu)
+       features-grid      - trzy karty informacyjne na dole strony
+   ─────────────────────────────────────────────────────────────────────────
+   Motyw: jasny (light mode), biało-indigo. Brak efektu glassmorphism na kartach
+   (profile używa backdrop-filter, tu karty mają zwykłe białe tło 95%).
+   Animacje wejścia: fadeInUp ze staggeringiem (animate-up + delay-N).
+   Uwaga: plik zawiera kilka klas legacy (ai-slider, student-box, site-card,
+   salary-slider-group) które nie są używane w aktualnym home.component.html
+   - pozostawione jako rezerwa lub do przyszłego użycia.
+*/
 
-
-
- 
-/* GLOBAL RESET & FONTS */
+/* Blok :host definiuje CSS custom properties (design tokens) dla całego komponentu.
+   :host = element <app-home> w DOM - zmienne dziedziczone przez wszystkie elementy wewnątrz.
+   Uproszczona paleta w porównaniu do profile.component.css - tylko dwa główne kolory primary.
+   display: block wymagane bo Angular renderuje komponenty jako inline domyślnie */
 :host {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --bg: #f8fafc;
-  --text-main: #1e293b;
-  --text-sub: #64748b;
+  --primary: #6366f1;        /* bazowy kolor akcentów (indigo) */
+  --primary-hover: #4f46e5;  /* ciemniejszy indigo na hover przycisków */
+  --bg: #f8fafc;             /* główne tło strony (prawie biały niebieskoszary) */
+  --text-main: #1e293b;      /* ciemny slate - główny kolor tekstu */
+  --text-sub: #64748b;       /* szary - podpisy, opisy, etykiety */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: block;
 }
 
+/* Reset box-sizing i dziedziczenie font-family na wszystkich elementach */
 * { box-sizing: border-box; font-family: inherit; }
 
 
-/* BACKGROUND GLOWS */
+/* Tło strony - stały wrapper przyklejony do viewportu.
+   position: fixed + 100vw/100vh pokrywa cały ekran nawet przy scrollowaniu.
+   z-index: -1 - pod wszystkimi elementami strony, tylko dekoracja.
+   overflow: hidden - zapobiega pojawieniu się poziomego scrollbara gdy plamy
+   wychodzą poza viewport (glow-1 zaczyna się od top: -10% / right: -5%) */
 .background-glow { position: fixed; width: 100vw; height: 100vh; top: 0; left: 0; z-index: -1; background: var(--bg); overflow: hidden; }
+
+/* Dekoracyjne rozmyte plamy indigo w tle - bez animacji (w odróżnieniu od profile.component.css).
+   radial-gradient(circle, kolor 0%, transparent 70%) - "plama" zanikająca na krawędziach.
+   Dwie plamy w przeciwnych rogach tworzą subtelną głębię na jednolitym tle */
 .glow-1 { position: absolute; top: -10%; right: -5%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(255, 255, 255, 0) 70%); }
 .glow-2 { position: absolute; bottom: -10%; left: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(79, 70, 229, 0.08) 0%, rgba(255, 255, 255, 0) 70%); }
 
-/* CONTAINER & HERO */
+/* Główny wrapper treści strony.
+   padding-top: 120px zostawia miejsce na fixed navbar (wyższy niż w profile - hero potrzebuje więcej oddechu).
+   max-width: 900px węższa niż /offers (1200px) bo /home to jedna kolumna bez sidebara.
+   margin: 0 auto centruje kontener na szerokich monitorach */
 .home-container { padding: 120px 1rem 60px; max-width: 900px; margin: 0 auto; }
+
+/* Sekcja hero - nagłówek strony, wyśrodkowany tekst */
 .hero-section { text-align: center; margin-bottom: 3rem; }
+
+/* Mała etykieta "Skaner Kompetencji" nad tytułem.
+   border-radius: 50px - pill shape (okrągły kształt niezależnie od szerokości tekstu).
+   display: inline-block - margin-bottom działa poprawnie (span jest inline domyślnie) */
 .badge { background: #eef2ff; color: var(--primary); padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block; letter-spacing: 0.05em; }
+
+/* Główny tytuł - duży, pogrubiony, ze ściśniętym letter-spacing (-1.5px) dla premium wyglądu */
 .hero-section h1 { font-size: 3rem; font-weight: 900; color: var(--text-main); line-height: 1.2; margin-bottom: 1rem; letter-spacing: -1.5px; }
+
+/* Gradient na tekście "wyższym poziomie".
+   Technika: background z gradientem + background-clip: text + kolor tekstu transparent.
+   -webkit-background-clip i -webkit-text-fill-color: wymagane dla Safari i starszych Chrome.
+   Bez tych reguł tekst byłby niewidoczny w niektórych przeglądarkach */
 .text-gradient { background: linear-gradient(90deg, #6366f1, #a855f7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Opis pod tytułem - max-width: 650px żeby nie rozciągał się na całą szerokość kontenera
+   (długie linie są trudne do czytania), wyśrodkowany przez margin: 0 auto */
 .hero-section p { font-size: 1.15rem; color: var(--text-sub); max-width: 650px; margin: 0 auto; line-height: 1.6; }
 
-/* MAIN CARD */
+/* Główna karta z dropzoną CV.
+   Białe tło 95% (nie backdrop-filter jak w profile - prostsze, lżejsze).
+   max-width: 800px + margin: 0 auto - karta węższa niż kontener, wyśrodkowana.
+   box-shadow z dużym spread (-10px) tworzy miękki, rozlany cień */
 .main-card { background: rgba(255, 255, 255, 0.95); border-radius: 24px; padding: 3rem; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08); border: 1px solid rgba(226, 232, 240, 0.8); max-width: 800px; margin: 0 auto; }
 
-/* UPLOAD AREA */
+/* Kontener dropzony - kolumna wyśrodkowana */
 .upload-area { display: flex; flex-direction: column; align-items: center; }
+
+/* Strefa drag&drop dla pliku CV.
+   Element <button> w HTML (dostępność) stylizowany jako strefa przeciągania.
+   border: 2px dashed - wizualny sygnał "upuść tutaj".
+   width: 100% - zajmuje całą szerokość karty, nie tylko tekst (ważne dla drag&drop) */
 .dropzone { width: 100%; padding: 3rem 2rem; border: 2px dashed #cbd5e1; border-radius: 16px; background: #f8fafc; cursor: pointer; transition: all 0.3s; }
+
+/* Hover i stan "dragging" (plik przeciągany nad obszar).
+   Klasa .dragging dodawana przez [class.dragging]="isDragging" w Angular gdy
+   użytkownik przeciąga plik - patrz onDragOver() w home.component.ts */
 .dropzone:hover, .dropzone.dragging { border-color: var(--primary); background: #eff6ff; }
+
+/* Zawartość dropzony - ikona + tekst wyśrodkowane w kolumnie */
 .dropzone-inner { display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-main); font-weight: 700; font-size: 1.05rem; }
 .dropzone-inner svg { color: var(--primary); }
+
+/* Przycisk "Usuń CV" - wygląda jak link (bez tła, z podkreśleniem), czerwony (destruktywna akcja).
+   Wywołuje removeFile($event) w home.component.ts który resetuje stan analizy CV */
 .remove-link { margin-top: 1rem; background: transparent; border: none; color: #ef4444; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
-/* SUB SECTIONS & DIVIDERS */
+/* Sekcja divider (separator) i tytuły podsekcji - klasy legacy używane w starszej wersji formularza.
+   Aktualny formularz filtrów jest w FiltersFormComponent (app/shared/filters-form/) */
 .divider { text-align: center; margin: 2.5rem 0; border-bottom: 1px solid #e2e8f0; line-height: 0.1em; }
 .divider span { background: white; padding: 0 15px; font-size: 0.75rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.05em; }
 .form-section-title { font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin: 2.5rem 0 1.25rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #f1f5f9; }
 .sub-section-title { font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 1.5rem 0 0.75rem 0; }
 
+/* Siatka pól formularza - 2 kolumny dla pól obok siebie.
+   Legacy: aktualnie formularz renderowany przez FiltersFormComponent (zewnętrzny komponent) */
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
 .input-group { display: flex; flex-direction: column; gap: 6px; }
 .input-group.full-width { grid-column: span 2; }
 .input-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+/* Selektor wyklucza radio, checkbox i range - te mają własne style, nie potrzebują boxowych paddingów */
 .input-group input:not([type="radio"]):not([type="checkbox"]):not([type="range"]), select { padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; color: var(--text-main); width: 100%; }
 
-/* --- PILLS (Specjalizacje, Doświadczenie, Technologie) --- */
+/* Technika "ukrytego checkboxa" dla pillsów (kart wyboru) - patrz też filters-form.component.css.
+   Zasada działania:
+     1. input[type="radio/checkbox"] jest absolutnie pozycjonowany, niewidoczny (opacity: 0, 0x0)
+     2. Klikalny <label> opakowuje input + .pill-content
+     3. Kliknięcie label = kliknięcie input (native HTML behavior)
+     4. CSS :checked + .pill-content zmienia styl sąsiedniego elementu gdy input zaznaczony
+   Dzięki temu checkboxy wyglądają jak karty/odznaki bez JavaScript */
 .pills-container { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.2rem; }
 .pill-card { cursor: pointer; display: inline-block; margin: 0; }
+/* Ukrycie natywnego inputa - opacity: 0 zamiast display: none, bo display: none
+   usuwa element z tab-index (klawiatura przestałaby działać) */
 .pill-card input[type="radio"], .pill-card input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
 .pill-content { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1.2rem; border: 1px solid #cbd5e1; border-radius: 50px; background: #ffffff; color: #475569; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; user-select: none; }
 .pill-content i { font-size: 1.1rem; }
 .pill-card:hover .pill-content { border-color: #94a3b8; background: #f8fafc; }
+/* Stan zaznaczenia - CSS adjacent sibling selector (input:checked + .pill-content).
+   Zmienia styl pill na indigo gdy checkbox/radio wewnątrz label jest zaznaczony.
+   box-shadow: 0 0 0 1px - dodaje wewnętrzną ramkę bez zwiększania rozmiaru elementu */
 .pill-card input:checked + .pill-content { border-color: var(--primary); background: #eef2ff; color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+/* Przycisk "rozwiń/zwiń" listę pillsów - wyglądem jak pill, ale to <button> nie <label> */
 .toggle-pill-btn { background: transparent; border: 1px solid #cbd5e1; border-radius: 50px; padding: 0.5rem 1.2rem; color: #475569; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; }
 .toggle-pill-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
 
-/* INTERAKTYWNE KARTY WYBORU (Job Sites) */
+/* Karty wyboru portali ogłoszeń (Pracuj.pl, JustJoin, NoFluffJobs) - legacy.
+   Aktualnie portale są obsługiwane przez FiltersFormComponent jako checkboxy-pills.
+   .sr-only = screen-reader only: element niewidoczny wzrokowo ale czytany przez czytniki ekranu.
+   Technika WCAG: clip: rect(0,0,0,0) + overflow: hidden + tiny size ukrywa element wizualnie */
 .site-fieldset { border: none; padding: 0; margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .site-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 0.5rem; }
@@ -102,35 +153,56 @@
 .site-card-content { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff; color: var(--text-sub); font-weight: 700; font-size: 0.95rem; transition: all 0.2s; }
 .site-card:hover .site-card-content { border-color: #cbd5e1; background: #f8fafc; transform: translateY(-2px); }
 .site-card input[type="checkbox"]:checked + .site-card-content { border-color: var(--primary); background: #eef2ff; color: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15); }
+/* Ikona checkmark wewnątrz karty portalu - ukryta domyślnie, pojawia się po zaznaczeniu */
 .site-check { width: 18px; height: 18px; display: none; }
 .site-card input[type="checkbox"]:checked + .site-card-content .site-check { display: block; animation: popIn 0.3s; }
+/* Animacja "pop" ikony checkmark przy zaznaczeniu - scale 0.5→1 + opacity */
 @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-/* --- SEKCIJA PŁACOWA (PODWÓJNY SUWAK Z POINTER-EVENTS NONE) --- */
+/* Podwójny suwak wynagrodzenia - legacy (aktualnie używany przez FiltersFormComponent).
+   Architektura trzech warstw (identyczna jak w filters-form.component.css):
+     ::before (warstwa 0): szary track (tło całego suwaka)
+     .salary-progress-fill (warstwa 1): kolorowy fragment między suwakami
+     .salary-input (warstwa 2): dwa nakładające się <input type="range">
+   Kluczowy trick: pointer-events: none na całym input, pointer-events: auto tylko na kciuku.
+   Bez tego górny input blokowałby dolny na całej powierzchni slidera */
 .salary-slider-group { background: #ffffff; padding: 1.5rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0; }
 .salary-labels { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
 .salary-badge { padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 800; font-size: 0.8rem; background: #e0e7ff; color: var(--primary); }
+/* Kontener obu suwaków - position: relative żeby ::before i inputy mogły być absolutnie pozycjonowane */
 .salary-range-slider { position: relative; width: 100%; height: 40px; margin-top: 1rem; }
+/* Szary track suwaka jako pseudo-element - pozycjonowany absolutnie w pionie (top: 50% + translateY).
+   Nie możemy użyć ::-webkit-slider-runnable-track bo nakrywałby kolorowe wypełnienie */
 .salary-range-slider::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 6px; background: #cbd5e1; border-radius: 3px; transform: translateY(-50%); z-index: 0; }
 
-.salary-input { 
-  position: absolute; top: 50%; transform: translateY(-50%); width: 100%; height: 6px; 
+/* Input range - oba suwaki nakładają się na siebie (position: absolute, identyczne wymiary).
+   background: transparent - żeby szary track ::before był widoczny pod spodem.
+   pointer-events: none na całym elemencie - kliknięcie/drag "przechodzi przez" input do elementu pod spodem.
+   Dzięki temu oba suwaki mogą być klikalne niezależnie od ich kolejności w DOM */
+.salary-input {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 100%; height: 6px;
   -webkit-appearance: none; appearance: none; background: transparent; z-index: 2; margin: 0; outline: none;
   pointer-events: none; /* Rozwiązuje problem blokowania suwaków */
 }
-.salary-input::-webkit-slider-thumb { 
-  -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--primary); 
-  border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3); transition: transform 0.2s; 
+/* Kciuk suwaka (thumb) - okrągły, indigo, z białą ramką i cieniem.
+   pointer-events: auto - TYLKO kciuk jest klikalny, nie cały input (patrz wyżej).
+   -webkit-appearance: none wymagane żeby zresetować domyślny styl przeglądarki przed nadaniem własnego */
+.salary-input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--primary);
+  border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3); transition: transform 0.2s;
   cursor: pointer; pointer-events: auto; /* Kropka jest klikalna */
 }
-.salary-input::-moz-range-thumb { 
-  width: 22px; height: 22px; background: var(--primary); border-radius: 50%; border: 3px solid white; 
-  cursor: pointer; pointer-events: auto; 
+/* Firefox używa -moz-range-thumb zamiast -webkit-slider-thumb */
+.salary-input::-moz-range-thumb {
+  width: 22px; height: 22px; background: var(--primary); border-radius: 50%; border: 3px solid white;
+  cursor: pointer; pointer-events: auto;
 }
 .salary-input::-webkit-slider-thumb:hover { transform: scale(1.15); }
+/* Etykiety pod suwakiem: "0 PLN" i "50 000+ PLN" - stałe, nie zmieniają się */
 .range-markers { margin-top: -0.5rem; font-weight: 600; color: var(--text-sub); font-size: 0.75rem; display: flex; justify-content: space-between; }
 
-/* AI SLIDER */
+/* Suwak precyzji dopasowania AI - legacy, nie używany w aktualnym home.component.html.
+   Pozostawiony na wypadek powrotu tej funkcji w przyszłości */
 .ai-section-title { color: #8b5cf6 !important; }
 .slider-group { background: #f8fafc; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; }
 .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
@@ -143,76 +215,132 @@
 .slider-labels { display: flex; justify-content: space-between; text-align: center; font-weight: 700; color: var(--text-main); font-size: 0.9rem; }
 .slider-labels small { display: block; font-weight: 500; color: var(--text-sub); font-size: 0.75rem; margin-top: 4px; }
 
-/* Inne Selecty / Walidacja */
+/* Select z niestandardową strzałką - legacy.
+   appearance: none usuwa domyślną strzałkę przeglądarki.
+   background-image: SVG strzałki jako data URI - żaden zewnętrzny plik nie jest potrzebny.
+   SVG jest URL-encoded (%3c = <, %3e = >, %23 = #) bo data URI nie obsługuje surowego SVG */
 select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; padding-right: 2.5rem; }
+
+/* Sekcja "Student" - legacy (checkbox "jestem studentem" z latami doświadczenia).
+   Nie używana w aktualnym home.component.html */
 .student-box { background: #f8fafc; padding: 1.25rem; border-radius: 12px; margin-top: 2rem; display: flex; align-items: center; gap: 1.5rem; border: 1px solid #e2e8f0; }
 .checkbox-container { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main); cursor: pointer; }
 .checkbox-container input[type="checkbox"] { width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary); }
+
+/* Walidacja Angular - klasy .ng-invalid i .ng-touched są dodawane przez Angular automatycznie
+   gdy formularz ReactiveForm / template-driven ma błąd walidacji i pole było dotknięte.
+   !important potrzebne żeby nadpisać standardowe style border inputów bez podnoszenia specyficzności */
 input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important; background-color: #fef2f2; }
-/* --- MODERN STUDENT BOX --- */
-.student-box { 
-  background: #f8fafc; 
-  padding: 1.25rem 1.5rem; 
-  border-radius: 12px; 
-  margin-top: 2rem; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 1rem; 
-  border: 1px solid #e2e8f0; 
+
+/* Rozbudowana wersja student-box z latami doświadczenia - legacy */
+.student-box {
+  background: #f8fafc;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid #e2e8f0;
 }
 .student-years-container {
-  display: flex; 
-  align-items: center; 
-  gap: 1.5rem; 
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
   margin-left: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px dashed #cbd5e1;
 }
-.year-label { 
-  font-size: 0.85rem; 
-  font-weight: 700; 
-  color: var(--text-sub); 
+.year-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-sub);
 }
-.year-pill { 
-  padding: 0.4rem 1rem !important; 
-  font-size: 1rem !important; 
+.year-pill {
+  padding: 0.4rem 1rem !important;
+  font-size: 1rem !important;
 }
+/* Na szerszych ekranach student-box zmienia kierunek na row i chowa border-top separatora */
 @media (min-width: 640px) {
   .student-box { flex-direction: row; align-items: center; justify-content: space-between; gap: 2rem; }
   .student-years-container { border-top: none; padding-top: 0; margin-left: auto; }
 }
 
-/* SKANER AI */
+/* Animacja skanowania CV - identyczna logika jak w profile.component.css.
+   scanner-container zastępuje dropzone gdy isScanning = true w Angular (*ngIf) */
 .scanner-container { width: 100%; padding: 3rem 2rem; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+/* Okrągły kontener radaru.
+   overflow: hidden KONIECZNE - obcina obracający się radar-sweep do kręgu.
+   Bez tego "ramię" radaru wystawałoby poza okrąg */
 .radar-box { width: 80px; height: 80px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3); display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; margin-bottom: 1.5rem; }
+
+/* Obracające się "ramię" radaru.
+   Startuje od top: 0, left: 50% (środek okręgu ku górze), zajmuje ćwiartkę koła.
+   transform-origin: bottom left - obraca się wokół lewego dolnego rogu = centrum okręgu.
+   Gradient transparent→indigo symuluje "zamiatanie" radaru */
 .radar-sweep { position: absolute; top: 0; left: 50%; width: 50%; height: 50%; background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6)); transform-origin: bottom left; animation: radarSpin 1.5s linear infinite; }
+
+/* Stan "gotowe" - zatrzymuje kręcenie gdy scanProgress === 100.
+   Klasa dodawana przez [class.radar-done]="scanProgress === 100" w home.component.html */
 .radar-sweep.radar-done { animation: none; opacity: 0; }
 @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Tekst statusu ("Analiza CV...", "Zakończono!") - zmieniany etapami przez scanStatus w home.component.ts */
 .scanning-text { font-size: 1.1rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; }
+
+/* Pasek postępu - szare tło + kolorowe wypełnienie.
+   overflow: hidden na .progress-bar-bg zapobiega wychodzeniu fill poza zaokrąglone rogi.
+   transition: width 0.3s ease-out - płynna animacja rosnącego paska (nie skacze) */
 .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
 .progress-bar-fill { height: 100%; background: var(--primary); transition: width 0.3s ease-out; }
 .progress-percent { font-size: 0.9rem; font-weight: 800; color: var(--primary); }
+
+/* Baner sukcesu po analizie CV - zastępuje upload-area gdy scanComplete = true.
+   Zielone tło + obramowanie + ikona ✓ sygnalizują powodzenie */
 .scan-success-banner { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 12px; }
+/* Zielone kółko z ✓ - flex-shrink: 0 żeby nie kurczyło się przy długiej nazwie pliku */
 .success-icon { background: #10b981; color: #022c22; width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 900; }
+/* flex: 1 - info rośnie na dostępną przestrzeń między ikoną a przyciskiem "Usuń" */
 .success-info { display: flex; flex-direction: column; flex: 1; }
 .success-info strong { color: #065f46; font-size: 1rem; }
 .success-info span { color: #047857; font-size: 0.85rem; }
 
-/* FEATURES SECTION */
+/* Siatka trzech kart features na dole strony - czysto informacyjna sekcja marketingowa.
+   repeat(3, 1fr) - równe kolumny, na mobile zmieniane na 1fr (media query poniżej).
+   margin-top: 4rem - duży odstęp od formularza filtrów */
 .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 4rem; }
+
+/* Pojedyncza karta - tło półprzezroczyste białe, zaokrąglone rogi, hover unosi kartę.
+   transition: 0.3s bez podanej właściwości - skrót dla "all 0.3s ease" */
 .feature-card { padding: 2rem; background: rgba(255, 255, 255, 0.8); border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; transition: 0.3s; }
 .feature-card:hover { transform: translateY(-5px); background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+
+/* Kwadratowa ikona z emoji - wyśrodkowana nad tytułem karty */
 .icon-box { width: 48px; height: 48px; background: #eef2ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem; }
 .feature-card h3 { margin-bottom: 0.75rem; font-size: 1.1rem; font-weight: 800; color: var(--text-main); }
 .feature-card p { font-size: 0.9rem; color: var(--text-sub); line-height: 1.5; margin: 0; }
 
-/* ANIMACJE GŁÓWNE */
+/* Klasa animacji wejścia - nakładana na sekcje strony (hero, main-card, app-filters-form, feature-card).
+   Startuje z opacity: 0 (niewidoczny) - animation: forwards utrzymuje stan końcowy po zakończeniu.
+   Bez "forwards" element wróciłby do opacity: 0 po 0.8s */
 .animate-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+/* Opóźnienia animacji wejścia - tworzą efekt "waterfall" (sekcje pojawiają się po kolei).
+   delay-1: main-card (100ms), delay-2: filters-form + feature-card 1 (200ms),
+   delay-3: feature-card 2 (300ms), delay-4: feature-card 3 (400ms) */
 .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; } .delay-4 { animation-delay: 0.4s; }
+
+/* Animacja przesunięcia w górę z pojawianiem - 40px to wyraźna odległość (żywa animacja).
+   cubic-bezier(0.2, 0.8, 0.2, 1) - sprężyste przejście: szybkie na starcie, zwalnia na końcu */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
 
-/* RESPONSIVE */
+/* Responsywność - poniżej 768px (tablet i mobile).
+   form-grid i features-grid przechodzą na jedną kolumnę.
+   input-group.full-width traci span 2 (nie ma sensu w 1-kolumnowym gridzie).
+   Tytuł hero zmniejszany do 2.2rem żeby mieścił się na wąskim ekranie.
+   padding-top zmniejszony do 100px (navbar zajmuje mniej miejsca na mobile) */
 @media (max-width: 768px) {
   .form-grid, .features-grid { grid-template-columns: 1fr; }
   .input-group.full-width { grid-column: 1; }

@@ -1,17 +1,29 @@
+<!-- Stan ładowania - widoczny dopóki forkJoin w ngOnInit nie pobierze wszystkich danych słownikowych z backendu.
+     Zastępuje cały formularz - filtersForm jest null dopóki dane nie dotrą -->
 <div *ngIf="isLoading" class="ff-loading">
   <p>Ładowanie filtrów…</p>
 </div>
 
+<!-- Komunikat błędu - widoczny gdy forkJoin z LookupsApiService zakończy się niepowodzeniem.
+     loadError zawiera gotowy komunikat po polsku ustawiany w ngOnInit -->
 <div *ngIf="loadError" class="ff-error">
   <p>{{ loadError }}</p>
 </div>
 
+<!-- Cały formularz renderowany dopiero gdy filtersForm != null (dane z backendu gotowe).
+     Składnia @if (nowa w Angular 17+) zamiast *ngIf na sekcji.
+     [formGroup]="filtersForm" podpina ReactiveForm pod wszystkie zagnieżdżone formControlName -->
 @if (filtersForm) {
 <section class="ff-card" [formGroup]="filtersForm">
 
+  <!-- Opcjonalny nagłówek formularza z tytułem i przyciskiem akcji.
+       Widoczny tylko gdy showSummaryHeader = true (np. na stronie /home).
+       W sidebarze /offers showSummaryHeader = false - nagłówek jest ukrywany -->
   <div *ngIf="showSummaryHeader" class="summary-header summary-header-collapsible">
     <h2>{{ summaryHeading }}</h2>
 
+    <!-- Wariant przycisku "Uzupełnij z profilu" umieszczony w prawym rogu nagłówka.
+         Aktywny gdy profileFillButtonPosition = 'header-right' (ustawiany przez @Input) -->
     <div class="summary-header-actions">
       <button
         *ngIf="showProfileFillButton && profileFillButtonPosition === 'header-right'"
@@ -23,8 +35,13 @@
     </div>
   </div>
 
+  <!-- Siatka sekcji formularza - ukrywana w całości gdy formularz jest zwinięty (collapsible + collapsed).
+       Poszczególne sekcje są dodatkowo kontrolowane przez @Input showXxx (showLocation, showRoles itd.) -->
   <div class="summary-grid" *ngIf="!collapsible || !collapsed">
 
+    <!-- Wariant przycisku "Uzupełnij z profilu" umieszczony na górze formularza (przed lokalizacją).
+         Aktywny gdy profileFillButtonPosition = 'top' (wartość domyślna @Input).
+         onProfileFillClick() przekazuje zdarzenie do parent komponentu przez @Output profileFillClicked -->
     <div
       class="summary-block full-width"
       *ngIf="showProfileFillButton && profileFillButtonPosition === 'top'">
@@ -38,8 +55,14 @@
       </div>
     </div>
 
+    <!-- Sekcja lokalizacji - picker z autocomplete (shared/location-picker/location-picker.component.ts).
+         Lokalizacje NIE są kontrolką ReactiveForm - stan przechowywany w selectedLocations poza FormGroup.
+         Zmiana emitowana przez (selectedChange) do onLocationsChange() który wywołuje filtersChange -->
     <div class="summary-block full-width" *ngIf="showLocation">
       <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
+      <!-- [locations] - lista wszystkich dostępnych lokalizacji z backendu (GET /v1/lookups/locations)
+           [selected]  - aktualnie wybrane lokalizacje (selectedLocations z komponentu)
+           (selectedChange) - emitowane gdy użytkownik doda lub usunie lokalizację -->
       <app-location-picker
         [locations]="availableLocations"
         [selected]="selectedLocations"
@@ -47,15 +70,27 @@
       </app-location-picker>
     </div>
 
+    <!-- Sekcja poziomu doświadczenia (seniority).
+         formGroupName="seniority" podpina tę sekcję do zagnieżdżonego FormGroup seniority w filtersForm.
+         Obsługuje dwa tryby:
+           - checkbox (singleExpLevelSelection = false) - można zaznaczyć wiele poziomów naraz
+           - radio (singleExpLevelSelection = true) - tylko jeden poziom naraz (używany w profile) -->
     <div class="summary-block" formGroupName="seniority" *ngIf="showExpLevel">
       <h3>Poziom doświadczenia</h3>
       <div class="pills-container">
+        <!-- Iterujemy po availableExpLevels pobranych z GET /v1/lookups/experience-levels -->
         <label class="pill-card" *ngFor="let option of availableExpLevels">
+
+          <!-- Tryb checkboxów - wiele poziomów może być wybranych jednocześnie.
+               [formControlName]="option.id" podpina checkbox do kontrolki FormGroup seniority -->
           <input
             *ngIf="!singleExpLevelSelection"
             type="checkbox"
             [formControlName]="option.id">
 
+          <!-- Tryb radio - tylko jeden poziom naraz (np. w formularzu profilu).
+               Radio nie jest kontrolką ReactiveForm - zmiana obsługiwana przez onSingleExpLevelSelect()
+               który ręcznie ustawia wszystkie inne opcje seniority na false w FormGroup -->
           <input
             *ngIf="singleExpLevelSelection"
             type="radio"
@@ -68,9 +103,13 @@
       </div>
     </div>
 
+    <!-- Sekcja trybu pracy (zdalnie, hybrydowo, stacjonarnie).
+         formGroupName="workMode" podpina do zagnieżdżonego FormGroup workMode.
+         Gdy wszystkie lub żadne zaznaczone, workTypeIds w computeValue() zwraca [] (brak filtra) -->
     <div class="summary-block" formGroupName="workMode" *ngIf="showWorkMode">
       <h3>Tryb pracy</h3>
       <div class="pills-container">
+        <!-- availableWorkTypes pobrane z GET /v1/lookups/work-types -->
         <label class="pill-card" *ngFor="let mode of availableWorkTypes">
           <input type="checkbox" [formControlName]="mode.id">
           <div class="pill-content">{{ mode.label }}</div>
@@ -78,9 +117,15 @@
       </div>
     </div>
 
+    <!-- Sekcja widełek płacowych - dwa suwaki range nakładające się na siebie.
+         Suwaki przechowują INDEKSY w SALARY_OPTIONS, nie kwoty PLN.
+         Rzeczywiste kwoty PLN wyliczane przez gettery salaryFromValue i salaryToValue -->
     <div class="summary-block full-width" *ngIf="showSalary">
       <h3>Widełki płacowe</h3>
 
+      <!-- Etykiety z aktualnymi wartościami suwaków w PLN.
+           Pipe number:'1.0-0' formatuje bez miejsc dziesiętnych (np. 15 000).
+           "50 000+" zamiast "50 000" gdy suwak "do" jest na maksimum - sygnalizuje "bez górnego limitu" -->
       <div class="salary-labels">
         <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
         <span class="salary-badge">
@@ -88,13 +133,20 @@
         </span>
       </div>
 
+      <!-- Kontener obu suwaków z kolorowym wypełnieniem między nimi.
+           salary-progress-fill to kolorowa belka pokazująca wybrany zakres.
+           Pozycja i szerokość belki obliczane przez getSalaryProgressLeft() i getSalaryProgressPercent() -->
       <div class="salary-range-slider">
+        <!-- Kolorowa belka między suwakami - [style.width.%] i [style.left.%] ustawiane dynamicznie -->
         <div
           class="salary-progress-fill"
           [style.width.%]="getSalaryProgressPercent()"
           [style.left.%]="getSalaryProgressLeft()">
         </div>
 
+        <!-- Suwak dolnej granicy wynagrodzenia.
+             (input) wywoływane przy każdym ruchu suwaka - checkSalaryRange('from') pilnuje
+             żeby suwak "od" nie przekroczył suwaka "do" -->
         <input
           type="range"
           formControlName="salaryFromIndex"
@@ -104,6 +156,7 @@
           (input)="checkSalaryRange('from')"
           class="salary-input">
 
+        <!-- Suwak górnej granicy wynagrodzenia - analogicznie do suwaka "od" -->
         <input
           type="range"
           formControlName="salaryToIndex"
@@ -114,20 +167,27 @@
           class="salary-input">
       </div>
 
+      <!-- Etykiety krańców skali pod suwakami - stałe, pokazują zakres możliwych wartości -->
       <div class="range-markers">
         <span>0 PLN</span>
         <span>50 000+ PLN</span>
       </div>
     </div>
 
+    <!-- Sekcja ról IT (specjalizacji).
+         formGroupName="itArea" podpina do zagnieżdżonego FormGroup itArea w filtersForm.
+         Domyślnie pokazuje 8 pierwszych ról (getVisibleRoles()), reszta ukryta za przyciskiem "rozwiń" -->
     <div class="summary-block full-width" formGroupName="itArea" *ngIf="showRoles">
       <h3>Główne role</h3>
       <div class="pills-container">
+        <!-- getVisibleRoles() zwraca slice(0,8) lub pełną listę zależnie od showAllRoles -->
         <label class="pill-card" *ngFor="let role of getVisibleRoles()">
           <input type="checkbox" [formControlName]="role.id">
           <div class="pill-content">{{ role.label }}</div>
         </label>
 
+        <!-- Przycisk "rozwiń/zwiń" - widoczny tylko gdy jest więcej niż 8 ról.
+             Zmienia flagę showAllRoles bezpośrednio w szablonie -->
         <button
           *ngIf="availableRoles.length > 8"
           type="button"
@@ -138,6 +198,8 @@
       </div>
     </div>
 
+    <!-- Wariant przycisku "Uzupełnij z profilu" umieszczony tuż przed sekcją technologii.
+         Aktywny gdy profileFillButtonPosition = 'above-technologies' -->
     <div
       class="summary-block full-width"
       *ngIf="showProfileFillButton && profileFillButtonPosition === 'above-technologies'">
@@ -151,8 +213,15 @@
       </div>
     </div>
 
+    <!-- Sekcja technologii - picker z wyszukiwarką i tagami (shared/tech-picker/tech-picker.component.ts).
+         Technologie NIE są kontrolką ReactiveForm - stan w selectedTechnologies poza FormGroup.
+         *ngIf="techPickerReady" - picker renderuje się dopiero po queueMicrotask w ngOnInit,
+         żeby selectedTechnologies było gotowe zanim TechPicker otrzyma [selected] -->
     <div class="summary-block full-width" *ngIf="showTechnologies">
       <h3>Technologie</h3>
+      <!-- [technologies] - lista wszystkich dostępnych technologii z backendu (jako LocationItem[])
+           [selected]     - aktualnie wybrane technologie (selectedTechnologies z komponentu)
+           (selectedChange) - emitowane gdy użytkownik doda lub usunie technologię -->
       <app-tech-picker
         [technologies]="availableTechItems"
         [selected]="selectedTechnologies"
@@ -160,9 +229,14 @@
       </app-tech-picker>
     </div>
 
+    <!-- Sekcja portali ogłoszeń (Pracuj.pl, JustJoin.it, NoFluffJobs).
+         formGroupName="jobSites" podpina do zagnieżdżonego FormGroup jobSites.
+         Gdy wszystkie lub żadne zaznaczone, siteIds w computeValue() zwraca [] (brak filtra) -->
     <div class="summary-block full-width" formGroupName="jobSites" *ngIf="showSites">
       <h3>Źródła ofert</h3>
       <div class="pills-container">
+        <!-- availableSites pobrane z GET /v1/lookups/sites.
+             Uwaga: [formControlName]="site.key" (nie site.id) bo jobSites FormGroup używa kluczy portali -->
         <label class="pill-card" *ngFor="let site of availableSites">
           <input type="checkbox" [formControlName]="site.key">
           <div class="pill-content">{{ site.label }}</div>
@@ -170,9 +244,14 @@
       </div>
     </div>
 
+    <!-- Stopka formularza z przyciskiem "Szukaj ofert" i przyciskiem zwijania.
+         Widoczna gdy showApplyButton = true (np. na /home) lub collapsible = true -->
     <div class="filters-footer" *ngIf="showApplyButton || collapsible">
       <div class="filters-footer-left"></div>
 
+      <!-- Przycisk "Zwiń filtry" - widoczny tylko gdy collapsible = true i formularz jest rozwinięty.
+           toggleCollapsed() przełącza collapsed w filters-form.component.ts.
+           aria-expanded informuje czytniki ekranu o aktualnym stanie -->
       <div class="filters-toggle-bottom" *ngIf="collapsible">
         <button
           type="button"
@@ -181,6 +260,7 @@
           [attr.aria-expanded]="!collapsed"
           aria-label="Zwiń filtry"
         >
+          <!-- Ikona strzałki - klasa .rotated obraca ją gdy formularz jest rozwinięty -->
           <svg
             class="filters-toggle-icon"
             [class.rotated]="!collapsed"
@@ -199,6 +279,9 @@
         </button>
       </div>
 
+      <!-- Przycisk "Szukaj ofert" (główne CTA formularza).
+           Widoczny tylko gdy showApplyButton = true (np. na /home - false w sidebarze /offers).
+           applyFilters() waliduje suwak salary i emituje applyClicked z aktualnym FiltersValue -->
       <div class="filters-actions" *ngIf="showApplyButton">
         <button type="button" class="btn-primary" (click)="applyFilters()">
           {{ applyButtonLabel }}
@@ -207,6 +290,9 @@
     </div>
   </div>
 
+  <!-- Pasek "Rozwiń filtry" - widoczny ZAMIAST całej siatki gdy formularz jest zwinięty.
+       Pojawia się tylko gdy collapsible = true i collapsed = true.
+       Kliknięcie wywołuje toggleCollapsed() który przełącza collapsed na false -->
   <div class="filters-toggle-collapsed" *ngIf="collapsible && collapsed">
     <button
       type="button"

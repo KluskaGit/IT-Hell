@@ -1,42 +1,78 @@
+/* Architektura CSS strony profilu (/profile)
+   ─────────────────────────────────────────────────────────────────────────
+   Struktura wizualna:
+     background-glow       - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
+     profile-container     - wyśrodkowany wrapper strony (max-width 1100px)
+       profile-top-grid    - siatka 2 kolumn: info-card (dane osobowe) | cv-card (upload)
+       app-filters-form    - formularz technologii i doświadczenia (komponent zewnętrzny)
+       profile-feedback    - banery błędów i sukcesów (loadError, saveError, saveSuccess)
+       actions-row         - przyciski "Zapisz zmiany" i "Anuluj"
+   ─────────────────────────────────────────────────────────────────────────
+   Motyw wizualny: jasny (light mode), szkło (glassmorphism) z gradientem #6366f1 (indigo).
+   Animacje wejścia: fadeInUp ze staggeringiem (animate-up + delay-N).
+   Głębokość: backdrop-filter na kartach tworzy efekt mlecznego szkła (glass-card).
+   Przenikanie stylów do child: ::ng-deep dla app-filters-form (patrz na dole pliku).
+*/
+
+/* Blok :host definiuje zmienne CSS (design tokens) dla całego komponentu.
+   :host oznacza element <app-profile> w DOM - zmienne są dziedziczone przez wszystkie
+   elementy wewnątrz komponentu, bo CSS variables przechodzą przez shadow-like encapsulation.
+   display: block wymagane bo Angular renderuje komponenty jako inline - bez tego padding/margin
+   na :host nie działają poprawnie.
+   font-family ustawiony tu zamiast na każdej klasie osobno - dziedziczy automatycznie */
 :host {
-  --primary: #6366f1;
-  --primary-dark: #4338ca;
-  --primary-deep: #3730a3;
-  --primary-hover: #4f46e5;
-  --primary-light: #eef2ff;
+  /* Paleta kolorów głównych (indigo/fioletowy) */
+  --primary: #6366f1;        /* bazowy kolor akcentów, ikon i focusu */
+  --primary-dark: #4338ca;   /* ciemniejszy odcień - używany w tle submit-button */
+  --primary-deep: #3730a3;   /* najciemniejszy - koniec gradientu submit-button */
+  --primary-hover: #4f46e5;  /* kolor na hover submit-button */
+  --primary-light: #eef2ff;  /* bardzo jasny - tło hover secondary-button */
 
-  --bg: #f8fafc;
-  --bg-mesh-1: #e0e7ff;
-  --bg-mesh-2: #f1f5f9;
+  /* Kolory tła */
+  --bg: #f8fafc;             /* główne tło strony (prawie biały niebieskoszary) */
+  --bg-mesh-1: #e0e7ff;      /* blado-indigo - kolor gradientu tła w lewym górnym rogu */
+  --bg-mesh-2: #f1f5f9;      /* blado-szary - środek gradientu tła */
 
-  --text-main: #1e293b;
-  --text-sub: #64748b;
-  --text-muted: #94a3b8;
+  /* Kolory tekstu */
+  --text-main: #1e293b;   /* ciemny slate - główny kolor tekstu */
+  --text-sub: #64748b;    /* szary - podpisy, readonly inputy */
+  --text-muted: #94a3b8;  /* jaśniejszy szary - etykiety kart (card-label) */
 
-  --border: rgba(226, 232, 240, 0.8);
+  /* Obramowania */
+  --border: rgba(226, 232, 240, 0.8);  /* półprzezroczyste - subtelne, nie rzuca się w oczy */
 
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-blur: 16px;
+  /* Parametry efektu "szkła" (glassmorphism) */
+  --glass-bg: rgba(255, 255, 255, 0.72);  /* białe tło z 72% przezroczystości */
+  --glass-blur: 16px;                      /* rozmycie backdrop-filter */
 
+  /* Cienie kart */
   --shadow-card: 0 20px 40px -10px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-hover: 0 28px 56px -12px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
 
-  --radius-lg: 20px;
-  --radius-md: 12px;
+  /* Zaokrąglenia rogów */
+  --radius-lg: 20px;  /* karty (glass-card) */
+  --radius-md: 12px;  /* inputy, mniejsze elementy */
 
-  --danger: #ef4444;
-  --success: #10b981;
+  /* Kolory stanów błędu i sukcesu */
+  --danger: #ef4444;   /* czerwony - komunikaty błędów, przycisk "Usuń" */
+  --success: #10b981;  /* zielony - banner sukcesu CV i komunikat zapisu */
 
   font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: block;
 }
 
+/* Resetuje box-sizing i dziedziczy font-family na wszystkich elementach komponentu.
+   Bez box-sizing: border-box padding/border powiększałby element poza zadeklarowaną szerokość */
 * {
   box-sizing: border-box;
   font-family: inherit;
 }
 
 
+/* Dekoracyjny gradient tła całej strony - stały, przyklejony do viewportu.
+   position: fixed + top/left: 0 + width/height: 100vw/vh pokrywa cały ekran nawet przy scrollu.
+   z-index: -1 - pod wszystkimi innymi elementami, tylko dekoracja.
+   overflow: hidden - zapobiega poziomemu scrollowi gdy plamy glow wychodzą poza viewport */
 .background-glow {
   position: fixed;
   width: 100vw;
@@ -48,6 +84,11 @@
   overflow: hidden;
 }
 
+/* Trzy dekoracyjne "plamy" - rozmyte okrągłe gradienty które wolno się poruszają (glowFloat).
+   Każda ma inny rozmiar (vw żeby skalowały się z ekranem), pozycję i czas animacji.
+   radial-gradient(circle, kolor 0%, transparent 70%) tworzy "plamy" zanikające na krawędziach.
+   animation: alternate / alternate-reverse - plamy poruszają się w przeciwnych fazach,
+   co tworzy żywy, organiczny ruch bez synchronizacji */
 .glow-1 {
   position: absolute;
   top: -15%;
@@ -78,6 +119,8 @@
   animation: glowFloat 18s ease-in-out infinite alternate;
 }
 
+/* Delikatny ruch unoszenia - przesuwa plamę o 30px w prawo i 20px w górę, lekko skalując.
+   Pętla infinite alternate daje efekt "oddechu" - płynnie wróci do pozycji startowej */
 @keyframes glowFloat {
   0% {
     transform: translate(0, 0) scale(1);
@@ -87,12 +130,18 @@
   }
 }
 
+/* Główny wrapper zawartości strony.
+   padding-top: 96px zostawia miejsce na fixed navbar (wysokość navbara to ~64px + margin).
+   max-width: 1100px + margin: 0 auto centruje treść na szerokich monitorach */
 .profile-container {
   padding: 96px 2rem 4rem;
   max-width: 1100px;
   margin: 0 auto;
 }
 
+/* Górna siatka dwóch kart: "Dane osobowe" i "Twoje CV".
+   grid-template-columns: 1fr 1fr - obie karty mają równą szerokość.
+   Na mobilnych ekranach (patrz media queries na dole) zmieniane na 1fr (jedna kolumna) */
 .profile-top-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -100,6 +149,9 @@
   margin-bottom: 1.25rem;
 }
 
+/* Mała etykieta nad zawartością karty (np. "DANE OSOBOWE", "TWOJE CV").
+   uppercase + letter-spacing + mały font-size to klasyczny styl "overline label"
+   używany żeby odróżnić nagłówek sekcji od treści bez dominacji nad nią */
 .card-label {
   font-size: 0.72rem;
   font-weight: 800;
@@ -109,6 +161,15 @@
   margin-bottom: 1.25rem;
 }
 
+/* Efekt "szkła" (glassmorphism) - wspólny styl dla obu kart.
+   background: var(--glass-bg) + backdrop-filter: blur() - rozmywa tło za kartą,
+   tworząc wrażenie półprzezroczystej tafli szkła.
+   -webkit-backdrop-filter: duplikat dla Safari (standard nie zawsze wystarczy).
+   border: 0.5px solid transparent + background-clip: padding-box - technika na
+   przezroczyste obramowanie: border nie pokazuje koloru, tło kończący się na padding.
+   outline: 0.5px solid rgba(255,255,255,0.6) - biały cienki kontur zamiast border
+   (outline nie wpływa na layout i może nakładać się z border).
+   transition na transform i box-shadow - płynna animacja hover (uniesienie + cień) */
 .glass-card {
   position: relative;
   background: var(--glass-bg);
@@ -126,6 +187,11 @@
   overflow: hidden;
 }
 
+/* Pseudo-element "shimmer" - błysk świetlny przesuwający się przez kartę po hover.
+   Domyślnie opacity: 0 i translateX(-100%) - poza kartą i niewidoczny.
+   Efekt wyzwalany przez :hover::before poniżej.
+   pointer-events: none - shimmer nie blokuje kliknięć w przyciski wewnątrz karty.
+   z-index: 0 - pod zawartością karty, żeby nie nakrywał tekstu */
 .glass-card::before {
   content: '';
   position: absolute;
@@ -139,28 +205,38 @@
   z-index: 0;
 }
 
+/* Aktywuje shimmer na hover - zmienia transition transform na 0.65s ease,
+   co daje efekt błysku przesuwającego się od lewej do prawej.
+   Nie ustawiamy transform bezpośrednio tutaj - Angular robi to przez :hover::before */
 .glass-card:hover::before {
   opacity: 1;
   transform: translateX(100%);
   transition: opacity 0.1s, transform 0.65s ease;
 }
 
+/* Hover karty - unosi ją o 2px i wzmacnia cień żeby dać wrażenie "podniesienia" */
 .glass-card:hover {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
 }
 
+/* Układ wewnątrz karty "Dane osobowe": avatar po lewej, pola formularza po prawej.
+   align-items: flex-start - avatar i pola wyrównane do górnej krawędzi */
 .hero-layout {
   display: flex;
   align-items: flex-start;
   gap: 1.5rem;
 }
 
+/* flex-shrink: 0 - avatar nie kurczy się gdy pola formularza potrzebują więcej miejsca */
 .avatar-container {
   position: relative;
   flex-shrink: 0;
 }
 
+/* Okrągły avatar z gradientem tła.
+   box-shadow: 0 0 0 3px white - biały "ring" wokół avatara (outer ring bez rozmycia),
+   drugi cień dodaje miękką poświatę indigo pod avatarem */
 .avatar {
   width: 88px;
   height: 88px;
@@ -174,13 +250,15 @@
   overflow: hidden;
 }
 
-
+/* z-index: 1 - nad pseudo-elementem ::before (shimmer ma z-index: 0),
+   dzięki czemu tekst i inputy są zawsze widoczne podczas animacji hover */
 .hero-info {
   position: relative;
   z-index: 1;
   width: 100%;
 }
 
+/* Siatka dwóch kolumn dla pól "Imię" i "Nazwisko" obok siebie */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -188,12 +266,14 @@
   margin-bottom: 1rem;
 }
 
+/* Opakowuje label + input w kolumnę */
 .input-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
+/* Styl etykiet pól - mały uppercase jak card-label, ale ciemniejszy (text-main) */
 .input-group label {
   font-size: 0.78rem;
   font-weight: 700;
@@ -202,6 +282,8 @@
   letter-spacing: 0.04em;
 }
 
+/* Styl inputów - border, zaokrąglenie, tło lekko przezroczyste.
+   transition na border-color i box-shadow dla płynnego focusu */
 .input-group input {
   padding: 0.75rem 1rem;
   border: 1px solid #cbd5e1;
@@ -213,6 +295,7 @@
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
+/* Focus input - obramowanie primary (indigo) z miękką poświatą wokół */
 .input-group input:focus {
   outline: none;
   border-color: var(--primary);
@@ -220,12 +303,18 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
+/* Wizualne odróżnienie pól tylko do odczytu (imię, nazwisko, email z Keycloak).
+   !important - nadpisuje .input-group input powyżej bez potrzeby podnoszenia specyficzności.
+   cursor: not-allowed - informuje użytkownika że pola nie można edytować.
+   Kolor --text-sub (szary) zamiast --text-main (ciemny) sygnalizuje że to dane systemowe */
 .input-readonly {
   background: rgba(241, 245, 249, 0.8) !important;
   color: var(--text-sub) !important;
   cursor: not-allowed;
 }
 
+/* Kontener obszaru uploadu CV - rozciąga się na pełną wysokość karty cv-card.
+   align-items: stretch - dropzone i scanner zajmują całą dostępną szerokość */
 .upload-area {
   display: flex;
   flex-direction: column;
@@ -233,6 +322,12 @@
   height: 100%;
 }
 
+/* Strefa przeciągania / przycisk uploadu CV.
+   Stylizowany jako <button> (display: block) z przerywany obramowaniem.
+   border: 2px dashed - wizualnie sygnalizuje że można tu "upuścić" plik.
+   color: inherit i box-shadow: none - resetuje domyślne style przeglądarki dla button,
+   bo ten element jest <button> ale musi wyglądać jak dropzone, nie jak przycisk.
+   transform: none - wyłącza lift z .glass-card:hover żeby dropzone nie unosił się osobno */
 .dropzone {
   width: 100%;
   padding: 2rem 1.5rem;
@@ -247,6 +342,10 @@
   transform: none;
 }
 
+/* Hover dropzone i stan "dragging" (gdy użytkownik przeciąga plik nad obszar).
+   Klasa .dragging jest dodawana przez [class.dragging]="isDragging" w HTML
+   gdy Angular reaguje na (dragover) zdarzenie - patrz: profile.component.ts onDragOver().
+   Kolor obramowania zmienia się na primary (indigo), tło na jasnoniebieski */
 .dropzone:hover,
 .dropzone.dragging {
   border-color: var(--primary);
@@ -256,6 +355,7 @@
   box-shadow: none;
 }
 
+/* Zawartość dropzone: ikona + tekst wyśrodkowane w kolumnie */
 .dropzone-inner {
   display: flex;
   flex-direction: column;
@@ -267,16 +367,20 @@
   text-align: center;
 }
 
+/* Ikona SVG w dropzone - kolorowana na primary (indigo) */
 .dropzone-inner svg {
   color: var(--primary);
 }
 
+/* Drobny podpis pod ikoną dropzone (opcjonalny, używany jeśli jest w HTML) */
 .dropzone-sub {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
 }
 
+/* Kontener animacji skanowania - zastępuje dropzone gdy isScanning = true w HTML.
+   Wyśrodkowana kolumna z radarem, paskiem postępu i tekstem statusu */
 .scanner-container {
   width: 100%;
   padding: 3rem 2rem;
@@ -289,6 +393,9 @@
   text-align: center;
 }
 
+/* Okrągły kontener dla animacji radaru.
+   overflow: hidden KLUCZOWE - obcina obracający się radar-sweep do kręgu.
+   Bez overflow: hidden "ramię" radaru wystawałoby poza okrąg i psuło animację */
 .radar-box {
   width: 80px;
   height: 80px;
@@ -303,6 +410,11 @@
   margin-bottom: 1.5rem;
 }
 
+/* "Ramię" obracającego się radaru - ćwiartka koła ze stopniowaniem kolor → transparent.
+   position: absolute + top: 0 + left: 50% - zaczyna od środka okręgu ku górze.
+   width: 50% + height: 50% - ćwiartka, bo transform-origin: bottom left obraca ją
+   wokół lewego dolnego rogu (= centrum okręgu radar-box).
+   animation: radarSpin 1.5s linear infinite - równomierne 360° bez przyspieszenia */
 .radar-sweep {
   position: absolute;
   top: 0;
@@ -314,11 +426,15 @@
   animation: radarSpin 1.5s linear infinite;
 }
 
+/* Stan "gotowe" - zatrzymuje animację radaru gdy scanProgress osiągnie 100%.
+   animation: none wyłącza kręcenie, opacity: 0 chowa sweep płynnie.
+   Klasa dodawana przez [class.radar-done]="scanProgress === 100" w HTML */
 .radar-sweep.radar-done {
   animation: none;
   opacity: 0;
 }
 
+/* Pełny obrót radaru - prosty 0° → 360° bez easing (linear) */
 @keyframes radarSpin {
   from {
     transform: rotate(0deg);
@@ -328,6 +444,9 @@
   }
 }
 
+/* Tekst statusu skanowania (np. "Analizowanie CV...", "Gotowe!").
+   Wartość pochodzi z właściwości scanStatus w profile.component.ts,
+   aktualizowanej etapami przez setTimeout w analyzeCV() */
 .scanning-text {
   font-size: 1.1rem;
   color: var(--text-main);
@@ -335,6 +454,8 @@
   margin-bottom: 1rem;
 }
 
+/* Szare tło paska postępu - pełna szerokość kontenera.
+   overflow: hidden - zapobiega wychodzeniu kolorowego fill poza zaokrąglone rogi */
 .progress-bar-bg {
   width: 100%;
   height: 8px;
@@ -344,18 +465,28 @@
   margin-bottom: 0.5rem;
 }
 
+/* Kolorowe wypełnienie paska - szerokość sterowana przez [style.width.%]="scanProgress" w HTML.
+   transition: width 0.3s ease-out - płynna animacja zmiany szerokości,
+   dzięki czemu pasek "rośnie" zamiast skakać */
 .progress-bar-fill {
   height: 100%;
   background: var(--primary);
   transition: width 0.3s ease-out;
 }
 
+/* Procentowy napis pod paskiem - np. "35%", "100%".
+   Wartość z właściwości scanProgress w profile.component.ts */
 .progress-percent {
   font-size: 0.9rem;
   font-weight: 800;
   color: var(--primary);
 }
 
+/* Baner sukcesu po zakończeniu analizy CV - zastępuje cały upload-area.
+   Wyświetlany gdy scanComplete = true w profile.component.html (*ngIf="scanComplete").
+   Zielone tło + obramowanie sygnalizują pozytywny wynik.
+   flex + gap: 1rem - ikona checkmark po lewej, info (nazwa pliku + opis) na środku,
+   przycisk "Usuń" po prawej */
 .scan-success-banner {
   display: flex;
   align-items: center;
@@ -366,6 +497,9 @@
   border-radius: 12px;
 }
 
+/* Zielone kółko z "✓" - ikona wizualnego potwierdzenia.
+   color: #022c22 - ciemny kolor tekstu na zielonym tle dla kontrastu.
+   flex-shrink: 0 - ikona nie kurczy się gdy tekst obok jest długi */
 .success-icon {
   background: var(--success);
   color: #022c22;
@@ -379,22 +513,28 @@
   flex-shrink: 0;
 }
 
+/* Kontener z nazwą pliku (strong) i opisem (span) - rośnie na pozostałą szerokość (flex: 1) */
 .success-info {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
+/* Nazwa pliku CV - ciemny zielony (kontrast na jasnym tle) */
 .success-info strong {
   color: #065f46;
   font-size: 1rem;
 }
 
+/* Opis pod nazwą - "CV przeanalizowane pomyślnie" */
 .success-info span {
   color: #047857;
   font-size: 0.85rem;
 }
 
+/* Przycisk "Usuń" - wyglada jak link (bez tła, bez border, underline).
+   Czerwony (--danger) sygnalizuje że to akcja destruktywna (usuwa CV i resetuje stan).
+   flex-shrink: 0 - przycisk nie kurczy się gdy nazwa pliku jest długa */
 .remove-link {
   margin-top: 0;
   background: transparent;
@@ -406,6 +546,9 @@
   flex-shrink: 0;
 }
 
+/* Rząd przycisków "Zapisz zmiany" i "Anuluj".
+   grid-template-columns: 1fr 1fr - oba przyciski zajmują połowę szerokości.
+   margin-top: 4rem - duży odstęp od formularza filtrów powyżej */
 .actions-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -413,10 +556,17 @@
   margin-top: 4rem;
 }
 
+/* Gdy widoczny jest baner feedback (saveError lub saveSuccess), górna sekcja
+   ma już własny margines, więc actions-row dostaje zmniejszone margin-top.
+   Klasa dodawana przez [class.actions-row-with-feedback]="saveError || saveSuccess" w HTML */
 .actions-row.actions-row-with-feedback {
   margin-top: 0.9rem;
 }
 
+/* Główny przycisk "Zapisz zmiany" - gradient indigo, biały tekst.
+   position: relative + overflow: hidden - potrzebne dla pseudo-elementu ::after (shimmer).
+   box-shadow z kolorem primary-dark - podkreśla "wagę" przycisku (main CTA).
+   cubic-bezier(0.2, 0.8, 0.2, 1) - sprężyste przejście typowe dla Material Design */
 .submit-button {
   position: relative;
   overflow: hidden;
@@ -436,6 +586,11 @@
   box-shadow: 0 8px 20px -4px rgba(67, 56, 202, 0.38), 0 2px 6px rgba(67, 56, 202, 0.2);
 }
 
+/* Pseudo-element shimmer dla submit-button.
+   Startuje z left: -100% (poza przyciskiem po lewej) i transition: left 0s (bez animacji).
+   Na hover left skacze do 160% (poza przyciskiem po prawej) z transition 0.55s -
+   tworzy efekt błysku przelatującego przez przycisk od lewej do prawej.
+   skewX(-15deg) - ukośne pochylenie shimmer dla dynamicznego wyglądu */
 .submit-button::after {
   content: '';
   position: absolute;
@@ -448,21 +603,27 @@
   transition: left 0s;
 }
 
+/* Wyzwala animację shimmer - zmiana left z 0s na 0.55s ease uruchamia lot przez przycisk */
 .submit-button:hover::after {
   left: 160%;
   transition: left 0.55s ease;
 }
 
+/* Hover przycisku - jaśniejszy gradient, uniesienie o 2px, większy cień */
 .submit-button:hover {
   background: linear-gradient(135deg, var(--primary-hover), var(--primary-dark));
   transform: translateY(-2px);
   box-shadow: 0 14px 28px -4px rgba(67, 56, 202, 0.45), 0 4px 8px rgba(67, 56, 202, 0.2);
 }
 
+/* Kliknięcie - zeruje uniesienie (natychmiastowe "wciśnięcie") */
 .submit-button:active {
   transform: translateY(0);
 }
 
+/* Stan disabled ([disabled]="isSaving" w HTML) - wygaszony wygląd bez efektów hover.
+   opacity: 0.6 sygnalizuje że przycisk jest nieaktywny.
+   cursor: not-allowed + transform: none + box-shadow: none blokują wszystkie efekty interaktywne */
 .submit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -470,10 +631,14 @@
   box-shadow: none;
 }
 
+/* Shimmer nie powinien pojawiac się na wygaszonym przycisku */
 .submit-button:disabled::after {
   display: none;
 }
 
+/* Przycisk "Anuluj" - drugorzędny, przezroczyste tło.
+   backdrop-filter: blur(8px) daje lekki efekt mlecznego szkła (mniej niż glass-card).
+   text-decoration: none - bo routerLink="/" może renderować jako <a> */
 .secondary-button {
   display: flex;
   align-items: center;
@@ -491,6 +656,7 @@
   backdrop-filter: blur(8px);
 }
 
+/* Hover secondary - wypełnienie jasnym indigo, ciemniejsza ramka, lekkie uniesienie */
 .secondary-button:hover {
   background: var(--primary-light);
   border-color: #a5b4fc;
@@ -498,11 +664,17 @@
   box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.2);
 }
 
+/* Klasa animacji wejścia - używana na sekcjach strony (profile-top-grid, app-filters-form, actions-row).
+   Startuje z opacity: 0 (niewidoczny) i animuje do opacity: 1 + translateY(0).
+   animation: forwards - po zakończeniu animacji zostaje w stanie końcowym (nie wraca do opacity: 0).
+   Opóźnienie (delay-1, delay-2...) tworzy efekt "waterfall" - sekcje pojawiają się po kolei */
 .animate-up {
   opacity: 0;
   animation: fadeInUp 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+/* Klasy opóźnienia - nakładane razem z .animate-up żeby sekcje wchodziły po kolei.
+   delay-1: filtersForm (po 70ms), delay-2: actions-row (po 140ms) */
 .delay-1 {
   animation-delay: 0.07s;
 }
@@ -519,11 +691,14 @@
   animation-delay: 0.28s;
 }
 
+/* Wrapper komunikatów feedback (loadError, saveError, saveSuccess).
+   max-width: 1030px wyrównuje szerokość z formularzem filtrów powyżej */
 .profile-feedback {
   max-width: 1030px;
   margin: 0.75rem auto 0;
 }
 
+/* Baner komunikatu - wspólne style dla .success i .error */
 .profile-feedback-box {
   padding: 0.75rem 1rem;
   border-radius: 12px;
@@ -533,18 +708,23 @@
   box-shadow: 0 8px 16px -12px rgba(0, 0, 0, 0.08);
 }
 
+/* Wariant sukcesu - zielone tło i tekst (po udanym zapisie do backendu).
+   Automatycznie znika po 3 sekundach - logika w saveSuccessTimer (profile.component.ts) */
 .profile-feedback-box.success {
   background: #ecfdf5;
   border-color: #10b981;
   color: #065f46;
 }
 
+/* Wariant błędu - czerwone tło i tekst (błąd API lub brak wymaganych danych) */
 .profile-feedback-box.error {
   background: #fef2f2;
   border-color: #ef4444;
   color: #991b1b;
 }
 
+/* Animacja wejścia - przesuwa element o 28px w górę i jednocześnie wypełnia opacity.
+   28px to umiarkowana odległość: duże wartości wyglądają nienaturalnie, małe niezauważalnie */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -556,16 +736,26 @@
   }
 }
 
-/* Większy padding karty technologii i doświadczenia na stronie profilu */
+/* Przenikanie stylów do zagnieżdżonego komponentu app-filters-form (filters-form.component.ts).
+   Angular domyślnie izoluje style przez ViewEncapsulation - selektory z tego pliku nie docierają
+   do child komponentów. ::ng-deep "przebija" tę izolację i pozwala nadpisać style .ff-card
+   zdefiniowane w filters-form.component.css.
+   :host ::ng-deep - :host zawęża zasięg do tego komponentu, żeby nie nadpisywać ff-card
+   na innych stronach gdzie użyty jest FiltersFormComponent (np. /home lub /offers) */
 :host ::ng-deep app-filters-form .ff-card {
   padding: 3rem;
 }
 
-/* Wycentruj doświadczenie — zajmuje pół gridu, wyrównujemy do pełnej szerokości */
+/* Selector :has() rozpoznaje sekcję z poziomem doświadczenia po obecności input[type="radio"].
+   Na profilu singleExpLevelSelection = true, więc pills-container zawiera radio zamiast checkbox.
+   Ta sekcja normalnie zajmuje pół szerokości gridu (summary-grid ma 2 kolumny),
+   grid-column: 1 / -1 rozciąga ją na pełną szerokość - dzięki temu pillsy poziomu
+   doświadczenia wyglądają wyśrodkowano a nie zepchnięte do lewej kolumny */
 :host ::ng-deep app-filters-form .summary-block:has(.pills-container input[type="radio"]) {
   grid-column: 1 / -1;
 }
 
+/* Wyśrodkowanie pillsów (radio buttonów poziomów doświadczenia) gdy sekcja zajmuje pełną szerokość */
 :host ::ng-deep app-filters-form .summary-block:has(.pills-container input[type="radio"]) .pills-container {
   justify-content: center;
 }

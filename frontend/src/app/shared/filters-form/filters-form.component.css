@@ -1,7 +1,17 @@
+/* Style dla FiltersFormComponent (shared/filters-form/filters-form.component.ts).
+   Komponent używany na trzech stronach: /home (główny formularz), /offers (sidebar), /profile.
+   W każdym kontekście wygląd jest nieco inny - offers.component.css nadpisuje część tych styli
+   przez ::ng-deep dla wersji sidebarowej (płaski wygląd bez kart i cieni). */
+
+
+/* :host = element <app-filters-form> w DOM - ustawiamy display: block
+   bo domyślnie elementy custom Angular są inline co łamie layout */
 :host {
   display: block;
 }
 
+/* Stan ładowania i błędu - wyświetlane zamiast formularza gdy dane z backendu nie są gotowe.
+   Wspólny styl (biała karta z zaokrąglonymi rogami) nadpisywany przez .ff-error dla wariantu błędu */
 .ff-loading,
 .ff-error {
   background: rgba(255, 255, 255, 0.95);
@@ -12,12 +22,16 @@
   margin-bottom: 1.5rem;
 }
 
+/* Wariant błędu - czerwone tło sygnalizujące problem z pobraniem danych słownikowych z backendu */
 .ff-error {
   color: #b91c1c;
   background: #fef2f2;
   border-color: #fecaca;
 }
 
+/* Główna karta formularza - biały zaokrąglony kontener z cieniem.
+   Używany na /home i /profile. W sidebarze /offers nadpisywany przez ::ng-deep w offers.component.css
+   (tło transparent, brak border i box-shadow żeby formularz wyglądał płasko w panelu) */
 .ff-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24px;
@@ -27,6 +41,8 @@
   margin-bottom: 1.5rem;
 }
 
+/* Nagłówek formularza z tytułem (np. "Filtry") i opcjonalnym przyciskiem akcji po prawej.
+   Widoczny tylko gdy showSummaryHeader = true (ustawiany przez @Input w TS) */
 .summary-header {
   display: flex;
   align-items: center;
@@ -43,34 +59,42 @@
   letter-spacing: -0.6px;
 }
 
+/* Wariant nagłówka gdy formularz jest zwijany (collapsible = true) - wyrównanie pionowe */
 .summary-header-collapsible {
   align-items: center;
 }
 
+/* Kontener przycisków akcji w nagłówku (np. "Uzupełnij z profilu" w pozycji header-right) */
 .summary-header-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: auto; /* przesuwa przyciski do prawej krawędzi nagłówka */
 }
 
+/* Odznaka z liczbą aktywnych filtrów - używana w nagłówku gdy collapsible = true */
 .summary-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: #eef2ff;
   color: #6366f1;
-  border-radius: 999px;
+  border-radius: 999px; /* pill shape - pełne zaokrąglenie */
   padding: 0.45rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 800;
 }
 
+/* Siatka sekcji formularza - domyślnie 2 kolumny (np. seniority obok trybu pracy).
+   Sekcje z full-width rozciągają się na całą szerokość (lokalizacja, technologie, salary, role) */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
+/* Pojedyncza sekcja formularza - szare tło odróżniające od białej karty.
+   Zawiera nagłówek h3 i kontrolki (checkboxy, pickery, suwak) */
 .summary-block {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -78,10 +102,12 @@
   padding: 1rem;
 }
 
+/* Sekcja zajmująca całą szerokość siatki - stosowana dla lokalizacji, technologii, salary, ról */
 .summary-block.full-width {
   grid-column: 1 / -1;
 }
 
+/* Nagłówek sekcji formularza (np. "Poziom doświadczenia", "Tryb pracy") */
 .summary-block h3 {
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
@@ -96,6 +122,8 @@
   line-height: 1.5;
 }
 
+/* Stylowany select HTML - używany w ewentualnych dodatkowych filtrach select.
+   appearance: none usuwa domyślny wygląd przeglądarki - strzałka dodana jako SVG w background-image */
 .styled-select {
   width: 100%;
   padding: 0.8rem 1rem;
@@ -107,18 +135,23 @@
   appearance: none;
   cursor: pointer;
   outline: none;
+  /* SVG strzałki zakodowany jako data URI - strzałka "w dół" po prawej stronie selecta */
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1em;
-  padding-right: 2.5rem;
+  padding-right: 2.5rem; /* miejsce na ikonę strzałki żeby tekst jej nie przykrywał */
 }
 
 .styled-select:focus {
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); /* focus ring w kolorze primary */
 }
 
+
+/* Kontener kapsułek wyboru (checkboxów/radio wystylowanych jako przyciski pill).
+   Używany dla seniority, trybu pracy i portali ogłoszeń.
+   flex-wrap: wrap pozwala na zawijanie gdy kapsułek jest dużo */
 .pills-container {
   display: flex;
   flex-wrap: wrap;
@@ -126,6 +159,8 @@
   margin-top: 0.2rem;
 }
 
+/* Wrapper label dla pojedynczej kapsułki.
+   position: relative potrzebne dla absolutnie pozycjonowanego inputa wewnątrz */
 .pill-card {
   cursor: pointer;
   display: inline-block;
@@ -133,6 +168,9 @@
   position: relative;
 }
 
+/* Ukrywamy natywny input checkbox/radio - zastępujemy go wizualnie przez .pill-content.
+   Technika "custom checkbox" - input jest niewidoczny ale nadal funkcjonalny (klawisz Space, Tab).
+   Selektor CSS :checked działa na ukrytym inpucie i zmienia styl sąsiedniego .pill-content */
 .pill-card input[type="radio"],
 .pill-card input[type="checkbox"] {
   position: absolute;
@@ -141,6 +179,8 @@
   height: 0;
 }
 
+/* Widoczna kapsułka zastępująca natywny checkbox/radio.
+   user-select: none zapobiega zaznaczaniu tekstu przy kliknięciu */
 .pill-content {
   display: flex;
   align-items: center;
@@ -148,7 +188,7 @@
   gap: 0.5rem;
   padding: 0.5rem 1.2rem;
   border: 1px solid #cbd5e1;
-  border-radius: 50px;
+  border-radius: 50px; /* pełne zaokrąglenie = pill shape */
   background: #ffffff;
   color: #475569;
   font-weight: 600;
@@ -162,13 +202,17 @@
   background: #f8fafc;
 }
 
+/* Styl zaznaczonej kapsułki - selektor CSS używa :checked na ukrytym inpucie
+   i selektor sąsiedni (+) do zmiany wyglądu .pill-content */
 .pill-card input:checked + .pill-content {
   border-color: #6366f1;
   background: #eef2ff;
   color: #6366f1;
-  box-shadow: 0 0 0 1px #6366f1;
+  box-shadow: 0 0 0 1px #6366f1; /* dodatkowy border żeby kapsułka wyglądała "grubiej" gdy zaznaczona */
 }
 
+/* Przycisk "rozwiń/zwiń" listę ról (gdy jest ich więcej niż 8).
+   Wygląda jak kapsułka ale jest buttonem (nie labelem) - brak checkboxa wewnątrz */
 .toggle-pill-btn {
   background: transparent;
   border: 1px solid #cbd5e1;
@@ -188,12 +232,16 @@
   border-color: #94a3b8;
 }
 
+/* Fieldset portali ogłoszeń - używany w alternatywnym układzie z kartami (site-cards-grid).
+   border: none usuwa domyślne obramowanie fieldset przeglądarki */
 .site-fieldset {
   border: none;
   padding: 0;
   margin: 0;
 }
 
+/* Siatka kart portali ogłoszeń - alternatywny wygląd dla portali (większe karty niż kapsułki).
+   auto-fit + minmax pozwala na automatyczne dopasowanie liczby kolumn do dostępnej szerokości */
 .site-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -201,12 +249,15 @@
   margin-top: 0.5rem;
 }
 
+/* Karta portalu ogłoszeń (większy format niż pill).
+   position: relative dla absolutnie pozycjonowanego inputa wewnątrz */
 .site-card {
   cursor: pointer;
   display: block;
   position: relative;
 }
 
+/* Ukryty checkbox dla karty portalu - ta sama technika co przy .pill-card */
 .site-card input[type="checkbox"] {
   position: absolute;
   opacity: 0;
@@ -214,6 +265,7 @@
   height: 0;
 }
 
+/* Widoczna treść karty portalu zastępująca natywny checkbox */
 .site-card-content {
   display: flex;
   align-items: center;
@@ -232,9 +284,10 @@
 .site-card:hover .site-card-content {
   border-color: #cbd5e1;
   background: #f8fafc;
-  transform: translateY(-2px);
+  transform: translateY(-2px); /* lekkie unoszenie przy hover */
 }
 
+/* Zaznaczona karta portalu - kolor primary i cień */
 .site-card input[type="checkbox"]:checked + .site-card-content {
   border-color: #6366f1;
   background: #eef2ff;
@@ -242,27 +295,33 @@
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
+/* Ikona checkmark wewnątrz zaznaczonej karty portalu - domyślnie ukryta */
 .site-check {
   width: 18px;
   height: 18px;
   display: none;
 }
 
+/* Checkmark pojawia się z animacją gdy karta zostanie zaznaczona */
 .site-card input[type="checkbox"]:checked + .site-card-content .site-check {
   display: block;
   animation: ffPopIn 0.3s;
 }
 
+/* Animacja pop-in dla ikony checkmark - szybkie "wyskakiwanie" ze skali 0.5 do 1 */
 @keyframes ffPopIn {
-  0% { transform: scale(0.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0%   { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
 }
 
+
+/* Sekcja z suwakiem wynagrodzenia - flex column żeby etykiety, suwak i markery były w pionie */
 .summary-block:has(.salary-range-slider) {
   display: flex;
   flex-direction: column;
 }
 
+/* Wiersz z etykietami "OD" i "DO" nad suwakami salary */
 .salary-labels {
   display: flex;
   justify-content: space-between;
@@ -270,6 +329,8 @@
   gap: 0.75rem;
 }
 
+/* Odznaka z aktualną wartością suwaka salary (np. "OD: 10 000").
+   Indigo tło podkreśla że to interaktywna wartość, nie stały tekst */
 .salary-badge {
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
@@ -279,6 +340,9 @@
   color: #6366f1;
 }
 
+/* Kontener obu suwaków salary i kolorowej belki między nimi.
+   position: relative konieczne bo suwaki i belka są absolutnie pozycjonowane.
+   height: 40px zapewnia obszar klikania dla uchwytów suwaków (większy niż 6px belki) */
 .salary-range-slider {
   position: relative;
   display: block;
@@ -287,17 +351,23 @@
   margin-top: 0.75rem;
 }
 
+/* Kolorowa belka wypełnienia między suwakami - pokazuje wybrany zakres salary.
+   position: absolute + top: 50% + translateY(-50%) centruje belkę pionowo w kontenerze.
+   Szerokość i pozycja ustawiane dynamicznie przez [style.width.%] i [style.left.%] w HTML.
+   pointer-events: none żeby belka nie blokowała kliknięć na suwaki pod nią */
 .salary-progress-fill {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   height: 6px;
-  background: #6366f1;
+  background: #6366f1; /* kolor primary - zaznaczony zakres */
   border-radius: 3px;
-  z-index: 1;
+  z-index: 1;          /* nad szarym tłem (::before), pod suwakami (z-index: 2) */
   pointer-events: none;
 }
 
+/* Szare tło całej skali suwaka - linia od 0 do max.
+   ::before na kontenerze zamiast osobnego elementu żeby nie komplikować HTML */
 .salary-range-slider::before {
   content: '';
   position: absolute;
@@ -305,12 +375,17 @@
   left: 0;
   right: 0;
   height: 6px;
-  background: #cbd5e1;
+  background: #cbd5e1; /* szary - niezaznaczony zakres */
   border-radius: 3px;
   transform: translateY(-50%);
-  z-index: 0;
+  z-index: 0; /* pod belką fill i suwakami */
 }
 
+/* Suwaki range (input type="range") nakładające się jeden na drugi.
+   Obydwa zajmują całą szerokość kontenera - jeden kontroluje dolną granicę, drugi górną.
+   background: transparent i -webkit-appearance: none ukrywają domyślny track przeglądarki -
+   track rysujemy sami przez ::before i .salary-progress-fill.
+   pointer-events: none na całym suwaku - kliknięcia przekazywane do uchwytów (::-webkit-slider-thumb) */
 .salary-input {
   position: absolute;
   top: 50%;
@@ -320,14 +395,16 @@
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: transparent;
-  z-index: 2;
+  background: transparent; /* ukrywamy domyślny track - rysujemy własny */
+  z-index: 2;              /* nad belką fill i szarym tłem */
   margin: 0;
   padding: 0;
   outline: none;
-  pointer-events: none;
+  pointer-events: none;    /* kliknięcia przechodzą przez track do elementów pod spodem */
 }
 
+/* Uchwyt suwaka (kulka do przeciągania) - Chrome/Safari/Edge.
+   pointer-events: auto przywraca interaktywność tylko dla uchwytu (nie całego tracka) */
 .salary-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -335,17 +412,18 @@
   height: 22px;
   background: #6366f1;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 3px solid white;      /* biała obwódka oddziela kulkę od kolorowej belki */
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s;
   cursor: pointer;
-  pointer-events: auto;
+  pointer-events: auto;         /* tylko uchwyt jest klikalny - nie cały track */
 }
 
 .salary-input::-webkit-slider-thumb:hover {
-  transform: scale(1.12);
+  transform: scale(1.12); /* lekkie powiększenie przy hover */
 }
 
+/* Uchwyt suwaka dla Firefox - vendor prefix -moz- */
 .salary-input::-moz-range-thumb {
   width: 22px;
   height: 22px;
@@ -356,6 +434,7 @@
   pointer-events: auto;
 }
 
+/* Etykiety krańców skali pod suwakami - stałe wartości "0 PLN" i "50 000+ PLN" */
 .range-markers {
   margin-top: 0.5rem;
   font-weight: 600;
@@ -366,6 +445,8 @@
   width: 100%;
 }
 
+/* Przycisk "Szukaj ofert" (główne CTA formularza) - widoczny gdy showApplyButton = true.
+   Gradient liniowy zamiast flat color dla głębi, cień w kolorze primary */
 .btn-primary {
   border: none;
   cursor: pointer;
@@ -379,36 +460,44 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px); /* unoszenie przy hover */
   box-shadow: 0 14px 22px -10px rgba(79, 70, 229, 0.55);
 }
 
+/* Stopka formularza z przyciskami "Zwiń filtry" i "Szukaj ofert".
+   Siatka 3 kolumn: [pusta lewa] [przycisk zwiń - wyśrodkowany] [przycisk szukaj - wyrównany do prawej].
+   grid-column: 1 / -1 sprawia że stopka rozciąga się na całą szerokość siatki sekcji */
 .filters-footer {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto 1fr; /* lewa=elastyczna, środek=auto, prawa=elastyczna */
   align-items: center;
   margin-top: 1.75rem;
   width: 100%;
   grid-column: 1 / -1;
 }
 
+/* Pusta lewa kolumna stopki - tworzy symetryczny układ z prawą kolumną (przyciski) */
 .filters-footer-left {
   min-height: 1px;
 }
 
+/* Kontener przycisku "Zwiń filtry" - wyśrodkowany w środkowej kolumnie stopki */
 .filters-toggle-bottom {
   display: flex;
   justify-content: center;
-  grid-column: 2;
+  grid-column: 2; /* środkowa kolumna siatki stopki */
 }
 
+/* Kontener przycisku "Szukaj ofert" - wyrównany do prawej krawędzi */
 .filters-actions {
   display: flex;
   justify-content: flex-end;
-  grid-column: 3;
+  grid-column: 3; /* prawa kolumna siatki stopki */
   width: 100%;
 }
 
+/* Bazowy styl przycisków zwijania/rozwijania formularza (toggle collapse).
+   Styl pill z kolorem primary - wyróżnia się od reszty formularza */
 .filters-toggle-btn {
   height: 40px;
   padding: 0 1.1rem;
@@ -435,33 +524,43 @@
   box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.25);
 }
 
+/* Ikona strzałki w przycisku toggle - obraca się o 180deg gdy formularz jest rozwinięty.
+   Klasa .rotated dodawana przez Angular gdy collapsed = false ([class.rotated]="!collapsed") */
 .filters-toggle-icon {
   transition: transform 0.25s ease;
   flex-shrink: 0;
 }
 
 .filters-toggle-icon.rotated {
-  transform: rotate(180deg);
+  transform: rotate(180deg); /* strzałka "w górę" gdy formularz jest rozwinięty */
 }
 
+/* Kontener paska "Rozwiń filtry" - widoczny ZAMIAST siatki sekcji gdy collapsed = true.
+   Wyświetlany jako jedyny element karty gdy formularz jest zwinięty */
 .filters-toggle-collapsed {
   display: flex;
   justify-content: center;
   margin-top: 1.25rem;
 }
 
+/* Wariant większego przycisku toggle w stopce i pasku collapsed (większy padding i cień) */
 .filters-toggle-btn-bottom {
   height: 44px;
   padding: 0 1.35rem;
   box-shadow: 0 6px 18px -8px rgba(79, 70, 229, 0.35);
 }
 
+
+/* Responsywność - tablet (max 980px): siatka sekcji zmienia się z 2 kolumn na 1.
+   Wszystkie sekcje (łącznie z tymi bez full-width) zajmują pełną szerokość */
 @media (max-width: 980px) {
   .summary-grid {
     grid-template-columns: 1fr;
   }
 }
 
+/* Responsywność - mobile (max 768px): stopka formularza zmienia się z 3-kolumnowej siatki
+   na układ jednokolumnowy - przyciski jeden pod drugim */
 @media (max-width: 768px) {
   .filters-footer {
     grid-template-columns: 1fr;
@@ -469,39 +568,49 @@
     grid-column: 1 / -1;
   }
 
+  /* Lewa pusta kolumna nie ma sensu w jednokolumnowym układzie */
   .filters-footer-left {
     display: none;
   }
 
+  /* Przycisk toggle i przycisk szukaj wyśrodkowane na mobile */
   .filters-toggle-bottom,
   .filters-actions {
     grid-column: auto;
     justify-content: center;
   }
 
+  /* Przycisk "Szukaj ofert" na pełną szerokość na mobile (max 280px dla czytelności) */
   .filters-actions .btn-primary {
     width: 100%;
     max-width: 280px;
   }
 
+  /* Karty portali w jednej kolumnie na wąskim ekranie */
   .site-cards-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Profile fill button styles - home */
+
+/* Sekcja przycisku "Uzupełnij z profilu" - ma przezroczyste tło i brak obramowania.
+   :has() sprawdza czy .summary-block zawiera .filters-profile-fill-row i usuwa szarą ramkę sekcji.
+   Dzięki temu przycisk "wisi" między sekcjami bez dodatkowego szarego boksu wokół niego */
 .summary-block:has(.filters-profile-fill-row) {
   background: transparent;
   border: none;
   padding: 0.25rem 0;
 }
 
+/* Kontener przycisku "Uzupełnij z profilu" - wyrównany do prawej krawędzi formularza */
 .filters-profile-fill-row {
   display: flex;
   justify-content: flex-end;
   align-items: center;
 }
 
+/* Styl przycisku "Uzupełnij z profilu" w pozycji 'top' i 'above-technologies'.
+   Indigo tło (eef2ff) i obramowanie zamiast gradientu - drugorzędny przycisk (secondary) */
 .filters-profile-fill-row .secondary-button {
   display: inline-flex;
   align-items: center;
@@ -530,7 +639,8 @@
   box-shadow: none;
 }
 
-/* Profile fill button — top position (no gray box) */
+/* Wariant przycisku "Uzupełnij z profilu" w pozycji 'top' (wiersz nad sekcjami formularza).
+   grid-column: 1 / -1 rozciąga na całą szerokość siatki summary-grid */
 .profile-fill-top-row {
   grid-column: 1 / -1;
   display: flex;
@@ -539,6 +649,7 @@
   margin-bottom: 0.5rem;
 }
 
+/* Styl przycisku w pozycji 'top' - identyczny wygląd co secondary-button powyżej */
 .profile-fill-top-btn {
   display: inline-flex;
   align-items: center;
@@ -568,23 +679,8 @@
   box-shadow: none;
 }
 
-/* Profile fill button styles - header right */
-
-.summary-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.summary-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-left: auto;
-}
-
+/* Wariant przycisku "Uzupełnij z profilu" w pozycji 'header-right' (w nagłówku formularza).
+   Większy padding i font-size niż secondary-button - bardziej widoczny w nagłówku */
 .profile-fill-header-btn {
   background: #ffffff;
   color: #4338ca;
@@ -602,13 +698,14 @@
 .profile-fill-header-btn:hover {
   background: #eef2ff;
   border-color: #c7d2fe;
-  transform: translateY(-3px);
+  transform: translateY(-3px); /* większe unoszenie niż secondary-button - bardziej dramatyczny efekt */
 }
 
 .profile-fill-header-btn:active {
   transform: translateY(-1px);
 }
 
+/* Responsywność mobile (max 640px): przycisk "Uzupełnij z profilu" na pełną szerokość */
 @media (max-width: 640px) {
   .filters-profile-fill-row {
     width: 100%;
@@ -620,11 +717,13 @@
   }
 }
 
+/* Responsywność bardzo małe ekrany (max 520px): mniejsze padding karty i etykiety salary w kolumnie */
 @media (max-width: 520px) {
   .ff-card {
-    padding: 1.2rem;
+    padding: 1.2rem; /* mniejszy padding na bardzo wąskich ekranach */
   }
 
+  /* Etykiety "OD" i "DO" pod sobą zamiast obok siebie gdy nie ma miejsca */
   .salary-labels {
     flex-direction: column;
     align-items: flex-start;

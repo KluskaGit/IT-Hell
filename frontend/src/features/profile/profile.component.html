@@ -1,19 +1,35 @@
+<!-- Wspólny pasek nawigacji - ten sam komponent co na /home i /offers.
+     Zdefiniowany w app/shared/navbar/navbar.component.ts.
+     Wyświetla logo, linki i przycisk logowania/wylogowania przez Keycloak (auth.service.ts) -->
 <app-navbar></app-navbar>
 
+<!-- Dekoracyjne rozmyte plamy w tle (efekt "glow").
+     Trzy elementy div animowane przez CSS w profile.component.css - tylko wizualne, brak logiki.
+     Klasy glow-1 / glow-2 / glow-3 mają różne kolory i pozycje żeby tworzyć głębię -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
   <div class="glow-3"></div>
 </div>
 
+<!-- Główny wrapper strony profilu - wyśrodkowany kontener z paddingiem.
+     Wszystkie sekcje strony są w środku: dane osobowe, CV, filtry, akcje -->
 <div class="profile-container">
 
+  <!-- Górna siatka dwóch kart obok siebie: dane osobowe (po lewej) i CV (po prawej).
+       Na mobilnych ekranach CSS zmienia grid na jedną kolumnę.
+       animate-up to klasa CSS która nadaje wejściową animację przesunięcia + opacity -->
   <div class="profile-top-grid animate-up">
 
-    <!-- Dane osobowe -->
+    <!-- Karta "Dane osobowe" - pokazuje imię, nazwisko i email z Keycloak.
+         Dane są tylko do odczytu - nie można ich zmieniać przez ten formularz.
+         Wartości firstName / lastName / email są pobierane przez initFromToken()
+         z tokenu JWT Keycloak (bez wywołania API) - patrz: profile.component.ts -->
     <section class="glass-card info-card">
       <div class="card-label">Dane osobowe</div>
       <div class="hero-layout">
+
+        <!-- Avatar (ikona użytkownika) - statyczny SVG, brak uploadu zdjęcia w tej wersji -->
         <div class="avatar-container">
           <div class="avatar">
             <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
@@ -22,6 +38,11 @@
             </svg>
           </div>
         </div>
+
+        <!-- Pola tekstowe z danymi z Keycloak.
+             [value]="firstName" zamiast formControlName - te inputy NIE są częścią FormGroup.
+             Są tylko wyświetlaczem (readonly), więc nie wymagają ReactiveForm.
+             class="input-readonly" nadaje styl wizualnie odróżniający od edytowalnych pól -->
         <div class="hero-info">
           <div class="form-row">
             <div class="input-group">
@@ -41,13 +62,38 @@
       </div>
     </section>
 
-    <!-- CV Upload -->
+    <!-- Karta "Twoje CV" - zarządza uploadem i analizą pliku CV.
+         Trzy stany wyświetlane alternatywnie:
+           1. Dropzone (upload) - gdy !scanComplete i !isScanning
+           2. Animacja skanowania  - gdy isScanning = true (po wysłaniu pliku do API)
+           3. Baner sukcesu        - gdy scanComplete = true (analiza zakończona)
+         Logika stanów w profile.component.ts w metodzie analyzeCV() i removeCv() -->
     <section class="glass-card cv-card">
       <div class="card-label">Twoje CV</div>
 
+      <!-- Obszar uploadu - widoczny tylko gdy analiza jeszcze nie zakończyła się sukcesem.
+           Po scanComplete = true ten div znika, pojawia się baner sukcesu poniżej -->
       <div class="upload-area" *ngIf="!scanComplete">
+
+        <!-- Dropzone (strefa przeciągania) - widoczna gdy plik nie jest aktualnie skanowany.
+             Gdy użytkownik wgra plik i zacznie skanowanie, isScanning staje się true
+             i ten ng-container jest ukrywany, a pokazuje się animacja radaru poniżej -->
         <ng-container *ngIf="!isScanning">
+
+          <!-- Ukryty input type="file" - standardowa technika, bo natywny input jest brzydki.
+               #fileInput to referencja template do tego elementu - używana przez button niżej.
+               accept=".pdf,.doc,.docx" ogranicza okno wyboru do dozwolonych formatów CV.
+               (change)="onFileSelected($event)" wywołuje metodę w profile.component.ts
+               która weryfikuje rozmiar i typ pliku, potem wywołuje analyzeCV() -->
           <input type="file" #fileInput hidden accept=".pdf,.doc,.docx" (change)="onFileSelected($event)">
+
+          <!-- Przycisk dropzone - wizualny obszar drag&drop.
+               (click)="fileInput.click()" - kliknięcie otwiera natywny dialog wyboru pliku
+               przez wywołanie .click() na ukrytym #fileInput powyżej.
+               [class.dragging]="isDragging" dodaje klasę CSS gdy użytkownik przeciąga plik
+               nad obszar (ustawiane przez onDragOver / onDragLeave w profile.component.ts).
+               Obsługa drag&drop przez (dragover), (dragleave), (drop) - te zdarzenia
+               są przekazywane do metod komponentu które ustawiają isDragging i pobierają plik -->
           <button
             type="button"
             class="dropzone"
@@ -65,8 +111,16 @@
           </button>
         </ng-container>
 
+        <!-- Animacja skanowania - widoczna gdy isScanning = true.
+             Pojawia się po wysłaniu pliku do API (POST /v1/cv/analyze w cv-api.service.ts).
+             Bo API nie zwraca postępu w czasie rzeczywistym, scanProgress jest napędzany
+             fałszywą animacją setTimeout (200ms → 35%, potem 150ms opóźnienie po odpowiedzi)
+             - patrz analyzeCV() w profile.component.ts -->
         <div class="scanner-container" *ngIf="isScanning">
           <div class="radar-box">
+            <!-- Obracający się "sweep" radaru - CSS animation w profile.component.css.
+                 [class.radar-done]="scanProgress === 100" zatrzymuje animację gdy skanowanie kończy się,
+                 żeby nie kręciło się dalej gdy wynik jest już gotowy -->
             <div class="radar-sweep" [class.radar-done]="scanProgress === 100"></div>
             <svg viewBox="0 0 24 24" width="40" height="40" stroke="#6366f1" stroke-width="1.5" fill="none">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -76,7 +130,13 @@
               <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
           </div>
+
+          <!-- scanStatus to string ustawiany w analyzeCV() - np. "Analizowanie CV..." lub "Gotowe!".
+               Zmienia się etapami wraz z postępem animacji setTimeout -->
           <h3 class="scanning-text">{{ scanStatus }}</h3>
+
+          <!-- Pasek postępu - szerokość w % sterowana przez scanProgress (0–100).
+               [style.width.%]="scanProgress" Angular automatycznie przelicza na px -->
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" [style.width.%]="scanProgress"></div>
           </div>
@@ -84,6 +144,11 @@
         </div>
       </div>
 
+      <!-- Baner sukcesu - widoczny gdy scanComplete = true (analiza CV zakończyła się).
+           Zastępuje cały obszar uploadu - dzięki *ngIf="!scanComplete" powyżej.
+           currentCvFile to nazwa wgranego pliku (ustawiana w analyzeCV() po odpowiedzi API).
+           Przycisk "Usuń" wywołuje removeCv() który resetuje scanComplete, scanProgress
+           i currentCvFile - dzięki czemu dropzone pojawia się ponownie -->
       <div class="scan-success-banner" *ngIf="scanComplete">
         <div class="success-icon">✓</div>
         <div class="success-info">
@@ -97,6 +162,27 @@
 
   </div>
 
+  <!-- Formularz filtrów (technologie i doświadczenie) - współdzielony komponent FiltersFormComponent.
+       Zdefiniowany w app/shared/filters-form/filters-form.component.ts.
+       Ten sam komponent używany na /home i /offers, ale tutaj skonfigurowany inaczej przez @Input:
+         [initialFilters]="savedFilters"      - pre-wypełniony stan z backendu lub localStorage.
+                                                savedFilters to FiltersInitialState ustawiony
+                                                w patchProfileData() w profile.component.ts
+         [showApplyButton]="false"            - brak przycisku "Szukaj ofert" (nie szukamy tu ofert)
+         summaryHeading="..."                 - własny nagłówek sekcji
+         [showSummaryHeader]="true"           - pokazuje nagłówek z tytułem
+         [showLocation]="false"              - ukrywa picker lokalizacji (profil nie filtruje po mieście)
+         [showWorkMode]="false"              - ukrywa tryb pracy
+         [showSalary]="false"               - ukrywa suwaki wynagrodzenia
+         [showRoles]="false"                - ukrywa sekcję "Główne role IT"
+         [showSites]="false"               - ukrywa sekcję "Źródła ofert"
+         [showExpLevel]="true"              - pokazuje poziom doświadczenia (seniority)
+         [showTechnologies]="true"          - pokazuje picker technologii
+         [singleExpLevelSelection]="true"   - tryb radio (tylko jeden poziom), nie checkbox
+         (filtersChange)="onFiltersChange($event)" - każda zmiana w formularzu trafia do
+                                                       onFiltersChange() który aktualizuje
+                                                       currentFilterValue do późniejszego zapisu
+       animate-up delay-1 to klasy CSS nadające opóźnioną animację wejścia (po 100ms) -->
   <app-filters-form
     class="animate-up delay-1"
     [initialFilters]="savedFilters"
@@ -114,16 +200,37 @@
     (filtersChange)="onFiltersChange($event)">
   </app-filters-form>
 
+  <!-- Komunikat błędu ładowania - widoczny gdy ngOnInit (loadUserDataFromBackend) zwróci błąd
+       inny niż 404. loadError zawiera gotowy komunikat po polsku ustawiany w profile.component.ts.
+       Błąd 404 jest normalnym stanem (nowy użytkownik bez profilu) i NIE ustawia loadError -->
   <div *ngIf="loadError" class="profile-feedback animate-up">
     <div class="profile-feedback-box error">{{ loadError }}</div>
   </div>
 
+  <!-- Komunikaty po kliknięciu "Zapisz zmiany":
+         saveError - błąd PUT /v1/users/me/profile (np. błąd serwera)
+         saveSuccess - potwierdzenie zapisu (np. "Zmiany zapisane pomyślnie")
+       Oba mogą istnieć niezależnie w teorii, ale w praktyce ustawiany jest jeden lub drugi.
+       saveSuccess jest automatycznie kasowany po 3 sekundach przez saveSuccessTimer
+       w profile.component.ts (czyszczony w ngOnDestroy żeby nie wyciec) -->
   <div *ngIf="saveError || saveSuccess" class="profile-feedback animate-up">
     <div *ngIf="saveError" class="profile-feedback-box error">{{ saveError }}</div>
     <div *ngIf="saveSuccess" class="profile-feedback-box success">{{ saveSuccess }}</div>
   </div>
 
+  <!-- Rząd przycisków akcji - "Zapisz zmiany" i "Anuluj".
+       [class.actions-row-with-feedback] dodaje dodatkowy margin-top gdy widoczny jest baner
+       feedback powyżej, żeby zachować odpowiedni odstęp wizualny.
+       animate-up delay-2 to animacja wejścia z opóźnieniem 200ms (po filtersForm) -->
   <div class="actions-row animate-up delay-2" [class.actions-row-with-feedback]="saveError || saveSuccess">
+
+    <!-- Przycisk "Zapisz zmiany" wywołuje onSave() w profile.component.ts.
+         onSave() weryfikuje czy currentFilterValue jest ustawiony (formularz gotowy),
+         potem wysyła PUT /v1/users/me/profile z danymi technologii i exp_level.
+         [disabled]="isSaving" blokuje ponowne kliknięcie podczas trwającego zapisu.
+         Dwa ng-container wewnątrz zmieniają zawartość przycisku:
+           - !isSaving: ikona dyskietki + "Zapisz zmiany"
+           - isSaving:  "Zapisywanie…" (bez ikony) żeby dać feedback użytkownikowi -->
     <button type="button" class="submit-button" (click)="onSave()" [disabled]="isSaving">
       <ng-container *ngIf="!isSaving">
         <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -131,9 +238,14 @@
       </ng-container>
       <ng-container *ngIf="isSaving">Zapisywanie…</ng-container>
     </button>
+
+    <!-- Przycisk "Anuluj" - wraca do strony głównej bez zapisywania.
+         routerLink="/" używa Angular Router zamiast href żeby nie przeładowywać całej aplikacji -->
     <button type="button" class="secondary-button" routerLink="/">Anuluj</button>
   </div>
 
 </div>
 
+<!-- Stopka strony - ten sam komponent co na /home i /offers.
+     Zdefiniowany w app/shared/footer/footer.component.ts -->
 <app-footer></app-footer>
