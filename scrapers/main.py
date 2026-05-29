@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import queue
+import yaml
 
 from typing import Protocol, Callable
 from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
@@ -40,15 +41,31 @@ def setup_logger(
 
     return logger
 
+def get_config() -> dict:
+    with open('app-config.yaml', 'r') as cfg:
+        try:
+            config = yaml.safe_load(cfg)
+            return config
+        except yaml.YAMLError as e:
+            raise yaml.YAMLError(f"Error occured while reading the config file, {e}")
+
 def setup_pracuj_pl() -> Scraper:
     logger_pracuj_pl = setup_logger("PracujPL")
-    scraper_pracuj_pl = ScraperPracujPL(logger_pracuj_pl)
+    try:
+        cfg = get_config()["pracuj_pl"]
+    except KeyError as e:
+        raise KeyError(f"Please specify pracuj_pl section, {e}")
+    scraper_pracuj_pl = ScraperPracujPL(logger_pracuj_pl, cfg)
 
     return scraper_pracuj_pl
 
 def setup_theprotocol() -> Scraper:
     logger_theprotocol = setup_logger("TheProtocolIT")
-    scraper_theprtocol = ScraperTheProtocolIT(logger_theprotocol)
+    try:
+        cfg = get_config()["theprotocol_it"]
+    except KeyError as e:
+        raise KeyError(f"Please specify theprotocol_it section, {e}")
+    scraper_theprtocol = ScraperTheProtocolIT(logger_theprotocol, cfg)
 
     return scraper_theprtocol
 
