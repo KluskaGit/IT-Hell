@@ -52,6 +52,7 @@ scrapers/
 ├── main.py             # Entry point for running scrapers
 ├── pyproject.toml      # Project dependencies managed by uv
 ├── README.md           # Documentation
+├── app-config.yaml     # Configuration file for scraper settings
 ├── logs/               # Application log files
 ├── src/                
 │   ├── core/           # Core modules (e.g., Redis client connection)
