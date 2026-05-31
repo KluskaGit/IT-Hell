@@ -81,7 +81,7 @@ IT-Hell follows a microservices architecture to handle the full lifecycle of job
 2.  **Message Broker**: Redis serves as the communication hub between scrapers and the worker.
 3.  **[Worker](./backend/worker.md)**: Consumes data from Redis, normalizes it, and stores it in the database.
 4.  **Database**: PostgreSQL stores all structured job data and user profiles.
-5.  **[Backend API](./backend/README.md)**: Serves the processed data and handles business logic, including CV analysis.
+5.  **[Backend API](./backend/backend.md)**: Serves the processed data and handles business logic, including CV analysis.
 6.  **Auth**: Keycloak manages user authentication and authorization.
 7.  **[Frontend](./frontend/README.md)**: Angular-based dashboard for users to browse offers and analyze CVs.
 
