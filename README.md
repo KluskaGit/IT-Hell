@@ -93,3 +93,6 @@ IT-Hell follows a microservices architecture to handle the full lifecycle of job
 * **Autofill technologies from CV**: After uploading a CV, the system automatically extracts technologies and applies them as filters for job search.
 * **Autofill from user profile (logged users only)**: For logged-in users, the system can aplly filters based on the technologies and experience level listed in their profile.
 * **Access to all offers (logged users only)**: Logged-in users can access all job offers, while non-logged users have access to a limited set of offers.
+
+## Not implemented features
+* **User account removal/editing**: Currently, users cannot edit personal informations or remove their accounts. This feature is planned for future development.
