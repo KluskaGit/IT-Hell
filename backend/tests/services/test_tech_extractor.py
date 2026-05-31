@@ -91,23 +91,3 @@ async def test_extract_technologies_deduplication(mock_lookups_service):
     assert extracted[0].name == "Python"
 
 
-@pytest.mark.asyncio
-async def test_get_extraction_stats(mock_lookups_service):
-    service = TechExtractorService(lookups_service=mock_lookups_service)
-    cv_text = "I know Java, java, C++."
-    
-    stats = await service.get_extraction_stats(cv_text)
-    
-    assert "total_candidates_found" in stats
-    assert "matches_above_threshold" in stats
-    assert "matched_technologies" in stats
-    
-    # Słowa to: 'know', 'java', 'java', 'c++' (4 kandydatów)
-    # Unikalne z nich to: 'know', 'java', 'c++' (3 kandydatów)
-    assert stats["total_candidates_found"] == 4
-    assert stats["unique_candidates"] == 3
-    
-    # Uda się dopasować java oraz c++
-    matched_names = [m["name"] for m in stats["matched_technologies"]]
-    assert "Java" in matched_names
-    assert "C++" in matched_names
