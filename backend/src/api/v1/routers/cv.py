@@ -12,14 +12,39 @@ router = APIRouter(prefix="/cv", tags=["CV Analysis"])
 
 # Endpoint
 
-@router.post("/upload", response_model=List[LookupRead])
+@router.post(
+    "/upload",
+    response_model=List[LookupRead],
+    summary="Upload CV and extract technologies",
+    responses={
+        200: {
+            "description": "List of technologies successfully extracted from the CV",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"id": "xyz12345-e89b-12d3-a456-426614174000", "name": "Python"},
+                        {"id": "abc12345-e89b-12d3-a456-426614174000", "name": "Docker"}
+                    ]
+                }
+            }
+        },
+        422: {"description": "Validation Error (e.g., unsupported file format, empty file)"},
+        500: {"description": "Internal Server Error during file processing"}
+    }
+)
 async def upload_cv(
     file: UploadFile,
     cv_service: Annotated[CVService, Depends(get_cv_service)]
 ):
-    """Upload CV and extract technologies.
+    """
+    Uploads a CV document (`.pdf` or `.docx`) and automatically extracts matching technologies.
     
-    Returns extracted technologies from CV file without storing any user data.
+    **Process:**
+    1. Accepts a file upload (`multipart/form-data`).
+    2. Extracts raw text based on the file extension.
+    3. Uses fuzzy matching to find known technologies from the database.
+    
+    *Note: This endpoint is completely stateless and privacy-friendly. It **does not** store the user's CV file or its content in the database.*
     """
     try:
         file_bytes = await file.read()
