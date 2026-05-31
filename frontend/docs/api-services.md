@@ -178,9 +178,9 @@ Lista ofert pracy z filtrami i paginacją.
 // Surowa odpowiedź backendu
 interface JobOfferApiResponse {
   id: string;
-  url: string | null;
+  url: string;
   title: string;
-  description: string | null;
+  description: string;
   salary_from: number | null;
   salary_to: number | null;
   site: LookupDto | null;
@@ -190,7 +190,8 @@ interface JobOfferApiResponse {
   specialization: LookupDto | null;
   technologies: LookupDto[];
   locations: LookupDto[];
-  created_at: string;
+  publication_date: string | null;   // ISO 8601, null gdy scraper nie podał daty
+  expiration_date: string | null;    // ISO 8601, null gdy scraper nie podał daty
 }
 
 // Zmapowany model używany w UI
@@ -200,16 +201,19 @@ interface MappedOffer {
   company: string;
   location: string;
   workMode: string;
-  salaryMin?: number;
-  salaryMax?: number;
+  workTypeId: string;          // ID trybu pracy (do getWorkModeLabel)
+  salaryMin: number;
+  salaryMax: number;
   technologies: string[];      // IDs
   technologyNames: string[];   // wyświetlane nazwy
   roles: string[];
   seniority: string;
-  source: string;              // 'pracuj' | 'justjoin' | 'nofluff'
-  postedLabel: string;         // "2 dni temu"
+  source: string;              // ID portalu (do formatSource)
+  postedLabel: string;
   description: string;
   url?: string;
+  publicationDate: string | null;   // przepisane z publication_date
+  expirationDate: string | null;    // przepisane z expiration_date
 }
 ```
 

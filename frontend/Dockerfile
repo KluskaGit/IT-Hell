@@ -7,16 +7,11 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runtime
-WORKDIR /app
+FROM nginx:1.27-alpine AS runtime
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist/cv-analizer/browser /usr/share/nginx/html
 
-ENV NODE_ENV=production
-ENV PORT=4000
-EXPOSE 4000
-
-CMD ["node", "dist/cv-analizer/server/server.mjs"]
+EXPOSE 80

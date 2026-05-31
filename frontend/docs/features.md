@@ -401,6 +401,13 @@ W szablonie tagi technologii dostają klasę `tag--match` jeśli `offer.matchedT
   <p><sub>Zbliżenie na kartę oferty — technologie zaznaczone w filtrach dostają klasę <code>tag--match</code> (kolorowa ramka)</sub></p>
 </div>
 
+### Stopka karty — daty i przycisk
+
+Każda karta oferty ma stopkę z dwoma elementami:
+
+- **Daty (lewa strona):** `publication_date` wyświetlana jako „Dodano: DD.MM.YYYY", `expiration_date` jako „Wygasa: DD.MM.YYYY" (klasa `offer-card__date--expiry`). Widoczne tylko gdy backend zwrócił wartość (`*ngIf`). Formatowanie przez Angular pipe `date:'dd.MM.yyyy'`.
+- **Przycisk „Otwórz ofertę" (prawa strona):** `[disabled]` gdy `offer.url` jest pusty.
+
 ### Otwieranie ofert zewnętrznych
 
 ```typescript
