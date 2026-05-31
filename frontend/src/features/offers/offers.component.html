@@ -193,10 +193,15 @@
           </span>
         </div>
 
-        <!-- Stopka karty z przyciskiem otwierającym ofertę na zewnętrznym portalu.
+        <!-- Stopka karty z datami (lewa strona) i przyciskiem (prawa strona).
              openOffer() otwiera offer.url w nowej karcie (window.open z noopener/noreferrer).
              Przycisk jest nieaktywny ([disabled]) gdy oferta nie ma URL -->
         <div class="offer-card__footer">
+          <!-- Daty po lewej - widoczne tylko gdy backend zwrócił wartość (nie null) -->
+          <div class="offer-card__dates">
+            <span *ngIf="offer.publicationDate">Dodano: {{ offer.publicationDate | date:'dd.MM.yyyy' }}</span>
+            <span *ngIf="offer.expirationDate" class="offer-card__date--expiry">Wygasa: {{ offer.expirationDate | date:'dd.MM.yyyy' }}</span>
+          </div>
           <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">
             Otwórz ofertę
             <!-- Ikona strzałki w prawo -->

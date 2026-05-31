@@ -606,9 +606,15 @@ section { display: flex; flex-direction: column; gap: .75rem; }
 /* Stopka karty z przyciskiem otwierającym ofertę na zewnętrznym portalu.
    Linia border-top oddziela footer od tagów technologii */
 .offer-card__footer {
-  display: flex; align-items: center; justify-content: flex-end;
+  display: flex; align-items: center; justify-content: space-between;
   padding-top: .875rem; border-top: 1px solid rgba(226,232,240,.6);
 }
+
+.offer-card__dates {
+  display: flex; flex-direction: column; gap: .15rem;
+  font-size: .72rem; color: #64748b;
+}
+.offer-card__date--expiry { color: #f59e0b; }
 
 /* Główny przycisk akcji - "Otwórz ofertę".
    Kliknięcie wywołuje openOffer() który otwiera offer.url w nowej karcie.

@@ -22,6 +22,8 @@ export interface MappedOffer {
   postedLabel: string;
   description: string;
   url?: string;
+  publicationDate: string | null;
+  expirationDate: string | null;
 }
 
 // Fallbacki używane przez mapToOffer gdy pole z API jest null
@@ -86,6 +88,8 @@ export class JobOffersApiService {
       postedLabel: '',
       description,
       url: api.url,
+      publicationDate: api.publication_date ?? null,
+      expirationDate: api.expiration_date ?? null,
     };
   }
 

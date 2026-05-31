@@ -17,4 +17,6 @@ export interface JobOfferApiResponse {
   specialization: LookupDto | null;
   technologies: LookupDto[];
   locations: LookupDto[];
+  publication_date: string | null;
+  expiration_date: string | null;
 }
