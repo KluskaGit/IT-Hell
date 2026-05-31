@@ -16,7 +16,6 @@ async def test_create_and_get_job_offer(db_session: AsyncSession):
     work_type_id = uuid4()
     specialization_id = uuid4()
 
-    # Tworzymy ofertę (testujemy create)
     created_offer = await repo.create(
         site_id=site_id,
         exp_level_id=exp_level_id,
@@ -31,7 +30,6 @@ async def test_create_and_get_job_offer(db_session: AsyncSession):
     assert created_offer.title == "Backend Developer"
     assert created_offer.id is not None
 
-    # Testujemy get_by_url i get_by_id
     fetched_offer = await repo.get_by_url("https://example.com/job")
     assert fetched_offer is not None
     assert fetched_offer.id == created_offer.id
@@ -43,7 +41,6 @@ async def test_filter_job_offers(db_session: AsyncSession):
     
     site_id = uuid4()
     
-    # Tworzymy 3 różne oferty do testowania filtrów
     await repo.create(
         site_id=site_id, exp_level_id=uuid4(), company_id=uuid4(), work_type_id=uuid4(), specialization_id=uuid4(),
         url="url1", title="Python Developer", description="Mid level", salary_from=10000, salary_to=15000
@@ -57,11 +54,9 @@ async def test_filter_job_offers(db_session: AsyncSession):
         url="url3", title="Senior Python Dev", description="Senior", salary_from=16000, salary_to=20000
     )
 
-    # 1. Filtrowanie po tytule (case-insensitive - "ilike")
     python_offers = await repo.filter(title="python")
     assert len(python_offers) == 2
 
-    # 2. Filtrowanie po wynagrodzeniu
     high_salary = await repo.filter(salary_from_min=15000)
     assert len(high_salary) == 1
     assert high_salary[0].title == "Senior Python Dev"
@@ -75,7 +70,6 @@ async def test_filter_job_offers(db_session: AsyncSession):
 async def test_create_with_relationships(db_session: AsyncSession):
     repo = JobOffersRepository(session=db_session)
     
-    # Przygotowujemy technologie i lokalizacje w bazie (wymagane jako obiekty dla SQLAlchemy)
     tech1 = Technology(id=uuid4(), name="Python")
     tech2 = Technology(id=uuid4(), name="PostgreSQL")
     loc1 = Location(id=uuid4(), name="Warsaw")
@@ -83,7 +77,6 @@ async def test_create_with_relationships(db_session: AsyncSession):
     db_session.add_all([tech1, tech2, loc1])
     await db_session.commit()
 
-    # Tworzymy ofertę używając złożonej metody (w jednej transakcji)
     offer = await repo.create_with_relationships(
         site_id=uuid4(),
         exp_level_id=uuid4(),
@@ -97,7 +90,6 @@ async def test_create_with_relationships(db_session: AsyncSession):
         locations=[loc1]
     )
 
-    # Sprawdzamy czy relacje zostały załadowane i poprawnie zapisane
     assert len(offer.technologies) == 2
     assert len(offer.locations) == 1
     assert offer.technologies[0].name in ["Python", "PostgreSQL"]
@@ -123,6 +115,5 @@ async def test_update_and_delete(db_session: AsyncSession):
     deleted = await repo.delete(offer_id=offer.id)
     assert deleted is True
     
-    # Weryfikacja, że oferta została usunięta z bazy
     fetched = await repo.get_by_id(offer.id)
     assert fetched is None

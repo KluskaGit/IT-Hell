@@ -16,14 +16,11 @@ def mock_cv_service():
 
 @pytest.fixture
 async def client(mock_cv_service):
-    # Tworzymy lekką, wirtualną instancję FastAPI tylko dla tego routera
     app = FastAPI()
     app.include_router(cv_router)
     
-    # Nadpisujemy zależność - FastAPI zamiast prawdziwego serwisu użyje naszego Mocka
     app.dependency_overrides[get_cv_service] = lambda: mock_cv_service
     
-    # Inicjalizujemy asynchronicznego klienta HTTP
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
@@ -31,12 +28,10 @@ async def client(mock_cv_service):
 @pytest.mark.asyncio
 async def test_upload_cv_success(client: AsyncClient, mock_cv_service: AsyncMock):
     tech_id = uuid4()
-    # Symulujemy, że serwis pomyślnie znalazł i zwrócił jedną technologię
     mock_cv_service.extract_technologies_from_file.return_value = [
         Technology(id=tech_id, name="Python")
     ]
 
-    # Wysyłamy żądanie multipart/form-data (z atrapą pliku)
     files = {"file": ("resume.pdf", b"fake file content", "application/pdf")}
     response = await client.post("/cv/upload", files=files)
 

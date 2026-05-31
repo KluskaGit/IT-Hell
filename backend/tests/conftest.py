@@ -6,7 +6,6 @@ from src.models import Base  # Upewnij się, że to poprawny import Twojego Base
 
 @pytest_asyncio.fixture
 async def db_session():
-    # Używamy aiosqlite do utworzenia testowej bazy danych w pamięci
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     
     async with engine.begin() as conn:

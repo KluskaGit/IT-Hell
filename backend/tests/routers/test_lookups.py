@@ -26,7 +26,6 @@ def app_instance(mock_lookups_service):
 
 @pytest.mark.asyncio
 async def test_get_technologies(app_instance, mock_lookups_service):
-    # Test dla prostego endpointu wyciągającego listę
     tech_id = uuid4()
     mock_lookups_service.get_all.return_value = [Technology(id=tech_id, name="Python")]
 
@@ -43,7 +42,6 @@ async def test_get_technologies(app_instance, mock_lookups_service):
 
 @pytest.mark.asyncio
 async def test_get_sites_authenticated(app_instance, mock_lookups_service):
-    # Logika dla zalogowanego użytkownika (widzi wszystkie portale)
     mock_user = User(id_keycloak=uuid4(), email="test@example.com")
     app_instance.dependency_overrides[get_optional_current_user] = lambda: mock_user
 
@@ -61,7 +59,6 @@ async def test_get_sites_authenticated(app_instance, mock_lookups_service):
 
 @pytest.mark.asyncio
 async def test_get_sites_anonymous(app_instance, mock_lookups_service):
-    # Logika dla anonima - powinien dostać tylko konkretny portal, np. wbudowany w ustawienia
     app_instance.dependency_overrides[get_optional_current_user] = lambda: None
 
     site_id = uuid4()
@@ -78,7 +75,6 @@ async def test_get_sites_anonymous(app_instance, mock_lookups_service):
 
 @pytest.mark.asyncio
 async def test_get_sites_anonymous_fallback(app_instance, mock_lookups_service):
-    # Jeśli brak skonfigurowanego nazwanego portalu, system daje pierwszy z brzegu z get_all
     app_instance.dependency_overrides[get_optional_current_user] = lambda: None
 
     mock_lookups_service.get_by_name.side_effect = RecordNotFoundError("Not found")

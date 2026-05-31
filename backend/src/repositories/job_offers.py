@@ -265,7 +265,7 @@ class JobOffersRepository:
         
         If ANY part fails, the entire operation rolls back - no partial data in database.
         """
-        # Create the offer instance (not committed yet)
+        
         job_offer = JobOffer(
             site_id=site_id,
             exp_level_id=exp_level_id,
@@ -281,20 +281,16 @@ class JobOffersRepository:
             expiration_date=expiration_date,
         )
 
-        # Add to session but don't commit yet
         self.session.add(job_offer)
 
-        # Initialize collections to avoid lazy-load issues in async context
+        
         job_offer.technologies = []
         job_offer.locations = []
-        # Associate the resolved technologies and locations.
         job_offer.technologies = technologies
         job_offer.locations = locations
 
-        # ONE commit for everything: job_offers + job_offer_technology + job_offer_location
         await self.session.commit()
 
-        # Reload offer with ALL relationships using selectinload to avoid lazy-load in async
         stmt = select(JobOffer).where(JobOffer.id == job_offer.id) \
             .options(
                 selectinload(JobOffer.site),

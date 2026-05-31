@@ -17,7 +17,6 @@ def mock_user_profile_service():
 
 @pytest.fixture
 def mock_current_user():
-    # Przygotowujemy sztucznego użytkownika, który omija prawdziwą autoryzację JWT
     return User(
         id_keycloak=uuid4(),
         email="test_router@example.com",
@@ -37,7 +36,6 @@ def app_instance(mock_user_profile_service, mock_current_user):
 
 @pytest.mark.asyncio
 async def test_get_me(app_instance, mock_current_user):
-    # Endpoint /me ma po prostu zwrócić dane "zalogowanego" użytkownika
     async with AsyncClient(transport=ASGITransport(app=app_instance), base_url="http://test") as client:
         response = await client.get("/users/me")
 
@@ -49,14 +47,13 @@ async def test_get_me(app_instance, mock_current_user):
 
 @pytest.mark.asyncio
 async def test_get_my_profile(app_instance, mock_user_profile_service, mock_current_user):
-    # Endpoint /me/profile
     exp_id = uuid4()
     mock_profile = UserProfile(
         user_id=mock_current_user.id_keycloak, 
         raw_cv="My CV from router",
         exp_level_id=exp_id
     )
-    mock_profile.id = uuid4()  # Przypisujemy ID jako atrybut omijając sprawdzanie konstruktora
+    mock_profile.id = uuid4()  
     mock_profile.exp_level = ExperienceLevel(id=exp_id, name="Junior")
     mock_profile.technologies = []
     
@@ -79,7 +76,6 @@ async def test_update_my_profile(app_instance, mock_user_profile_service, mock_c
         exp_level_id=exp_id
     )
     mock_profile.id = uuid4()
-    # Pydantic potrzebuje tych relacji do poprawnego zbudowania JSON-a
     mock_profile.exp_level = ExperienceLevel(id=exp_id, name="Mid")
     mock_profile.technologies = []
     
