@@ -7,6 +7,7 @@
 //   3. Automatyczne odświeżanie tokenu JWT co 20 sekund (startTokenRefresh / refreshToken)
 //   4. Eksponowanie stanu autoryzacji jako Angular Signal (isAuthenticated, username)
 //   5. Odczyt danych z tokenu JWT bez wywołania API (getProfile(), getToken())
+//   6. Tworzenie instancji klienta Keycloak przez createKeycloak() w sposób ułatwiający testy
 //
 // Powiązane pliki:
 //   keycloak.config.ts       - url, realm, clientId dla instancji Keycloak
@@ -62,13 +63,10 @@ export class AuthService {
     }
 
     // Leniwe tworzenie instancji Keycloak - tylko raz, przy pierwszym init().
-    // Konfiguracja pobierana z keycloak.config.ts (url serwera, realm, clientId)
+    // Sama konstrukcja klienta została wydzielona do createKeycloak(), żeby uprościć testy
+    // jednostkowe i umożliwić podmianę implementacji w klasie testowej.
     if (!this.keycloak) {
-      this.keycloak = new Keycloak({
-        url: keycloakConfig.url,
-        realm: keycloakConfig.realm,
-        clientId: keycloakConfig.clientId,
-      });
+      this.keycloak = this.createKeycloak();
     }
 
     // Jeśli keycloak.init() był już wywołany wcześniej - tylko aktualizuj stan sygnałów.
@@ -94,6 +92,29 @@ export class AuthService {
     this.updateAuthState();
     // Uruchomienie automatycznego odświeżania tokenu co 20 sekund
     this.startTokenRefresh();
+  }
+
+  // Fabryka instancji Keycloak.
+  // Domyślnie tworzy prawdziwy klient keycloak-js na podstawie keycloak.config.ts.
+  //
+  // Dlaczego wydzielone do osobnej metody zamiast "new Keycloak(...)" bezpośrednio w init():
+  //   1. Upraszcza testy jednostkowe AuthService
+  //      - w testach można nadpisać tę metodę i zwrócić mock zamiast prawdziwej instancji
+  //      - dzięki temu nie trzeba mockować importu "keycloak-js", co bywa problematyczne
+  //        w środowisku Angular + Vitest + ESM
+  //   2. Oddziela logikę tworzenia klienta od logiki inicjalizacji sesji
+  //      - init() odpowiada za uruchomienie Keycloak i ustawienie stanu auth
+  //      - createKeycloak() odpowiada tylko za konstrukcję obiektu
+  //
+  // protected zamiast private:
+  //   - aplikacja produkcyjna nadal korzysta z domyślnej implementacji
+  //   - testowa klasa dziedzicząca może nadpisać createKeycloak() i zwrócić mock
+  protected createKeycloak(): Keycloak {
+    return new Keycloak({
+      url: keycloakConfig.url,
+      realm: keycloakConfig.realm,
+      clientId: keycloakConfig.clientId,
+    });
   }
 
   // Aktualizuje sygnały isAuthenticated i username na podstawie aktualnego stanu Keycloak.
