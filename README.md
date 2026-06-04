@@ -59,6 +59,7 @@ To get a local copy up and running, follow these simple steps.
     ```
 
 ## Usage
+**Attention**: The first KeyCloak startup may take a few minutes.
 ### Keycloak Setup
 1. Navigate to http://127.0.0.1:8080/admin/master/console/#/master/realms
 2. Log in with the default credentials (`admin`/`admin`).
