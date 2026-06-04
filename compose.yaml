@@ -83,7 +83,11 @@ services:
       # tylko gdy NIE istnieje. Bez persystencji realm jest re-importowany przy kazdym starcie,
       # wiec zmiany w keyCloak/import/it-hell-realm.json (np. redirect URI) dzialaja po restarcie.
       - ./keyCloak/themes:/opt/keycloak/themes
-      - ./keyCloak/import:/opt/keycloak/data/import:ro
+      # Realm it-hell sledzony jest w frontend/it-hell-realm.json (galaz frontend-Marek2),
+      # a nie w keyCloak/import (ten katalog jest pusty). Montujemy plik wprost do katalogu
+      # importu, zeby start-dev --import-realm mial co zaimportowac (inaczej brak realmu,
+      # klienta backend-client i kont testowych -> logowanie nie dziala).
+      - ./frontend/it-hell-realm.json:/opt/keycloak/data/import/it-hell-realm.json:ro
     restart: unless-stopped
 
   worker:
