@@ -26,7 +26,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./scrapers/logs:/app/logs
       - ./scrapers/app-config.yaml:/app/app-config.yaml:ro
     networks:
       - app-network

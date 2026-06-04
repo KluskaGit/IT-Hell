@@ -5,7 +5,7 @@ import queue
 import yaml
 
 from typing import Protocol, Callable
-from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
+from logging.handlers import QueueHandler, QueueListener
 
 from src.pracuj_pl.scraper import ScraperPracujPL
 from src.theprotocol_it.scraper import ScraperTheProtocolIT
@@ -16,23 +16,17 @@ class Scraper(Protocol):
 
 def setup_logger(
         name: str,
-        max_bytes: int = 5*1024*1024,
-        backup_count: int = 3
     ) -> logging.Logger:
 
     log_que = queue.Queue()
     que_handler = QueueHandler(log_que)
 
-    handler = RotatingFileHandler(
-        f'logs/{name}.log',
-        maxBytes=max_bytes,         # 5 MB per file
-        backupCount=backup_count    # Keep last 3 backups
-    )   
+    handler = logging.StreamHandler()   
     
     listener = QueueListener(log_que, handler)
     listener.start()
     
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
     logger = logging.getLogger(name)
