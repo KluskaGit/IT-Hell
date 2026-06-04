@@ -2,7 +2,7 @@ services:
   message-broker:
     image: redis:8.4-alpine
     container_name: message-broker
-    env_file:
+    env_file: 
       - .env
     entrypoint: ["redis-server", "--port", "${REDIS_PORT}", "--requirepass", "${REDIS_PASSWORD}"]
     networks:
@@ -19,12 +19,6 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
 
   scrapers:
     build: ./scrapers
@@ -50,7 +44,6 @@ services:
     depends_on:
       - message-broker
       - migrations
-
   migrations:
     build: ./backend
     container_name: migrations
@@ -60,8 +53,7 @@ services:
     networks:
       - app-network
     depends_on:
-      database:
-        condition: service_healthy
+      - database
 
   backend:
     build: ./backend
@@ -77,31 +69,32 @@ services:
     depends_on:
       - database
       - keycloak
-      - migrations
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.0
     container_name: keycloak-dev
-    command: start-dev --import-realm
+    command: start-dev
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
-      - ./frontend/it-hell-realm.json:/opt/keycloak/data/import/it-hell-realm.json:ro
-      - ./keyCloak/themes:/opt/keycloak/themes:ro
+      - ./keyCloak/themes:/opt/keycloak/themes
+    networks:
+      - app-network
 
   frontend:
     build: ./frontend
     container_name: frontend
     ports:
-      - "80:80"
+      - "4200:80"
     networks:
       - app-network
     depends_on:
       - backend
+      - keycloak
 
 volumes:
   db-data:
@@ -112,3 +105,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
+
