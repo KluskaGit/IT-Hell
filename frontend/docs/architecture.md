@@ -1,26 +1,26 @@
-# 🏗️ Architektura — CV_ANALIZER Frontend
+# 🏗️ Architecture — IT-Hell Frontend
 
-Dokument opisuje wzorce architektoniczne i decyzje projektowe użyte w aplikacji Angular 21. Jest uzupełnieniem [głównego README](../README.md).
+This document describes the architectural patterns and design decisions used in the Angular 21 app. It complements the [main README](../README.md).
 
-## 📑 Spis treści
+## 📑 Table of contents
 
 - [Standalone Components](#standalone-components)
-- [Angular Signals zamiast RxJS Subject](#angular-signals-zamiast-rxjs-subject)
+- [Angular Signals instead of RxJS Subject](#angular-signals-instead-of-rxjs-subject)
 - [OnPush Change Detection](#onpush-change-detection)
-- [SSR i Hydration](#ssr-i-hydration)
-- [Zarządzanie stanem](#zarządzanie-stanem)
+- [SSR and Hydration](#ssr-and-hydration)
+- [State management](#state-management)
 - [Memory leak prevention](#memory-leak-prevention)
-- [Debouncing i throttling](#debouncing-i-throttling)
-- [HTTP layer i interceptors](#http-layer-i-interceptors)
-- [Lazy loading i bundle size](#lazy-loading-i-bundle-size)
+- [Debouncing and throttling](#debouncing-and-throttling)
+- [HTTP layer and interceptors](#http-layer-and-interceptors)
+- [Lazy loading and bundle size](#lazy-loading-and-bundle-size)
 
 ---
 
 ## Standalone Components
 
-Aplikacja **w 100% używa standalone components** (Angular 14+). Brak `NgModule`, każdy komponent deklaruje własne zależności w `imports`.
+The app uses **100% standalone components** (Angular 14+). No `NgModule` — each component declares its own dependencies in `imports`.
 
-**Przykład bootstrapu (`src/main.ts`):**
+**Bootstrap example (`src/main.ts`):**
 
 ```typescript
 import { bootstrapApplication } from '@angular/platform-browser';
@@ -30,7 +30,7 @@ import { App } from './app/app';
 bootstrapApplication(App, appConfig);
 ```
 
-**Konfiguracja providerów (`src/app/app.config.ts`):**
+**Provider configuration (`src/app/app.config.ts`):**
 
 ```typescript
 export const appConfig: ApplicationConfig = {
@@ -43,36 +43,36 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-**Dlaczego tak:**
-- Mniej boilerplate — komponent deklaruje **dokładnie** czego potrzebuje
-- Lepsze tree-shaking w bundlerze
-- Łatwiejsze przenoszenie komponentów między projektami
-- Mniej "magicznych" dependency injection chain'ów
+**Why:**
+- Less boilerplate — a component declares **exactly** what it needs
+- Better tree-shaking in the bundler
+- Easier to move components between projects
+- Fewer "magic" dependency injection chains
 
 ---
 
-## Angular Signals zamiast RxJS Subject
+## Angular Signals instead of RxJS Subject
 
-Stan globalny (np. czy użytkownik jest zalogowany) trzymany jest w **Angular Signals** zamiast `BehaviorSubject` / `Observable`.
+Global state (e.g. whether the user is logged in) is held in **Angular Signals** instead of `BehaviorSubject` / `Observable`.
 
-**Przykład (`src/features/auth/auth.service.ts`):**
+**Example (`src/features/auth/auth.service.ts`):**
 
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // Signal zamiast BehaviorSubject<boolean>(false)
+  // Signal instead of BehaviorSubject<boolean>(false)
   isAuthenticated = signal(false);
   username = signal<string | null>(null);
 
   async init() {
-    const ok = await this.keycloak.init({ onLoad: 'check-sso', pkceMethod: 'S256' });
-    this.isAuthenticated.set(ok);
+    await this.keycloak.init({ onLoad: 'check-sso', pkceMethod: 'S256' });
+    this.isAuthenticated.set(!!this.keycloak.authenticated);
     this.username.set(this.keycloak.tokenParsed?.['given_name'] ?? null);
   }
 }
 ```
 
-**Użycie w szablonie:**
+**Use in a template:**
 
 ```html
 @if (auth.isAuthenticated()) {
@@ -80,94 +80,101 @@ export class AuthService {
 }
 ```
 
-**Przewaga nad RxJS:**
-- Brak konieczności subskrypcji ani `async` pipe
-- Brak ryzyka memory leak (Signals są zarządzane przez Angulara)
-- Synchroniczny odczyt — wartość zawsze dostępna od razu (`auth.isAuthenticated()`)
-- Reaktywność na poziomie change detection — Angular automatycznie odświeża widok
+**Advantages over RxJS:**
+- No need for a subscription or the `async` pipe
+- No memory leak risk (Signals are managed by Angular)
+- Synchronous read — the value is always available immediately (`auth.isAuthenticated()`)
+- Reactivity at the change-detection level — Angular refreshes the view automatically
 
-**Kiedy nadal używamy RxJS:**
-- `HttpClient` zwraca `Observable<T>` — kowertowane na Promise przez `firstValueFrom()` w serwisach API
-- Strumienie eventów UI (np. `filtersTrigger$` w `offers.component.ts`) z `debounceTime()` i `switchMap()`
-- `takeUntil(destroy$)` do uniku memory leaków w komponentach
+**Where we still use RxJS:**
+- `HttpClient` returns `Observable<T>` — converted to a Promise via `firstValueFrom()` in the API services
+- UI event streams (e.g. `filtersTrigger$` in `offers.component.ts`) with `debounceTime()`
+- `takeUntil(destroy$)` to avoid memory leaks in components
 
 ---
 
 ## OnPush Change Detection
 
-Komponenty intensywnie aktualizowane (np. `OffersComponent` z infinite scroll) używają `ChangeDetectionStrategy.OnPush` i manualnego `cdr.markForCheck()` po asynchronicznych aktualizacjach.
+Heavily-updated components (e.g. `OffersComponent` with infinite scroll) use `ChangeDetectionStrategy.OnPush` and a manual `cdr.markForCheck()` after asynchronous updates.
 
-**Korzyść:** Angular nie sprawdza tego komponentu przy każdym ticku — tylko gdy:
-1. Zmieni się referencja `@Input`
-2. Zostanie wyemitowany event z `@Output`
-3. Zostanie wywołany `markForCheck()` ręcznie
-4. Signal użyty w szablonie zmieni wartość
+**Benefit:** Angular doesn't check this component on every tick — only when:
+1. An `@Input` reference changes
+2. An `@Output` event is emitted
+3. `markForCheck()` is called manually
+4. A Signal used in the template changes value
 
-W efekcie lista 500+ ofert z filtrami nie powoduje przerenderowania całego drzewa przy każdym evencie.
+As a result, a list of 500+ offers with filters doesn't re-render the whole tree on every event.
 
 ---
 
-## SSR i Hydration
+## SSR and Hydration
 
-Projekt używa **Angular SSR** (`@angular/ssr`) serwowanego przez **Express** (`src/server.ts`). Build produkcyjny daje dwa artefakty: `dist/cv-analizer/browser/` (CSR) i `dist/cv-analizer/server/server.mjs` (SSR).
+The repository contains **Angular SSR scaffolding** (`@angular/ssr`) intended to be served by **Express** (`src/server.ts`):
 
-### Konfiguracja serwera (`src/app/app.config.server.ts`)
+- `src/main.server.ts` — the SSR bootstrap
+- `src/app/app.config.server.ts` — merges `appConfig` with `provideServerRendering()`
+- `src/app/app.routes.server.ts` — `RenderMode` per route
+- `src/server.ts` — the Express runtime that serves `dist/.../browser` and handles SSR
 
-Plik mergeuje `appConfig` z dodatkowymi providerami dla SSR — `provideServerRendering(withRoutes(serverRoutes))`.
+### ⚠️ SSR is not wired into the build yet
 
-### RenderMode per route (`src/app/app.routes.server.ts`)
+The current build target in `angular.json` defines only `browser` (`src/main.ts`) — there is **no `server` / `ssr` / `outputMode`** option. Because of that:
+
+- `npm run build` produces a **client-only SPA** (`dist/cv-analizer/browser/`); it does **not** emit `dist/cv-analizer/server/server.mjs`.
+- The `npm run serve:ssr:cv-analizer` script (which runs `node dist/cv-analizer/server/server.mjs`) won't work until SSR is enabled in `angular.json`.
+- The per-route `RenderMode` settings in `app.routes.server.ts` are therefore **dormant** — they take effect only once SSR is enabled.
+
+In Docker the app is shipped as **static files served by nginx** (see the [frontend README](../README.md)).
+
+### `RenderMode` per route (`src/app/app.routes.server.ts`)
+
+These settings are kept ready for when SSR is enabled:
 
 ```typescript
 export const serverRoutes: ServerRoute[] = [
   { path: 'offers', renderMode: RenderMode.Client },  // browser-only
-  { path: '**', renderMode: RenderMode.Prerender }    // statyczny prerender przy buildzie
+  { path: '**', renderMode: RenderMode.Prerender }    // static prerender at build time
 ];
 ```
 
-**Dlaczego `/offers` musi być `Client`:**
-- `IntersectionObserver` (infinite scroll) — brak w Node.js
-- `localStorage` (cache filtrów) — brak w Node.js
-- `history.state` (filtry z `/`) — niedostępne w SSR
+**Why `/offers` would have to stay `Client`** (once SSR is on):
+- `IntersectionObserver` (infinite scroll) — not available in Node.js
+- `localStorage` (filter cache) — not available in Node.js
+- `history.state` (filters from `/`) — not available in SSR
 
-**Pozostałe trasy są prerenderowane** przy buildzie — szybki time-to-first-byte, dobry SEO.
+### Critical gotcha — Keycloak + SSR
 
-### Krytyczna pułapka — Keycloak + SSR
-
-`AuthService.init()` ma early-return gdy `!isPlatformBrowser(platformId)`. W przeciwnym razie Keycloak próbowałby użyć `window`/`document` w Node.js i crashował SSR proces.
+`AuthService.init()` early-returns when `!isPlatformBrowser(platformId)`. Otherwise Keycloak would try to use `window`/`document` in Node.js and crash the SSR process. This guard matters as soon as SSR is enabled.
 
 ```typescript
 async init(): Promise<void> {
   if (!isPlatformBrowser(this.platformId)) return;
-  // ... reszta init
+  // ... rest of init
 }
 ```
 
 ---
 
-## Zarządzanie stanem
+## State management
 
-Brak globalnego store (NgRx/NGXS). Stan rozsiany po:
+No global store (NgRx/NGXS). State is spread across:
 
-| Typ stanu | Gdzie żyje | Przykład |
+| State type | Where it lives | Example |
 |---|---|---|
 | **Auth state** | `AuthService` (Signals) | `isAuthenticated()`, `username()` |
-| **Form state** | `FiltersFormComponent` (`FormGroup`) | filtry seniority/tech/salary |
-| **Persistencja filtrów** | `localStorage` (klucz `cv_analizer_candidate_filters`) | współdzielony między `/`, `/offers`, `/profile` |
-| **Cross-route data** | `history.state` (Angular Router) | przeniesienie filtrów z `/` do `/offers` |
-| **URL state** | `queryParamMap` | shareable links do `/offers?tech=react&exp=mid` |
-| **Cache słowników** | `LookupsApiService` (in-memory) | technologie, lokalizacje, portale |
+| **Form state** | `FiltersFormComponent` (`FormGroup`) | seniority/tech/salary filters |
+| **Filter persistence** | `localStorage` (key `cv_analizer_candidate_filters`) | shared across `/`, `/offers`, `/profile` |
+| **Cross-route data** | `history.state` (Angular Router) | passing filters from `/` to `/offers` |
+| **URL state** | `queryParamMap` | shareable links to `/offers?tech=react&exp=mid` |
+| **Lookup cache** | `LookupsApiService` (in-memory) | technologies, locations, job boards |
 
-**Priorytety odczytu filtrów (`OffersComponent` przy inicjalizacji):**
-
-```
-URL query params  >  history.state  >  localStorage  >  defaults {}
-```
+**Filter read priority** (`OffersComponent` on init): `URL query params > history.state > localStorage > defaults {}`. How each source is resolved is detailed in [`docs/features.md`](features.md).
 
 ---
 
 ## Memory leak prevention
 
-Komponenty z długo żyjącymi subskrypcjami (np. `OffersComponent` z `filtersTrigger$.pipe(debounceTime).subscribe(...)`) używają wzorca **`destroy$` + `takeUntil`**:
+Components with long-lived subscriptions (e.g. `OffersComponent` with `filtersTrigger$.pipe(debounceTime).subscribe(...)`) use the **`destroy$` + `takeUntil`** pattern:
 
 ```typescript
 private destroy$ = new Subject<void>();
@@ -175,7 +182,6 @@ private destroy$ = new Subject<void>();
 ngOnInit() {
   this.filtersTrigger$.pipe(
     debounceTime(700),
-    switchMap(filters => this.api.getOffers(filters)),
     takeUntil(this.destroy$)
   ).subscribe(...);
 }
@@ -183,81 +189,71 @@ ngOnInit() {
 ngOnDestroy() {
   this.destroy$.next();
   this.destroy$.complete();
-  // + odpięcie IntersectionObserver, clearInterval(refreshIntervalId)
+  // + disconnect IntersectionObserver, clearInterval(refreshIntervalId)
 }
 ```
 
-Dodatkowo `AuthService.startTokenRefresh()` używa `window.setInterval` i `stopTokenRefresh()` (`clearInterval`) — bez tego co 20 s próbowałby refreshować token po logoucie.
+In addition, `AuthService.startTokenRefresh()` uses `window.setInterval` and `stopTokenRefresh()` (`clearInterval`) — without it, it would keep trying to refresh the token every 20s after logout.
 
 ---
 
-## Debouncing i throttling
+## Debouncing and throttling
 
-| Akcja | Mechanizm | Czas |
+| Action | Mechanism | Time |
 |---|---|---|
-| Zmiana filtrów (offers) | RxJS `debounceTime(700)` | 700 ms |
-| Wyszukiwanie po tytule | RxJS `debounceTime(500)` | 500 ms |
-| Refresh tokenu Keycloak | `setInterval` | 20 s |
+| Filter change (offers) | RxJS `debounceTime(700)` | 700 ms |
+| Title search | RxJS `debounceTime(500)` | 500 ms |
+| Keycloak token refresh | `setInterval` | 20 s |
 | Token validity check | `keycloak.updateToken(30)` | minValidity = 30 s |
 
-**Dlaczego 700 ms na filtry:** użytkownik często klika kilka checkboxów pod rząd (np. 3 technologie) — bez debounce każdy klik powodował reload listy ofert (3× request). Z `debounceTime(700)` wysyłany jest jeden request po stabilnej zmianie.
+**Why 700 ms for filters:** users click several checkboxes in a row, so the changes are debounced into a single request. The per-component split (filters 700 ms vs. search 500 ms, and the `skip(1)` first-load guard) is detailed in [`docs/features.md`](features.md).
 
 ---
 
-## HTTP layer i interceptors
+## HTTP layer and interceptors
 
-`provideHttpClient(withFetch(), withInterceptors([authInterceptor]))` — używamy **Fetch API** (nie XHR) i funkcyjnego interceptora.
+`provideHttpClient(withFetch(), withInterceptors([authInterceptor]))` — we use the **Fetch API** (not XHR) and a functional interceptor.
 
-### Auth Interceptor (`src/app/app.config.ts:14-21`)
+### Auth interceptor (`src/app/app.config.ts`)
 
-```typescript
-const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
-  const token = auth.getToken();
-  if (token && req.url.includes('/v1/')) {
-    return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
-  }
-  return next(req);
-};
-```
+A functional interceptor attaches `Authorization: Bearer <token>` **only to `/v1/*` requests**
+(assets, fonts and Keycloak endpoints get no token), and only when a token is available. The code
+and the full rationale live in [`docs/auth-flow.md`](auth-flow.md) — not repeated here.
 
-**Logika:**
-- Tylko żądania do `/v1/*` dostają nagłówek (np. assety, fonty, Keycloak endpointy — bez tokenu)
-- Brak tokenu = brak nagłówka (anonimowe wywołania pozwolone dla części endpointów)
-- Token pobierany przez `auth.getToken()` (świeży, bo `startTokenRefresh()` odświeża co 20 s)
+### No error interceptor
 
-### Brak error interceptora
-
-Error handling **jest w komponentach** — każdy używa własnej strategii (toast, banner, fallback). Centralny error interceptor byłby kosztem elastyczności bez wyraźnych zysków (każdy endpoint inaczej obsługuje 401/404/500).
+Error handling **lives in the components** — each uses its own strategy (toast, banner, fallback). A central error interceptor would cost flexibility with no clear gain (each endpoint handles 401/404/500 differently).
 
 ---
 
-## Lazy loading i bundle size
+## Lazy loading and bundle size
 
-**Obecnie:** wszystkie features są eagerly importowane w `app.routes.ts`. Działa to bo aplikacja jest stosunkowo mała (~5 stron).
+**Currently:** all features are eagerly imported in `app.routes.ts`. This is fine because the app is fairly small (~5 pages).
 
-**Limity w `angular.json` (production budgets):**
+**Limits in `angular.json` (production budgets):**
 
 ```json
 "budgets": [
-  { "type": "initial",            "maximumWarning": "500kB", "maximumError": "1MB" },
-  { "type": "anyComponentStyle",  "maximumWarning": "4kB",   "maximumError": "8kB" }
+  { "type": "initial",           "maximumWarning": "500kB", "maximumError": "1MB" },
+  { "type": "anyComponentStyle", "maximumWarning": "10kB",  "maximumError": "20kB" }
 ]
 ```
 
-**Możliwa optymalizacja:** przejście na `loadComponent`:
+> Note: a couple of component stylesheets (e.g. `offers.component.css`, `home.component.css`) currently exceed the 10kB warning budget — warnings only, the build still succeeds.
+
+**Possible optimization:** switch to `loadComponent`:
 
 ```typescript
 { path: 'offers', loadComponent: () => import('../features/offers/offers.component').then(m => m.OffersComponent) }
 ```
 
-Najwięcej zyska `/offers` (najbardziej skomplikowany komponent, 600+ linii, używa wszystkich serwisów lookup).
+`/offers` would gain the most (the most complex component, 600+ lines, uses all the lookup services).
 
 ---
 
-## 📚 Powiązane dokumenty
+## 📚 Related documents
 
-- [`README.md`](../README.md) — quick-start i przegląd
-- [`docs/features.md`](features.md) — szczegóły każdego feature
-- [`docs/api-services.md`](api-services.md) — warstwa API
-- [`docs/auth-flow.md`](auth-flow.md) — Keycloak PKCE flow
+- [`README.md`](../README.md) — quick-start and overview
+- [`docs/features.md`](features.md) — details of each feature
+- [`docs/api-services.md`](api-services.md) — the API layer
+- [`docs/auth-flow.md`](auth-flow.md) — the Keycloak PKCE flow

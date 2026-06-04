@@ -1,4 +1,4 @@
-<!-- Stan ładowania - filtersForm jest null dopóki forkJoin nie pobierze danych słownikowych -->
+<!-- Loading state - filtersForm is null until forkJoin fetches the lookup data -->
 <div *ngIf="isLoading" class="ff-loading">
   <p>Ładowanie filtrów…</p>
 </div>
@@ -7,12 +7,12 @@
   <p>{{ loadError }}</p>
 </div>
 
-<!-- Cały formularz renderowany dopiero gdy filtersForm != null (dane z backendu gotowe) -->
+<!-- The whole form is rendered only when filtersForm != null (backend data ready) -->
 @if (filtersForm) {
 <section class="ff-card" [formGroup]="filtersForm">
 
-  <!-- Opcjonalny nagłówek - widoczny gdy showSummaryHeader = true (np. na /home).
-       W sidebarze /offers jest ukrywany - brak miejsca -->
+  <!-- Optional header - shown when showSummaryHeader = true (e.g. on /home).
+       Hidden in the /offers sidebar - no room -->
   <div *ngIf="showSummaryHeader" class="summary-header summary-header-collapsible">
     <h2>{{ summaryHeading }}</h2>
 
@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <!-- Lokalizacje NIE są kontrolką ReactiveForm - stan w selectedLocations poza FormGroup -->
+    <!-- Locations are NOT a ReactiveForm control - state lives in selectedLocations outside the FormGroup -->
     <div class="summary-block full-width" *ngIf="showLocation">
       <h3>Lokalizacja <small style="opacity:0.5; font-weight:400">(domyślnie wszystkie)</small></h3>
       <app-location-picker
@@ -52,9 +52,9 @@
       </app-location-picker>
     </div>
 
-    <!-- Seniority obsługuje dwa tryby:
-         - checkbox (singleExpLevelSelection = false) - wiele poziomów naraz
-         - radio (singleExpLevelSelection = true) - jeden poziom naraz (używany w profile) -->
+    <!-- Seniority supports two modes:
+         - checkbox (singleExpLevelSelection = false) - multiple levels at once
+         - radio (singleExpLevelSelection = true) - one level at a time (used in profile) -->
     <div class="summary-block" formGroupName="seniority" *ngIf="showExpLevel">
       <h3>Poziom doświadczenia</h3>
       <div class="pills-container">
@@ -65,8 +65,8 @@
             type="checkbox"
             [formControlName]="option.id">
 
-          <!-- Radio nie jest kontrolką ReactiveForm - onSingleExpLevelSelect() ręcznie
-               ustawia wszystkie inne opcje seniority na false w FormGroup -->
+          <!-- Radio is not a ReactiveForm control - onSingleExpLevelSelect() manually
+               sets all the other seniority options to false in the FormGroup -->
           <input
             *ngIf="singleExpLevelSelection"
             type="radio"
@@ -79,7 +79,7 @@
       </div>
     </div>
 
-    <!-- Gdy wszystkie lub żadne zaznaczone, workTypeIds w computeValue() zwraca [] (brak filtra) -->
+    <!-- When all or none are checked, workTypeIds in computeValue() returns [] (no filter) -->
     <div class="summary-block" formGroupName="workMode" *ngIf="showWorkMode">
       <h3>Tryb pracy</h3>
       <div class="pills-container">
@@ -90,12 +90,12 @@
       </div>
     </div>
 
-    <!-- Suwaki przechowują INDEKSY w SALARY_OPTIONS, nie kwoty PLN.
-         Rzeczywiste kwoty wyliczane przez gettery salaryFromValue i salaryToValue -->
+    <!-- The sliders store INDEXES into SALARY_OPTIONS, not PLN amounts.
+         The actual amounts are computed by the salaryFromValue and salaryToValue getters -->
     <div class="summary-block full-width" *ngIf="showSalary">
       <h3>Widełki płacowe</h3>
 
-      <!-- "50 000+" gdy suwak "do" jest na maksimum - sygnalizuje "bez górnego limitu" -->
+      <!-- "50 000+" when the "to" slider is at the maximum - signals "no upper limit" -->
       <div class="salary-labels">
         <span class="salary-badge">OD: {{ salaryFromValue | number:'1.0-0' }}</span>
         <span class="salary-badge">
@@ -103,8 +103,8 @@
         </span>
       </div>
 
-      <!-- salary-progress-fill - kolorowa belka pokazująca wybrany zakres.
-           Pozycja i szerokość obliczane przez getSalaryProgressLeft() i getSalaryProgressPercent() -->
+      <!-- salary-progress-fill - the colored bar showing the selected range.
+           Position and width computed by getSalaryProgressLeft() and getSalaryProgressPercent() -->
       <div class="salary-range-slider">
         <div
           class="salary-progress-fill"
@@ -137,7 +137,7 @@
       </div>
     </div>
 
-    <!-- Domyślnie pokazuje 8 pierwszych ról (getVisibleRoles()), reszta ukryta za "rozwiń" -->
+    <!-- Shows the first 8 roles by default (getVisibleRoles()), the rest hidden behind "expand" -->
     <div class="summary-block full-width" formGroupName="itArea" *ngIf="showRoles">
       <h3>Główne role</h3>
       <div class="pills-container">
@@ -169,9 +169,9 @@
       </div>
     </div>
 
-    <!-- Technologie NIE są kontrolką ReactiveForm - stan w selectedTechnologies poza FormGroup.
-         *ngIf="techPickerReady" - picker renderuje się po queueMicrotask w ngOnInit,
-         żeby selectedTechnologies było gotowe zanim TechPicker otrzyma [selected] -->
+    <!-- Technologies are NOT a ReactiveForm control - state lives in selectedTechnologies outside the FormGroup.
+         *ngIf="techPickerReady" - the picker renders after a queueMicrotask in ngOnInit,
+         so selectedTechnologies is ready before TechPicker receives [selected] -->
     <div class="summary-block full-width" *ngIf="showTechnologies">
       <h3>Technologie</h3>
       <app-tech-picker
@@ -181,8 +181,8 @@
       </app-tech-picker>
     </div>
 
-    <!-- [formControlName]="site.key" (nie site.id) bo jobSites FormGroup używa kluczy portali.
-         Gdy wszystkie lub żadne zaznaczone, siteIds zwraca [] (brak filtra) -->
+    <!-- [formControlName]="site.key" (not site.id) because the jobSites FormGroup uses board keys.
+         When all or none are checked, siteIds returns [] (no filter) -->
     <div class="summary-block full-width" formGroupName="jobSites" *ngIf="showSites">
       <h3>Źródła ofert</h3>
       <div class="pills-container">
@@ -196,7 +196,7 @@
     <div class="filters-footer" *ngIf="showApplyButton || collapsible">
       <div class="filters-footer-left"></div>
 
-      <!-- aria-expanded informuje czytniki ekranu o aktualnym stanie -->
+      <!-- aria-expanded tells screen readers the current state -->
       <div class="filters-toggle-bottom" *ngIf="collapsible">
         <button
           type="button"
@@ -205,7 +205,7 @@
           [attr.aria-expanded]="!collapsed"
           aria-label="Zwiń filtry"
         >
-          <!-- Klasa .rotated obraca ikonę gdy formularz jest rozwinięty -->
+          <!-- The .rotated class rotates the icon when the form is expanded -->
           <svg
             class="filters-toggle-icon"
             [class.rotated]="!collapsed"
@@ -232,7 +232,7 @@
     </div>
   </div>
 
-  <!-- Pasek "Rozwiń filtry" - widoczny ZAMIAST siatki gdy collapsed = true -->
+  <!-- "Expand filters" bar - shown INSTEAD of the grid when collapsed = true -->
   <div class="filters-toggle-collapsed" *ngIf="collapsible && collapsed">
     <button
       type="button"

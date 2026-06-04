@@ -1,5 +1,5 @@
-// Strona /profile - edycja profilu zalogowanego użytkownika.
-// FiltersFormComponent reużywany w trybie uproszczonym: tylko seniority (radio) i technologie.
+// /profile page - editing the logged-in user's profile.
+// FiltersFormComponent is reused in a simplified mode: only seniority (radio) and technologies.
 import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -20,7 +20,7 @@ import {
   UserProfileUpdateDto,
 } from '../../app/core/services/user-api.service';
 
-// Maksymalny rozmiar pliku CV - walidacja przed uploadem do backendu
+// Maximum CV file size - validated before uploading to the backend
 const MAX_CV_SIZE_MB    = 10;
 const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
 
@@ -32,7 +32,7 @@ const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit, OnDestroy {
-  // Używana do ręcznego patchValue() gdy dane z backendu dotrą po inicjalizacji formularza
+  // Used for a manual patchValue() when backend data arrives after the form is initialized
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
   email     = '';
@@ -48,18 +48,18 @@ export class ProfileComponent implements OnInit, OnDestroy {
   scanStatus    = '';
   scanComplete  = false;
 
-  // savedFilters - przekazywane do [initialFilters] formularza przy jego inicjalizacji
+  // savedFilters - passed to the form's [initialFilters] when it initializes
   savedFilters: FiltersInitialState | null = null;
-  // currentFilterValue - aktualizowane przez (filtersChange), używane przy zapisie profilu
+  // currentFilterValue - updated via (filtersChange), used when saving the profile
   private currentFilterValue: FiltersValue | null = null;
 
   isSaving     = false;
   loadError: string | null = null;
   saveError: string | null = null;
-  saveSuccess: string | null = null; // znika po 3 sekundach
+  saveSuccess: string | null = null; // disappears after 3 seconds
 
   private saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
-  // Tablica timerów animacji skanowania - czyszczona w ngOnDestroy żeby nie wyciekać
+  // Array of scan animation timers - cleared in ngOnDestroy to avoid leaks
   private scanTimers: ReturnType<typeof setTimeout>[] = [];
   private readonly destroy$ = new Subject<void>();
 
@@ -68,16 +68,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private readonly userApi: UserApiService,
     private readonly cvApi: CvApiService,
     private readonly cdr: ChangeDetectorRef,
-    // PLATFORM_ID - potrzebne bo localStorage i FileReader nie istnieją w SSR
+    // PLATFORM_ID - needed because localStorage and FileReader don't exist in SSR
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Etap 1: dane z tokena JWT (natychmiast, bez requestu)
+    // Step 1: data from the JWT (immediate, no request)
     this.initFromToken();
-    // Etap 2: pełne dane z backendu (może nadpisać dane z tokena)
+    // Step 2: full data from the backend (may override the token data)
     await this.loadUserDataFromBackend();
   }
 
@@ -88,7 +88,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.lastName  = profile.lastName  ?? '';
   }
 
-  // 404 z /users/me/profile jest oczekiwany dla nowych użytkowników bez profilu
+  // A 404 from /users/me/profile is expected for new users without a profile
   private async loadUserDataFromBackend(): Promise<void> {
     this.loadError = null;
 
@@ -109,7 +109,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
           return;
         }
-        throw error; // inny błąd (np. 500) - propagujemy do zewnętrznego catch
+        throw error; // a different error (e.g. 500) - propagate to the outer catch
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -118,15 +118,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ?? this.xxx - zachowujemy dane z tokena gdy backend zwróci null
+  // ?? this.xxx - keep the token data when the backend returns null
   private patchUserData(me: UserMeDto): void {
     this.email     = me.email      ?? this.email;
     this.firstName = me.first_name ?? this.firstName;
     this.lastName  = me.last_name  ?? this.lastName;
   }
 
-  // Buduje savedFilters i currentFilterValue z danych profilu.
-  // Wywoływane też po udanym onSave() żeby zsynchronizować stan z odpowiedzią backendu
+  // Builds savedFilters and currentFilterValue from the profile data.
+  // Also called after a successful onSave() to sync the state with the backend response
   private patchProfileData(profile: UserProfileDto): void {
     const selectedTechnologies = (profile.technologies ?? []).map(t => ({
       id: t.id,
@@ -143,7 +143,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.filtersFormRef?.patchValue(this.savedFilters);
     this.cdr.markForCheck();
 
-    // Pełny FiltersValue potrzebny przez buildProfilePayload() - większość pól domyślna
+    // The full FiltersValue needed by buildProfilePayload() - most fields are defaults
     this.currentFilterValue = {
       itArea: {},
       technologies: Object.fromEntries(selectedTechnologies.map(t => [t.id, true])),
@@ -151,7 +151,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       workMode: {},
       seniority: expLevelId ? { [expLevelId]: true } : {},
       salaryFromIndex: 0,
-      salaryToIndex: 25,   // domyślny indeks suwaka salary (nie używany w profilu)
+      salaryToIndex: 25,   // default salary slider index (not used in the profile)
       selectedLocations:    [],
       selectedTechnologies,
       specializationIds:    [],
@@ -164,7 +164,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       salaryTo:   50000,
     };
 
-    // raw_cv !== null oznacza że użytkownik ma już wgrane CV w backendzie
+    // raw_cv !== null means the user already has a CV uploaded in the backend
     this.currentCvFile = profile.raw_cv !== null ? 'Plik CV' : null;
     this.currentCvDate = '';
   }
@@ -173,7 +173,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.currentFilterValue = value;
   }
 
-  // expLevelIds[0] bo profil obsługuje tylko jeden poziom (singleExpLevelSelection = true)
+  // expLevelIds[0] because the profile supports only one level (singleExpLevelSelection = true)
   private buildProfilePayload(): { exp_level_id: string; technology_ids: string[] } {
     return {
       exp_level_id:   this.currentFilterValue?.expLevelIds?.[0] ?? '',
@@ -181,7 +181,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     };
   }
 
-  // preventDefault() wymagane żeby przeglądarka nie otwierała pliku we własnym oknie
+  // preventDefault() required so the browser doesn't open the file in its own window
   onDragOver(e: DragEvent): void {
     e.preventDefault();
     this.isDragging = true;
@@ -192,22 +192,22 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isDragging = false;
   }
 
-  // Obsługuje upuszczenie pliku na strefę drag&drop - pobiera pierwszy plik z dataTransfer
+  // Handles dropping a file on the drag&drop zone - takes the first file from dataTransfer
   onDrop(e: DragEvent): void {
     e.preventDefault();
     this.isDragging = false;
     if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]);
   }
 
-  // input.value = '' czyści input - bez tego ten sam plik nie wywoła change event ponownie
+  // input.value = '' clears the input - without it the same file won't fire the change event again
   onFileSelected(e: Event): void {
     const input = e.target as HTMLInputElement;
     if (input.files?.length) this.handleFile(input.files[0]);
     input.value = '';
   }
 
-  // Waliduje plik CV (rozszerzenie i rozmiar) i uruchamia upload jeśli przejdzie walidację.
-  // Błędy walidacji wyświetlane przez saveError w szablonie
+  // Validates the CV file (extension and size) and starts the upload if it passes.
+  // Validation errors are shown via saveError in the template
   private handleFile(file: File): void {
     const allowed = ['.pdf', '.doc', '.docx'];
     const name    = file.name.toLowerCase();
@@ -228,14 +228,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.analyzeCV(file);
   }
 
-  // Animacja paska postępu jest sztuczna - API nie zwraca progress, setTimeout symuluje etapy
+  // The progress bar animation is fake - the API returns no progress, setTimeout simulates the stages
   private analyzeCV(file: File): void {
     this.isScanning   = true;
     this.scanProgress = 0;
     this.scanStatus   = 'Analiza CV...';
     this.saveError    = null;
 
-    // Sztuczny progress 35% po 200ms - wizualna informacja że coś się dzieje zanim API odpowie
+    // Fake 35% progress after 200ms - visual feedback that something is happening before the API responds
     this.scanTimers.push(setTimeout(() => {
       this.scanProgress = 35;
     }, 200));
@@ -250,13 +250,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
           name: t.name,
         }));
 
-        // Opóźnienie 150ms przed ukryciem paska - żeby użytkownik zdążył zobaczyć 100%
+        // 150ms delay before hiding the bar - so the user gets to see 100%
         this.scanTimers.push(setTimeout(() => {
           this.isScanning   = false;
           this.scanComplete = true;
 
-          // Zachowujemy bieżące filtry (seniority) i nadpisujemy tylko technologie z CV.
-          // Spread savedFilters ?? {} zabezpiecza gdy profil nie był wcześniej załadowany
+          // Keep the current filters (seniority) and override only the technologies from the CV.
+          // Spread savedFilters ?? {} guards against the profile not being loaded earlier
           const nextFilters: FiltersInitialState = {
             ...(this.savedFilters ?? {}),
             selectedTechnologies,
@@ -264,10 +264,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
           };
 
           this.savedFilters = nextFilters;
-          // Aktualizujemy formularz z nowymi technologiami
+          // Update the form with the new technologies
           this.filtersFormRef?.patchValue(nextFilters);
 
-          // Synchronizujemy currentFilterValue z nowymi technologiami żeby onSave() miało aktualne dane
+          // Sync currentFilterValue with the new technologies so onSave() has up-to-date data
           if (this.currentFilterValue) {
             this.currentFilterValue = {
               ...this.currentFilterValue,
@@ -277,12 +277,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
             };
           }
 
-          // Formatujemy datę uploadu po polsku (np. "28.05.2026, 14:35")
+          // Format the upload date in Polish (e.g. "28.05.2026, 14:35")
           this.currentCvDate = new Date().toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
         }, 150));
       },
       error: (error) => {
-        console.error('Błąd analizy CV:', error);
+        console.error('CV analysis failed:', error);
         this.scanProgress = 100;
         this.scanStatus   = 'Nie udało się przeanalizować CV';
 
@@ -295,7 +295,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Usuwa informację o załadowanym CV z widoku (nie wysyła requestu DELETE do backendu)
+  // Removes the uploaded CV info from the view (does not send a DELETE request to the backend)
   removeCv(): void {
     this.currentCvFile = null;
     this.currentCvDate = '';
@@ -310,7 +310,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     const payload = this.buildProfilePayload();
 
-    // Walidacja po stronie klienta - backend też waliduje ale dajemy szybką odpowiedź
+    // Client-side validation - the backend validates too but we give fast feedback
     if (!payload.exp_level_id) {
       this.saveError = 'Wybierz poziom doświadczenia.';
       return;
@@ -319,7 +319,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isSaving     = true;
     this.saveError    = null;
     this.saveSuccess  = null;
-    // Czyścimy poprzedni timer sukcesu żeby nie ukrył nowego komunikatu zbyt wcześnie
+    // Clear the previous success timer so it doesn't hide the new message too early
     clearTimeout(this.saveSuccessTimer ?? undefined);
 
     try {
@@ -327,12 +327,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
         exp_level_id:   payload.exp_level_id,
         technology_ids: payload.technology_ids,
       };
-      // PUT /v1/users/me/profile - zwraca zaktualizowany UserProfileDto
+      // PUT /v1/users/me/profile - returns the updated UserProfileDto
       const savedProfile = await this.userApi.updateMyProfile(updatePayload);
-      // Synchronizujemy lokalny stan z odpowiedzią backendu (zamiast ufać lokalnemu stanowi)
+      // Sync the local state with the backend response (instead of trusting the local state)
       this.patchProfileData(savedProfile);
       this.saveSuccess = 'Profil został zapisany.';
-      // Komunikat sukcesu znika automatycznie po 3 sekundach
+      // The success message disappears automatically after 3 seconds
       this.saveSuccessTimer = setTimeout(() => {
         this.saveSuccess = null;
         this.cdr.detectChanges();
@@ -349,7 +349,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.scanTimers.forEach(t => clearTimeout(t));
     clearTimeout(this.saveSuccessTimer ?? undefined);
-    // destroy$ anuluje uploadCv jeśli użytkownik opuści stronę podczas uploadu
+    // destroy$ cancels uploadCv if the user leaves the page during the upload
     this.destroy$.next();
     this.destroy$.complete();
   }

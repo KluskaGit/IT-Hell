@@ -1,4 +1,4 @@
-/* display: block wymagane bo Angular renderuje komponenty jako inline domyslnie */
+/* display: block required because Angular renders components as inline by default */
 :host { display: block; }
 
 .site-footer {
@@ -7,7 +7,7 @@
   padding: 1.75rem 2rem;
 }
 
-/* max-width 1200px wyrownuje stopke z szerokoscia glownej tresci strony */
+/* max-width 1200px aligns the footer with the width of the main page content */
 .footer-inner {
   max-width: 1200px;
   margin: 0 auto;

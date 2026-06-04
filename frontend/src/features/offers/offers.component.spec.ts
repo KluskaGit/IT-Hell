@@ -34,9 +34,9 @@ describe('OffersComponent', () => {
     mapToOffer: vi.fn(),
   };
 
-  // NEVER - forkJoin nigdy nie kończy, FiltersFormComponent nie emituje filtersChange automatycznie.
-  // Gdyby użyć of([]), forkJoin zakończyłby się i wyemitował filtersChange na starcie,
-  // co triggerowałoby getOffers() raz extra (przed jawnym wywołaniem w testach).
+  // NEVER - forkJoin never completes, so FiltersFormComponent does not emit filtersChange automatically.
+  // If we used of([]), forkJoin would complete and emit filtersChange on startup,
+  // which would trigger getOffers() one extra time (before the explicit call in the tests).
   const lookupsApiMock = {
     getTechnologies:     vi.fn().mockReturnValue(NEVER),
     getSpecializations:  vi.fn().mockReturnValue(NEVER),

@@ -1,64 +1,64 @@
-/* Architektura CSS strony "O nas" (/about)
-   Struktura wizualna:
-     background-glow   - dekoracyjne rozmyte plamy (position: fixed, z-index: -1)
-     about-wrapper     - wyśrodkowany kontener (max-width 900px)
-       hero-section    - nagłówek z badge i tytułem
-       team-section    - siatka kart członków zespołu (Frontend / Backend)
-       nav-section     - lista kart nawigacyjnych do innych stron
-   Motyw: jasny (light), indigo-fioletowy. Brak glassmorphism (backdrop-filter)
-   - karty mają zwykłe białe tło rgba(255,255,255,0.9).
-   Animacje wejścia: fadeUp (14px) z animation shorthand w klasach .team-card i .nav-card.
-   Brak klas animate-up / delay-N jak na /home - animacja wbudowana bezpośrednio w selektory.
+/* CSS architecture of the "About" page (/about)
+   Visual structure:
+     background-glow   - decorative blurred blobs (position: fixed, z-index: -1)
+     about-wrapper     - centered container (max-width 900px)
+       hero-section    - header with a badge and title
+       team-section    - grid of team member cards (Frontend / Backend)
+       nav-section     - list of navigation cards to other pages
+   Theme: light, indigo-purple. No glassmorphism (backdrop-filter)
+   - cards use a plain white background rgba(255,255,255,0.9).
+   Entry animations: fadeUp (14px) via the animation shorthand on .team-card and .nav-card.
+   No animate-up / delay-N classes like on /home - the animation is built directly into the selectors.
 */
 
-/* :host = element <app-about> w DOM.
-   display: block wymagane bo Angular renderuje komponenty jako inline - bez tego
-   margin i padding na :host nie działają poprawnie.
-   Kolor tekstu ustawiony globalnie (#1e293b = dark slate) zamiast na każdej klasie osobno */
+/* :host = the <app-about> element in the DOM.
+   display: block is required because Angular renders components as inline - without it
+   margin and padding on :host don't work correctly.
+   Text color is set globally (#1e293b = dark slate) instead of on each class separately */
 :host {
   display: block;
   font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
   color: #1e293b;
 }
-/* Reset box-sizing i dziedziczenie font-family na wszystkich elementach komponentu */
+/* Reset box-sizing and inherit font-family on all of the component's elements */
 * { box-sizing: border-box; font-family: inherit; }
 
-/* Tło strony - stały wrapper przyklejony do viewportu.
-   inset: 0 to skrót dla top: 0; right: 0; bottom: 0; left: 0 (nowszy CSS).
-   z-index: -1 - pod wszystkimi elementami strony, tylko dekoracja.
-   gradient 135deg: lewy górny róg jasnofioletowy (#eef2ff) -> środek jasny (#f8fafc) -> prawy dolny biały.
-   overflow: hidden - zapobiega scrollbarowi gdy plamy wychodzą poza viewport */
+/* Page background - a fixed wrapper pinned to the viewport.
+   inset: 0 is shorthand for top: 0; right: 0; bottom: 0; left: 0 (modern CSS).
+   z-index: -1 - below all page elements, purely decorative.
+   gradient 135deg: top-left light purple (#eef2ff) -> middle light (#f8fafc) -> bottom-right white.
+   overflow: hidden - prevents a scrollbar when the blobs go outside the viewport */
 .background-glow {
   position: fixed; inset: 0; z-index: -1;
   background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 60%, #fff 100%);
   overflow: hidden;
 }
 
-/* Dekoracyjna plama indigo w prawym górnym rogu.
-   radial-gradient(circle, kolor 0%, transparent 70%) - "plama" zanikająca na krawędziach.
-   55vw × 55vw - skaluje się z szerokością ekranu */
+/* Decorative indigo blob in the top-right corner.
+   radial-gradient(circle, color 0%, transparent 70%) - a "blob" fading out at the edges.
+   55vw × 55vw - scales with the screen width */
 .glow-1 {
   position: absolute; top: -10%; right: -5%; width: 55vw; height: 55vw;
   background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
 }
 
-/* Dekoracyjna plama fioletowa w lewym dolnym rogu - słabsza (0.07 opacity) dla subtelności */
+/* Decorative purple blob in the bottom-left corner - weaker (0.07 opacity) for subtlety */
 .glow-2 {
   position: absolute; bottom: -10%; left: -10%; width: 40vw; height: 40vw;
   background: radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%);
 }
 
-/* Główny wrapper treści strony.
-   padding-top: 96px zostawia miejsce na fixed navbar.
-   max-width: 900px + margin: 0 auto - wyśrodkowany na szerokich monitorach */
+/* Main page content wrapper.
+   padding-top: 96px leaves room for the fixed navbar.
+   max-width: 900px + margin: 0 auto - centered on wide monitors */
 .about-wrapper { max-width: 900px; margin: 0 auto; padding: 96px 1.5rem 4rem; }
 
-/* Sekcja hero - nagłówek strony wyśrodkowany */
+/* Hero section - centered page header */
 .hero-section { text-align: center; padding: 2.5rem 0 2rem; }
 
-/* Mała etykieta "O PROJEKCIE" nad tytułem - pill shape (border-radius: 999px).
-   999px to konwencja na "zawsze okrągłe końce" niezależnie od szerokości elementu.
-   border: 1px solid #e0e7ff dodaje subtelną ramkę na jasnofioletowym tle */
+/* Small "O PROJEKCIE" label above the title - pill shape (border-radius: 999px).
+   999px is the convention for "always rounded ends" regardless of element width.
+   border: 1px solid #e0e7ff adds a subtle border on the light purple background */
 .badge {
   display: inline-block; background: #eef2ff; color: #6366f1;
   font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
@@ -66,61 +66,61 @@
   border: 1px solid #e0e7ff;
 }
 
-/* Tytuł strony z funkcją clamp() dla responsywnego rozmiaru czcionki.
-   clamp(2rem, 5vw, 2.8rem): min 2rem, preferuje 5% szerokości viewport, max 2.8rem.
-   Dzięki clamp() czcionka płynnie skaluje się bez media query */
+/* Page title with clamp() for a responsive font size.
+   clamp(2rem, 5vw, 2.8rem): min 2rem, prefers 5% of the viewport width, max 2.8rem.
+   Thanks to clamp() the font scales smoothly without a media query */
 .hero-section h1 {
   font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 900; letter-spacing: -1px;
   margin: 0 0 1rem; line-height: 1.1;
 }
 
-/* Gradient na tekście "IT-Hell" - ta sama technika co na /home ("wyższym poziomie").
-   background-clip: text + -webkit-text-fill-color: transparent sprawia że gradient
-   jest widoczny tylko przez "kształt" liter. -webkit- prefiks wymagany dla Safari */
+/* Gradient on the "IT-Hell" text - the same technique as on /home ("wyższym poziomie").
+   background-clip: text + -webkit-text-fill-color: transparent makes the gradient
+   visible only through the "shape" of the letters. The -webkit- prefix is required for Safari */
 .text-gradient {
   background: linear-gradient(90deg, #6366f1, #a855f7);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Opis pod tytułem - max-width: 540px węższe niż kontener (długie linie trudne do czytania).
-   margin: 0 auto centruje paragraf w wyśrodkowanej sekcji hero */
+/* Description under the title - max-width: 540px narrower than the container (long lines are hard to read).
+   margin: 0 auto centers the paragraph in the centered hero section */
 .hero-sub { font-size: 1rem; color: #64748b; max-width: 540px; margin: 0 auto; line-height: 1.65; }
 
-/* Etykieta sekcji - mały uppercase napis nad zawartością sekcji (np. "ZESPÓŁ", "EKSPLORUJ SERWIS").
-   Identyczny wzorzec jak .card-label w profile.component.css - "overline label" */
+/* Section label - a small uppercase caption above a section's content (e.g. "ZESPÓŁ", "EKSPLORUJ SERWIS").
+   Same pattern as .card-label in profile.component.css - an "overline label" */
 .section-label {
   font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
   letter-spacing: 0.1em; color: #94a3b8; margin: 0 0 0.9rem;
 }
 
-/* Sekcja zespołu - margines oddzielający od sekcji hero */
+/* Team section - margin separating it from the hero section */
 .team-section { margin: 2rem 0; }
 
-/* Grupa (Frontend / Backend) - zawiera etykietę grupy i siatkę kart */
+/* Group (Frontend / Backend) - contains the group label and the card grid */
 .team-group { margin-bottom: 1.25rem; }
 
-/* Etykieta grupy z kolorową kropką po lewej.
-   gap: 0.45rem - mały odstęp między kropką a tekstem "Frontend" / "Backend" */
+/* Group label with a colored dot on the left.
+   gap: 0.45rem - small spacing between the dot and the "Frontend" / "Backend" text */
 .team-group-label {
   display: flex; align-items: center; gap: 0.45rem;
   font-size: 0.78rem; font-weight: 700; color: #475569;
   text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.6rem;
 }
 
-/* Kolorowa kropka przy etykiecie grupy - kolor ustawiony inline w HTML (indigo/zielony).
-   flex-shrink: 0 - kropka nie kurczy się gdy tekst obok jest długi */
+/* Colored dot next to the group label - color set inline in HTML (indigo/green).
+   flex-shrink: 0 - the dot doesn't shrink when the text next to it is long */
 .team-group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* Siatka kart członków - dwie równe kolumny obok siebie.
-   Na mobile (<600px) zmieniana na jedną kolumnę (patrz media query na dole) */
+/* Grid of member cards - two equal columns side by side.
+   On mobile (<600px) changed to a single column (see the media query at the bottom) */
 .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
-/* Karta członka zespołu - avatar + imię w rzędzie.
-   animation: fadeUp 0.5s ease 0.1s both - wejściowa animacja wbudowana bezpośrednio
-   w selektor (nie przez oddzielną klasę jak animate-up na /home).
-   "both" = fill-mode both: element jest niewidoczny przed animacją i zostaje widoczny po.
-   Transition na transform i box-shadow dla płynnego hover */
+/* Team member card - avatar + name in a row.
+   animation: fadeUp 0.5s ease 0.1s both - entry animation built directly
+   into the selector (not via a separate class like animate-up on /home).
+   "both" = fill-mode both: the element is invisible before the animation and stays visible after.
+   Transition on transform and box-shadow for a smooth hover */
 .team-card {
   display: flex; align-items: center; gap: 0.9rem;
   background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
@@ -129,33 +129,33 @@
   animation: fadeUp 0.5s ease 0.1s both;
 }
 
-/* Hover karty - unosi o 2px i dodaje miękki cień */
+/* Card hover - lifts by 2px and adds a soft shadow */
 .team-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -6px rgba(0,0,0,0.1); }
 
-/* Okrągły avatar z inicjałami - gradient ustawiony inline w HTML (indywidualny kolor per osoba).
-   flex-shrink: 0 - avatar nie kurczy się gdy imię obok jest długie.
-   letter-spacing: -0.5px - inicjały bliżej siebie (np. "MK" wygląda zwartej) */
+/* Round avatar with initials - gradient set inline in HTML (individual color per person).
+   flex-shrink: 0 - the avatar doesn't shrink when the name next to it is long.
+   letter-spacing: -0.5px - initials closer together (e.g. "MK" looks tighter) */
 .team-avatar {
   width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 0.75rem; font-weight: 900; letter-spacing: -0.5px;
 }
 
-/* Kontener na imię i ewentualną rolę (column flex - gotowe na dodanie roli pod imieniem) */
+/* Container for the name and an optional role (column flex - ready for adding a role under the name) */
 .team-info { display: flex; flex-direction: column; }
 .team-info strong { font-size: 0.92rem; font-weight: 800; color: #1e293b; }
 
-/* Sekcja nawigacyjna - lista linków do innych stron */
+/* Navigation section - a list of links to other pages */
 .nav-section { margin: 2rem 0; }
 
-/* Karty nawigacyjne ułożone w kolumnie (flex-direction: column) - jedna pod drugą.
-   gap: 0.6rem - mały odstęp między kartami */
+/* Navigation cards stacked in a column (flex-direction: column) - one under another.
+   gap: 0.6rem - small spacing between cards */
 .nav-cards { display: flex; flex-direction: column; gap: 0.6rem; }
 
-/* Karta nawigacyjna - klikalny link <a> stylizowany jak karta z ikoną i strzałką.
-   text-decoration: none + color: inherit - resetuje domyślne style <a> (niebieski podkreślony tekst).
-   animation: fadeUp 0.5s ease 0.2s both - wejście z opóźnieniem 200ms (po kartach zespołu).
-   transition na transform, box-shadow i border-color dla płynnego hover */
+/* Navigation card - a clickable <a> link styled like a card with an icon and arrow.
+   text-decoration: none + color: inherit - resets the default <a> styles (blue underlined text).
+   animation: fadeUp 0.5s ease 0.2s both - entry with a 200ms delay (after the team cards).
+   transition on transform, box-shadow and border-color for a smooth hover */
 .nav-card {
   display: flex; align-items: center; gap: 1rem;
   background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
@@ -165,45 +165,45 @@
   animation: fadeUp 0.5s ease 0.2s both;
 }
 
-/* Hover karty nawigacyjnej - przesuwa w prawo (translateX zamiast translateY).
-   Kierunek "w prawo" sugeruje że kliknięcie przenosi dalej (intuicyjny UX dla list linków).
-   border-color zmienia się na jasnoindigo (#c7d2fe) żeby karta "rozświeciła się" */
+/* Navigation card hover - moves to the right (translateX instead of translateY).
+   The "to the right" direction suggests clicking takes you further (intuitive UX for link lists).
+   border-color changes to light indigo (#c7d2fe) so the card "lights up" */
 .nav-card:hover {
   transform: translateX(4px);
   box-shadow: 0 6px 20px -6px rgba(99,102,241,0.15);
   border-color: #c7d2fe;
 }
 
-/* Ikona emoji po lewej stronie karty.
-   flex-shrink: 0 - ikona nie kurczy się.
-   width: 36px + text-align: center - wyrównuje różnej szerokości emoji */
+/* Emoji icon on the left of the card.
+   flex-shrink: 0 - the icon doesn't shrink.
+   width: 36px + text-align: center - aligns emoji of different widths */
 .nav-card-icon { font-size: 1.3rem; flex-shrink: 0; width: 36px; text-align: center; }
 
-/* Środkowa część karty - tytuł i opis.
-   flex: 1 - zajmuje całą dostępną przestrzeń między ikoną a strzałką */
+/* Middle part of the card - title and description.
+   flex: 1 - takes all the available space between the icon and the arrow */
 .nav-card-body { display: flex; flex-direction: column; flex: 1; }
 .nav-card-body strong { font-size: 0.9rem; font-weight: 700; color: #1e293b; }
 .nav-card-body span   { font-size: 0.78rem; color: #64748b; margin-top: 1px; }
 
-/* Strzałka "›" po prawej - szara domyślnie, zmienia kolor na indigo przy hover rodzica.
-   flex-shrink: 0 - strzałka nie kurczy się.
-   .nav-card:hover .nav-card-arrow - selector potomny zmienia kolor strzałki przy hover całej karty */
+/* "›" arrow on the right - gray by default, turns indigo on parent hover.
+   flex-shrink: 0 - the arrow doesn't shrink.
+   .nav-card:hover .nav-card-arrow - a descendant selector changing the arrow color on whole-card hover */
 .nav-card-arrow { color: #94a3b8; flex-shrink: 0; transition: color 0.18s; }
 .nav-card:hover .nav-card-arrow { color: #6366f1; }
 
-/* Animacja wejścia - przesuwa element o 14px w górę + opacity 0->1.
-   14px to mniejsza odległość niż fadeInUp na /home (40px) - subtelniejszy efekt
-   pasuje do gęstszej listy kart (duże przesunięcie wyglądałoby zbyt dynamicznie).
-   "both" fill-mode użyty w animation shorthand na .team-card i .nav-card zapewnia
-   że elementy zaczynają od opacity: 0 przed startem animacji */
+/* Entry animation - moves the element up by 14px + opacity 0->1.
+   14px is a smaller distance than fadeInUp on /home (40px) - a subtler effect
+   that suits the denser card list (a large shift would look too dynamic).
+   The "both" fill-mode used in the animation shorthand on .team-card and .nav-card ensures
+   the elements start at opacity: 0 before the animation begins */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsywność - poniżej 600px siatka zespołu zmienia się na jedną kolumnę.
-   600px zamiast standardowego 768px bo karty zespołu są wąskie i dobrze mieszczą się
-   w dwóch kolumnach aż do małych smartfonów */
+/* Responsiveness - below 600px the team grid switches to a single column.
+   600px instead of the standard 768px because the team cards are narrow and fit well
+   in two columns down to small smartphones */
 @media (max-width: 600px) {
   .team-grid { grid-template-columns: 1fr; }
 }

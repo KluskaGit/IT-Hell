@@ -1,6 +1,6 @@
-// Komponent formularza filtrów - używany na /offers (sidebar), /home i /profile.
-// Pobiera dane słownikowe z backendu przez LookupsApiService, buduje dynamiczny ReactiveForm
-// i emituje FiltersValue przy każdej zmianie. Typy w filters-form.types.ts.
+// Filter form component - used on /offers (sidebar), /home and /profile.
+// Fetches lookup data from the backend via LookupsApiService, builds a dynamic ReactiveForm
+// and emits FiltersValue on every change. Types live in filters-form.types.ts.
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -12,17 +12,17 @@ import { TechPickerComponent } from '../tech-picker/tech-picker.component';
 import { LookupsApiService } from '../../core/services/lookups-api.service';
 import { FiltersInitialState, FiltersValue } from './filters-form.types';
 
-// Wewnętrzny typ dla elementów list wyboru (role, technologie, portale, poziomy doświadczenia).
+// Internal type for the selection list items (roles, technologies, job boards, experience levels).
 type LookupItem = { key: string; label: string; id: string };
 
-// Predefiniowane wartości suwaka wynagrodzenia w PLN (nieregularny krok - gęściej na niskich kwotach).
-// Indeks w tej tablicy jest przechowywany w FormGroup, nie kwota PLN.
+// Predefined salary slider values in PLN (irregular step - denser at lower amounts).
+// The index into this array is stored in the FormGroup, not the PLN amount.
 export const SALARY_OPTIONS = [
   0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
   13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 22000,
   25000, 30000, 35000, 40000, 45000, 50000,
 ];
-// Eksportowane - offers.component.ts sprawdza czy filtr salary jest na domyślnym maksimum
+// Exported - offers.component.ts checks whether the salary filter is at the default maximum
 export const MAX_SALARY_INDEX = SALARY_OPTIONS.length - 1;
 
 @Component({
@@ -36,10 +36,10 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly fb = inject(FormBuilder);
   private readonly lookupsApi = inject(LookupsApiService);
-  // ChangeDetectorRef - ręczne wymuszenie odświeżenia po queueMicrotask (poza cyklem Angular)
+  // ChangeDetectorRef - manual refresh after queueMicrotask (outside the Angular cycle)
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // null = brak zapisanego stanu, formularz zaczyna od wartości domyślnych
+  // null = no saved state, the form starts from default values
   @Input() initialFilters: FiltersInitialState | null = null;
   @Input() collapsible = false;
   @Input() showApplyButton = true;
@@ -48,7 +48,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
   @Input() showSummaryHeader = false;
   @Input() initialCollapsed = false;
 
-  // Flagi widoczności sekcji - pozwalają używać tego samego komponentu w różnych kontekstach
+  // Section visibility flags - let the same component be reused in different contexts
   @Input() showLocation = true;
   @Input() showExpLevel = true;
   @Input() showWorkMode = true;
@@ -56,8 +56,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
   @Input() showRoles = true;
   @Input() showTechnologies = true;
   @Input() showSites = true;
-  // Gdy true, tylko jeden poziom doświadczenia może być wybrany naraz (radio zamiast checkbox).
-  // Używane w profile.component gdzie wybieramy jeden poziom seniority
+  // When true, only one experience level can be selected at a time (radio instead of checkbox).
+  // Used in profile.component where a single seniority level is chosen
   @Input() singleExpLevelSelection = false;
   @Input() showProfileFillButton = false;
   @Input() profileFillButtonLabel = 'Uzupełnij z profilu';
@@ -66,33 +66,33 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
   @Output() profileFillClicked = new EventEmitter<void>();
   @Output() filtersChange = new EventEmitter<FiltersValue>();
   @Output() applyClicked = new EventEmitter<FiltersValue>();
-  // Emitowane raz po zakończeniu inicjalizacji - offers.component czeka na to przed pierwszym ładowaniem
+  // Emitted once after initialization completes - offers.component waits for it before the first load
   @Output() ready = new EventEmitter<FiltersValue>();
 
-  // Eksponujemy przez pola readonly żeby były dostępne w szablonie HTML
+  // Exposed via readonly fields so they are available in the HTML template
   readonly salaryOptions = SALARY_OPTIONS;
   readonly maxSalaryIndex = MAX_SALARY_INDEX;
 
-  // Listy opcji pobrane z backendu - puste przed zakończeniem forkJoin
+  // Option lists fetched from the backend - empty until forkJoin completes
   availableRoles: LookupItem[] = [];
   availableTechs: LookupItem[] = [];
-  availableTechItems: LocationItem[] = []; // te same technologie w formacie {id, name} dla TechPicker
+  availableTechItems: LocationItem[] = []; // the same technologies in {id, name} format for TechPicker
   availableSites: LookupItem[] = [];
   availableExpLevels: LookupItem[] = [];
   availableWorkTypes: LookupItem[] = [];
   availableLocations: LocationItem[] = [];
 
-  // Lokalizacje i technologie przechowywane POZA FormGroup - pickery mają własny stan
+  // Locations and technologies kept OUTSIDE the FormGroup - the pickers have their own state
   selectedLocations: LocationItem[] = [];
   selectedTechnologies: LocationItem[] = [];
 
-  // filtersForm jest null dopóki forkJoin nie zakończy pobierania - FormGroup wymaga danych z API
+  // filtersForm is null until forkJoin finishes fetching - the FormGroup needs the API data
   filtersForm: FormGroup | null = null;
   isLoading = true;
   loadError: string | null = null;
   collapsed = false;
   showAllRoles = false;
-  // Flaga dwuetapowego renderowania TechPicker - patrz queueMicrotask w ngOnInit
+  // Two-step rendering flag for TechPicker - see queueMicrotask in ngOnInit
   techPickerReady = false;
 
   onProfileFillClick(): void {
@@ -102,8 +102,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.collapsed = this.collapsible && this.initialCollapsed;
 
-    // forkJoin wysyła wszystkie requesty równolegle i czeka aż wszystkie się zakończą.
-    // of([]) jako fallback gdy dana sekcja jest ukryta przez @Input (np. showRoles = false)
+    // forkJoin fires all requests in parallel and waits until they all complete.
+    // of([]) as a fallback when a section is hidden via @Input (e.g. showRoles = false)
     forkJoin({
       techs:     this.showTechnologies ? this.lookupsApi.getTechnologies().pipe(catchError(() => of([])))     : of([]),
       specs:     this.showRoles        ? this.lookupsApi.getSpecializations().pipe(catchError(() => of([])))  : of([]),
@@ -113,7 +113,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
       workTypes: this.showWorkMode     ? this.lookupsApi.getWorkTypes().pipe(catchError(() => of([])))        : of([]),
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: ({ techs, specs, locations, sites, expLevels, workTypes }) => {
-        // dedupeByKey usuwa duplikaty które backend czasem zwraca (ten sam ID kilka razy)
+        // dedupeByKey removes duplicates the backend sometimes returns (the same ID several times)
         this.availableTechs = this.dedupeByKey(
           techs.map(t => ({ key: t.id, label: t.name, id: t.id }))
         );
@@ -127,7 +127,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
         this.availableExpLevels = expLevels.map(e => ({ key: e.id, label: e.name, id: e.id }));
         this.availableWorkTypes = workTypes.map(w => ({ key: w.id, label: w.name, id: w.id }));
 
-        // Sortujemy alfabetycznie po polsku dla wygody autocomplete
+        // Sort alphabetically using Polish collation for nicer autocomplete
         this.availableLocations = locations
           .map(l => ({ id: l.id, name: l.name }))
           .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
@@ -139,14 +139,14 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
         this.subscribeFormChanges();
         this.isLoading = false;
 
-        // Dwuetapowy render TechPickerComponent - najpierw chowamy, wykrywamy zmiany,
-        // potem w queueMicrotask pokazujemy z gotowym selectedTechnologies.
-        // Bez tego TechPicker renderuje się zanim selectedTechnologies jest ustawione.
+        // Two-step render of TechPickerComponent - first hide it, run change detection,
+        // then in queueMicrotask show it with selectedTechnologies already set.
+        // Without this TechPicker renders before selectedTechnologies is populated.
         this.techPickerReady = false;
         this.cdr.detectChanges();
 
-        // queueMicrotask uruchamia callback po bieżącym cyklu change detection,
-        // ale przed następną ramką - bezpieczne miejsce na emit ready i show TechPicker
+        // queueMicrotask runs the callback after the current change detection cycle,
+        // but before the next frame - a safe place to emit ready and show TechPicker
         queueMicrotask(() => {
           this.techPickerReady = true;
           this.cdr.detectChanges();
@@ -164,7 +164,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  // Priorytety: selectedLocations (obiekty) > locationIds (tablica ID do wyszukania)
+  // Priority: selectedLocations (objects) > locationIds (array of IDs to look up)
   private restoreSelectedLocations(init: FiltersInitialState): LocationItem[] {
     if (init.selectedLocations?.length) return init.selectedLocations;
     if (init.locationIds?.length) {
@@ -173,7 +173,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     return [];
   }
 
-  // Priorytety: selectedTechnologies (obiekty) > technologies (stary Record<id, boolean>)
+  // Priority: selectedTechnologies (objects) > technologies (old Record<id, boolean>)
   private restoreSelectedTechs(init: FiltersInitialState): LocationItem[] {
     if (init.selectedTechnologies?.length) return init.selectedTechnologies;
     // backward compat: restore from old Record<string, boolean> format
@@ -194,8 +194,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     return out;
   }
 
-  // Buduje wartości początkowe dla FormGroup z initialFilters.
-  // jobSiteKeys (nowy format tablicowy) ma pierwszeństwo przed jobSites (stary obiekt boolean)
+  // Builds the initial values for the FormGroup from initialFilters.
+  // jobSiteKeys (new array format) takes precedence over jobSites (old boolean object)
   private buildFilterValues(init: FiltersInitialState): {
     itArea: Record<string, boolean>;
     jobSites: Record<string, boolean>;
@@ -218,7 +218,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     const seniority: Record<string, boolean> = {};
     for (const e of this.availableExpLevels) seniority[e.id] = init.seniority?.[e.id] ?? false;
 
-    // workModeIds (nowy format tablicowy) ma pierwszeństwo przed workMode (stary obiekt boolean)
+    // workModeIds (new array format) takes precedence over workMode (old boolean object)
     const workModeIds = init.workModeIds;
     const workMode: Record<string, boolean> = {};
     for (const wt of this.availableWorkTypes) {
@@ -246,7 +246,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  // Lokalizacje i technologie NIE są w FormGroup - mają osobne handlery
+  // Locations and technologies are NOT in the FormGroup - they have separate handlers
   private subscribeFormChanges(): void {
     this.filtersForm?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.filtersChange.emit(this.computeValue());
@@ -268,11 +268,11 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     this.applyClicked.emit(this.computeValue());
   }
 
-  // Publiczna metoda wywoływana przez parent (offers, home) do aktualizacji formularza.
-  // { emitEvent: false } zapobiega podwójnej emisji - emitujemy ręcznie przez filtersChange na końcu
+  // Public method called by the parent (offers, home) to update the form.
+  // { emitEvent: false } prevents a double emit - we emit manually via filtersChange at the end
   patchValue(filters: FiltersInitialState, locations?: LocationItem[]): void {
     if (!this.filtersForm) {
-      // FormGroup jeszcze nie zbudowany - zapamiętujemy i aplikujemy w ngOnInit
+      // FormGroup not built yet - remember the values and apply them in ngOnInit
       this.initialFilters = filters;
       if (locations) this.selectedLocations = locations;
       return;
@@ -285,8 +285,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     this.filtersChange.emit(this.computeValue());
   }
 
-  // Konwertuje surowy stan FormGroup na FiltersValue z tablicami ID gotowymi do API.
-  // siteIds i workTypeIds są puste gdy wszystkie lub żadne opcje zaznaczone (brak filtra)
+  // Converts the raw FormGroup state into a FiltersValue with ID arrays ready for the API.
+  // siteIds and workTypeIds are empty when all or none of the options are checked (no filter)
   computeValue(): FiltersValue {
     const raw = this.filtersForm?.getRawValue() ?? {};
     const itArea:    Record<string, boolean> = raw.itArea    ?? {};
@@ -300,7 +300,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
       this.availableTechs.map(t => [t.id, technologyIds.includes(t.id)])
     );
 
-    // Puste gdy żaden lub wszystkie portale zaznaczone - backend interpretuje jako brak filtra
+    // Empty when none or all boards are checked - the backend treats it as no filter
     const allSiteKeys      = this.availableSites.map(s => s.key);
     const selectedSiteKeys = allSiteKeys.filter(k => jobSites[k]);
     const siteIds = (selectedSiteKeys.length === 0 || selectedSiteKeys.length === allSiteKeys.length)
@@ -310,7 +310,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     const seniority:  Record<string, boolean> = raw.seniority ?? {};
     const expLevelIds = this.availableExpLevels.filter(e => seniority[e.id]).map(e => e.id);
 
-    // Analogicznie do siteIds - puste gdy żaden lub wszystkie tryby zaznaczone
+    // Same as siteIds - empty when none or all work modes are checked
     const selectedModes = Object.entries(workMode).filter(([, v]) => v).map(([id]) => id);
     const workTypeIds = (selectedModes.length === 0 || selectedModes.length === Object.keys(workMode).length)
       ? []
@@ -339,7 +339,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     return this.availableTechs.find(t => t.id === id)?.label ?? id;
   }
 
-  // Domyślnie pokazuje tylko 8 pierwszych ról - formularz nie rozrasta się przy dużej liczbie specjalizacji
+  // Shows only the first 8 roles by default - the form doesn't grow with many specializations
   getVisibleRoles(): LookupItem[] {
     return this.showAllRoles ? this.availableRoles : this.availableRoles.slice(0, 8);
   }
@@ -352,21 +352,21 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     return this.salaryOptions[Number(this.filtersForm?.get('salaryToIndex')?.value) || this.maxSalaryIndex] ?? 0;
   }
 
-  // Szerokość kolorowej belki suwaka salary w procentach (od indeksu "od" do "do")
+  // Width of the colored salary slider bar in percent (from the "from" index to the "to" index)
   getSalaryProgressPercent(): number {
     const fromIndex = Number(this.filtersForm?.get('salaryFromIndex')?.value) || 0;
     const toIndex   = Number(this.filtersForm?.get('salaryToIndex')?.value)   || this.maxSalaryIndex;
     return ((toIndex - fromIndex) / this.maxSalaryIndex) * 100;
   }
 
-  // Przesunięcie belki od lewej krawędzi suwaka w procentach
+  // Offset of the bar from the left edge of the slider in percent
   getSalaryProgressLeft(): number {
     const fromIndex = Number(this.filtersForm?.get('salaryFromIndex')?.value) || 0;
     return (fromIndex / this.maxSalaryIndex) * 100;
   }
 
-  // Zapobiega przecięciu suwaków - suwak "od" nie może być >= suwakowi "do".
-  // { emitEvent: false } - korekta nie powinna wyzwalać kolejnej subskrypcji valueChanges
+  // Prevents the sliders from crossing - the "from" slider cannot be >= the "to" slider.
+  // { emitEvent: false } - the correction should not trigger another valueChanges subscription
   checkSalaryRange(type: 'from' | 'to'): void {
     const fromCtrl = this.filtersForm?.get('salaryFromIndex');
     const toCtrl   = this.filtersForm?.get('salaryToIndex');
@@ -384,8 +384,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     this.collapsed = !this.collapsed;
   }
 
-  // Tryb radio dla seniority - ustawia wybrany poziom na true, wszystkie pozostałe na false.
-  // { emitEvent: false } zapobiega wyzwoleniu subscribeFormChanges - emitujemy ręcznie na końcu
+  // Radio mode for seniority - sets the chosen level to true and all the others to false.
+  // { emitEvent: false } prevents triggering subscribeFormChanges - we emit manually at the end
   onSingleExpLevelSelect(selectedId: string): void {
     const seniorityGroup = this.filtersForm?.get('seniority') as FormGroup | null;
     if (!seniorityGroup) return;
@@ -397,8 +397,8 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     this.filtersChange.emit(this.computeValue());
   }
 
-  // Reaguje na zmianę @Input() initialFilters z zewnątrz (np. gdy parent odświeża dane).
-  // Gdy formularz jeszcze nie istnieje, ngOnInit sam zastosuje zmiany przy inicjalizacji
+  // Reacts to an external change of @Input() initialFilters (e.g. when the parent refreshes data).
+  // When the form does not exist yet, ngOnInit applies the changes itself on initialization
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['initialFilters'] || !this.filtersForm) return;
 
@@ -408,7 +408,7 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     this.selectedLocations    = this.restoreSelectedLocations(next);
     this.selectedTechnologies = this.restoreSelectedTechs(next);
 
-    // { emitEvent: false } - nie chcemy podwójnej emisji z valueChanges i ręcznego filtersChange
+    // { emitEvent: false } - we don't want a double emit from valueChanges and the manual filtersChange
     const patch = this.buildPatchValue(next);
     this.filtersForm.patchValue(patch, { emitEvent: false });
 

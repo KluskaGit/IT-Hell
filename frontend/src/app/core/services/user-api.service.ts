@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// raw_cv: null oznacza że użytkownik nie ma wgranego CV w backendzie
+// raw_cv: null means the user has no CV uploaded in the backend
 export interface UserMeDto {
   id_keycloak: string;
   email: string;

@@ -1,31 +1,31 @@
 # 🔐 Auth Flow — Keycloak PKCE
 
-Pełen opis przepływu autoryzacji w aplikacji CV_ANALIZER. Uzupełnienie [głównego README](../README.md).
+A full description of the authorization flow in the IT-Hell app. Complements the [main README](../README.md).
 
-## 📑 Spis treści
+## 📑 Table of contents
 
-- [Stack autoryzacyjny](#stack-autoryzacyjny)
-- [PKCE — co to i dlaczego](#pkce--co-to-i-dlaczego)
-- [Bootstrap aplikacji (APP_INITIALIZER)](#bootstrap-aplikacji-app_initializer)
-- [Pełen sequence diagram](#pełen-sequence-diagram)
-- [Komponenty systemu](#komponenty-systemu)
-- [Auto-refresh tokenu](#auto-refresh-tokenu)
-- [SSR — pułapka i obejście](#ssr--pułapka-i-obejście)
+- [Authorization stack](#authorization-stack)
+- [PKCE — what and why](#pkce--what-and-why)
+- [App bootstrap (APP_INITIALIZER)](#app-bootstrap-app_initializer)
+- [Full sequence diagram](#full-sequence-diagram)
+- [System components](#system-components)
+- [Token auto-refresh](#token-auto-refresh)
+- [SSR — gotcha and workaround](#ssr--gotcha-and-workaround)
 - [Troubleshooting](#troubleshooting)
 
 ---
 
-## Stack autoryzacyjny
+## Authorization stack
 
-| Element | Technologia | Wersja | Rola |
+| Element | Technology | Version | Role |
 |---|---|---|---|
-| Identity Provider | Keycloak | 26.6.0 | Wystawca JWT, formularze logowania, social login |
-| SPA Client | `keycloak-js` | 26.2 | Biblioteka kliencka w Angularze |
-| Flow | OAuth 2.0 Authorization Code + PKCE | S256 | Bezpieczny standard dla SPA |
-| Token format | JWT (RS256 podpisany kluczem publicznym Keycloak) | — | Bearer token w nagłówku |
-| Resource Server | FastAPI (backend) | — | Weryfikuje JWT przez klucz publiczny realmu |
+| Identity Provider | Keycloak | 26.6.0 | JWT issuer, login forms, social login |
+| SPA Client | `keycloak-js` | 26.2 | Client library in Angular |
+| Flow | OAuth 2.0 Authorization Code + PKCE | S256 | Secure standard for SPAs |
+| Token format | JWT (RS256 signed with Keycloak's public key) | — | Bearer token in the header |
+| Resource Server | FastAPI (backend) | — | Verifies the JWT against the realm's public key |
 
-**Konfiguracja realmu** (z `environment.ts`):
+**Realm config** (from `environment.ts`):
 
 ```typescript
 {
@@ -35,42 +35,42 @@ Pełen opis przepływu autoryzacji w aplikacji CV_ANALIZER. Uzupełnienie [głó
 }
 ```
 
-> ℹ️ Konfiguracja realmu jest auto-importowana z `backend/keycloak/import/it-hell-realm.json` przy pierwszym starcie Keycloak. Późniejsze zmiany w JSON nie mają efektu — patrz [Troubleshooting](#troubleshooting).
+> ℹ️ The realm config lives in `frontend/it-hell-realm.json` and is **imported manually** through the Keycloak Admin Console on first run (`compose.yaml` does not auto-import it). Later changes to the JSON have no effect once the realm exists in the `keycloak-data` volume — see [Troubleshooting](#troubleshooting).
 
 ---
 
-## PKCE — co to i dlaczego
+## PKCE — what and why
 
-**PKCE (Proof Key for Code Exchange)** to rozszerzenie OAuth 2.0 Authorization Code Flow zaprojektowane dla klientów publicznych (SPA, mobile), które **nie mogą bezpiecznie przechować client secret**.
+**PKCE (Proof Key for Code Exchange)** is an OAuth 2.0 Authorization Code Flow extension designed for public clients (SPA, mobile) that **cannot securely store a client secret**.
 
-**Klasyczny problem:** SPA ma cały kod w przeglądarce. Każdy client secret tam zapisany jest publiczny.
+**The classic problem:** an SPA has all its code in the browser. Any client secret stored there is public.
 
-**Rozwiązanie PKCE:**
+**The PKCE solution:**
 
-1. SPA generuje losowy `code_verifier` (43-128 znaków).
-2. Liczy `code_challenge = BASE64URL(SHA256(code_verifier))` — to **S256**.
-3. Wysyła `code_challenge` do Keycloak przy starcie flow.
-4. Po loginie Keycloak zwraca `authorization_code`.
-5. SPA wymienia `code + code_verifier` na JWT. Keycloak weryfikuje że hash zgodny.
-6. Atakujący który przechwycił `authorization_code` **nie zna `code_verifier`** — nie może wymienić na token.
+1. The SPA generates a random `code_verifier` (43-128 characters).
+2. It computes `code_challenge = BASE64URL(SHA256(code_verifier))` — this is **S256**.
+3. It sends the `code_challenge` to Keycloak when starting the flow.
+4. After login Keycloak returns an `authorization_code`.
+5. The SPA exchanges `code + code_verifier` for a JWT. Keycloak verifies the hash matches.
+6. An attacker who intercepted the `authorization_code` **doesn't know the `code_verifier`** — they can't exchange it for a token.
 
-**Konfiguracja w `auth.service.ts`:**
+**Config in `auth.service.ts`:**
 
 ```typescript
 await this.keycloak.init({
   onLoad: 'check-sso',
   pkceMethod: 'S256',
-  // ...
+  redirectUri: window.location.origin + window.location.pathname,
 });
 ```
 
 ---
 
-## Bootstrap aplikacji (APP_INITIALIZER)
+## App bootstrap (APP_INITIALIZER)
 
-Aplikacja **musi wiedzieć od pierwszej klatki** czy użytkownik jest zalogowany — inaczej navbar pokaże „Zaloguj" mimo aktywnej sesji, a guard zablokuje `/profile` z migotaniem ekranu.
+The app **must know from the first frame** whether the user is logged in — otherwise the navbar would show "Log in" despite an active session, and the guard would block `/profile` with a screen flicker.
 
-Rozwiązanie: blokujemy bootstrap na Keycloak init przez `APP_INITIALIZER` (`src/app/app.config.ts:31-40`):
+The solution: block bootstrap on Keycloak init via `APP_INITIALIZER` (`src/app/app.config.ts`):
 
 ```typescript
 {
@@ -86,63 +86,63 @@ Rozwiązanie: blokujemy bootstrap na Keycloak init przez `APP_INITIALIZER` (`src
 }
 ```
 
-**Kluczowe decyzje:**
+**Key decisions:**
 
-- **`Promise.race` z 5 s timeout** — aplikacja startuje nawet gdy Keycloak nie odpowiada. UX > kompletność.
-- **`catch()` z logiem** — błąd inicjalizacji nie crashuje aplikacji, tylko ustawia `isAuthenticated = false`.
+- **`Promise.race` with a 5s timeout** — the app starts even when Keycloak doesn't respond. UX > completeness.
+- **`catch()` with a log** — an init error doesn't crash the app, it just leaves `isAuthenticated = false`.
 
 ---
 
-## Pełen sequence diagram
+## Full sequence diagram
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as Użytkownik
+    participant U as User
     participant A as Angular SPA
     participant K as Keycloak
     participant B as FastAPI Backend
 
-    Note over A: Bootstrap aplikacji
-    A->>A: APP_INITIALIZER blokuje start
+    Note over A: App bootstrap
+    A->>A: APP_INITIALIZER blocks start
     A->>K: keycloak.init({ onLoad: 'check-sso', pkceMethod: 'S256' })
-    K-->>A: brak sesji SSO
+    K-->>A: no SSO session
     A->>A: isAuthenticated.set(false)
-    A->>U: Render strony / (anonimowo)
+    A->>U: Render page / (anonymous)
 
-    Note over U,A: Próba dostępu do /profile
-    U->>A: Klik /profile
-    A->>A: authGuard sprawdza isAuthenticated()
+    Note over U,A: Attempt to access /profile
+    U->>A: Click /profile
+    A->>A: authGuard checks isAuthenticated()
     A->>A: false → authService.login('/profile')
     A->>K: redirect → /realms/it-hell/protocol/openid-connect/auth<br/>+ code_challenge=...
 
-    Note over U,K: Logowanie w Keycloak
-    U->>K: Wpisuje email/hasło (lub OAuth Google/GitHub)
-    K-->>A: redirect z ?code=...&state=...
+    Note over U,K: Login in Keycloak
+    U->>K: Enters email/password (or OAuth Google/GitHub)
+    K-->>A: redirect with ?code=...&state=...
 
-    Note over A,K: Wymiana code na JWT
+    Note over A,K: Exchange code for JWT
     A->>K: POST /token<br/>code + code_verifier
     K-->>A: { access_token, refresh_token, id_token }
     A->>A: tokenParsed → username = given_name
     A->>A: isAuthenticated.set(true)
     A->>A: startTokenRefresh() (interval 20s)
 
-    Note over U,B: Zapytania do API
-    U->>A: Wyświetl profil
+    Note over U,B: API requests
+    U->>A: View profile
     A->>B: GET /v1/users/me/profile<br/>Authorization: Bearer <JWT>
-    Note over A: authInterceptor dodał header
-    B->>K: Walidacja JWT (klucz publiczny RS256)
-    B-->>A: { profile } lub 404 (nowy user)
-    A->>U: Render profilu
+    Note over A: authInterceptor added the header
+    B->>K: Validate JWT (RS256 public key)
+    B-->>A: { profile } or 404 (new user)
+    A->>U: Render the profile
 
-    Note over A,K: Auto-refresh w tle
-    loop co 20 sekund
+    Note over A,K: Background auto-refresh
+    loop every 20 seconds
         A->>K: keycloak.updateToken(30)
-        K-->>A: nowy access_token (jeśli odświeżony)
+        K-->>A: new access_token (if refreshed)
     end
 
-    Note over U,A: Wylogowanie
-    U->>A: Klik "Wyloguj"
+    Note over U,A: Logout
+    U->>A: Click "Log out"
     A->>A: stopTokenRefresh()
     A->>K: keycloak.logout({ redirectUri: '/' })
     K-->>A: redirect → /
@@ -151,43 +151,48 @@ sequenceDiagram
 
 ---
 
-## Komponenty systemu
+## System components
 
 ### 1. `AuthService` (singleton)
 
-**Plik:** `src/features/auth/auth.service.ts`
+**File:** `src/features/auth/auth.service.ts`
 
-Owija `keycloak-js` w API friendly dla Angulara (Signals zamiast eventów, async/await zamiast callbacków).
+Wraps `keycloak-js` in an Angular-friendly API (Signals instead of events, async/await instead of callbacks). The Keycloak instance is created lazily via `createKeycloak()` (a protected method, overridable in tests).
 
-**Stan:**
+**State:**
 ```typescript
 isAuthenticated = signal(false);
 username = signal<string | null>(null);
 ```
 
-**Init:**
+**Init (simplified):**
 ```typescript
 async init() {
-  if (!isPlatformBrowser(this.platformId)) return;
-  if (this.initialized) return;
-  this.keycloak = new Keycloak(keycloakConfig);
-  const ok = await this.keycloak.init({
-    onLoad: 'check-sso',
-    pkceMethod: 'S256',
-    checkLoginIframe: false
-  });
-  this.initialized = true;
-  this.isAuthenticated.set(ok);
-  if (ok) {
-    this.username.set(this.keycloak.tokenParsed?.['given_name'] ?? null);
-    this.startTokenRefresh();
+  if (!isPlatformBrowser(this.platformId)) return;  // SSR → no-op
+  if (!this.keycloak) this.keycloak = this.createKeycloak();
+  if (this.initialized) { this.updateAuthState(); return; }
+
+  try {
+    await this.keycloak.init({
+      onLoad: 'check-sso',
+      pkceMethod: 'S256',
+      redirectUri: window.location.origin + window.location.pathname,
+    });
+  } catch {
+    // Keycloak unavailable - the app runs logged-out
   }
+
+  this.initialized = true;
+  this.updateAuthState();      // reads keycloak.authenticated → sets the signals
+  this.startTokenRefresh();
 }
 ```
 
+> Note: `init()` returns `void`. The auth state is derived in `updateAuthState()` from `keycloak.authenticated` and `keycloak.tokenParsed` (it reads `given_name`, falling back to `preferred_username`).
+
 ### 2. `authInterceptor` (functional HTTP interceptor)
 
-**Plik:** `src/app/app.config.ts:14-21`
+**File:** `src/app/app.config.ts`
 
 ```typescript
 const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -200,29 +205,28 @@ const authInterceptor: HttpInterceptorFn = (req, next) => {
 };
 ```
 
-**Selektywność:** dodaje token **tylko do żądań `/v1/*`** — nie do Keycloak, nie do asset CDN, nie do third-party.
+**Selectivity:** it adds the token **only to `/v1/*` requests** — not to Keycloak, not to asset CDNs, not to third parties.
 
 ### 3. `authGuard` (CanActivateFn)
 
-**Plik:** `src/app/core/guards/auth.guard.ts`
+**File:** `src/app/core/guards/auth.guard.ts`
 
 ```typescript
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
-  const router = inject(Router);
   if (auth.isAuthenticated()) return true;
-  auth.login(state.url);  // redirect do Keycloak z powrotem na żądaną stronę
+  await auth.login(state.url);  // redirect to Keycloak, then back to the requested page
   return false;
 };
 ```
 
-Chroni tylko `/profile`. Inne strony są dostępne anonimowo.
+Protects only `/profile`. Other pages are available anonymously.
 
 ### 4. `keycloak.config.ts`
 
-**Plik:** `src/app/keycloak.config.ts`
+**File:** `src/app/keycloak.config.ts`
 
-Mostek z `environment.ts` do API `keycloak-js`:
+A bridge from `environment.ts` to the `keycloak-js` API:
 
 ```typescript
 export const keycloakConfig = {
@@ -234,93 +238,103 @@ export const keycloakConfig = {
 
 ---
 
-## Auto-refresh tokenu
+## Token auto-refresh
 
-**Cel:** użytkownik nigdy nie powinien zobaczyć "401 Unauthorized" tylko dlatego, że token wygasł w trakcie sesji (default 5 min w Keycloak).
+**Goal:** the user should never see a "401 Unauthorized" just because the token expired mid-session (default 5 min in Keycloak).
 
-**Mechanizm:**
+**Mechanism:**
 
 ```typescript
 startTokenRefresh() {
-  this.refreshIntervalId = window.setInterval(() => {
-    this.refreshToken(30);  // odśwież jeśli wygasa za < 30 s
-  }, 20_000);              // sprawdzaj co 20 s
+  this.refreshIntervalId = window.setInterval(async () => {
+    if (!this.isAuthenticated()) return;   // nothing to refresh when logged out
+    await this.refreshToken(30);           // refresh if it expires in < 30s
+  }, 20_000);                              // check every 20s
 }
 
 async refreshToken(minValidity = 30): Promise<boolean> {
+  if (!this.keycloak) return false;
   try {
-    return await this.keycloak.updateToken(minValidity);
+    await this.keycloak.updateToken(minValidity);
+    this.updateAuthState();
+    return true;
   } catch {
-    // Refresh token też wygasł — wyloguj
-    this.logout();
+    // The refresh token expired too - clear local auth state and stop refreshing
+    this.isAuthenticated.set(false);
+    this.username.set(null);
+    this.stopTokenRefresh();
     return false;
   }
 }
 ```
 
-**Dlaczego 20 s interval + 30 s minValidity:**
-- 5 min token expiry / 20 s interval = 15 sprawdzeń przed expiry → bezpieczny margines
-- `minValidity = 30` zapewnia że nawet jeśli żądanie API trwa 25 s, token będzie ważny do końca
+> Note: on a refresh failure the service clears the local auth state and stops the interval — it does **not** redirect to the Keycloak logout endpoint.
 
-**Zatrzymanie:**
+**Why a 20s interval + 30s minValidity:**
+- 5 min token expiry / 20s interval = ~15 checks before expiry → a safe margin
+- `minValidity = 30` ensures that even if an API request goes out just before expiry, the token stays valid long enough
+
+**Stopping:**
 
 ```typescript
 stopTokenRefresh() {
   if (this.refreshIntervalId !== null) {
-    clearInterval(this.refreshIntervalId);
+    window.clearInterval(this.refreshIntervalId);
     this.refreshIntervalId = null;
   }
 }
 ```
 
-Wywoływane w `logout()` — bez tego po wylogowaniu interval próbowałby co 20 s refreshować nieistniejący token.
+Called in `logout()` — without it, after logout the interval would keep trying to refresh a non-existent token every 20s.
 
 ---
 
-## SSR — pułapka i obejście
+## SSR — gotcha and workaround
 
-`keycloak-js` używa `window`, `localStorage`, `document.cookie` — **wszystkie niedostępne w Node.js** (SSR).
+`keycloak-js` uses `window`, `localStorage`, `document.cookie` — **all unavailable in Node.js** (SSR).
 
-**Próba inicjalizacji Keycloak na serwerze → crash całego SSR procesu.**
+**Trying to initialize Keycloak on the server → crashes the whole SSR process.**
 
-### Obejście 1: Platform check w `AuthService.init()`
+> Reminder: SSR is currently **not wired into the build** (see [architecture.md](architecture.md)). The app ships as a client-only SPA. The guards below still matter and are kept ready for when SSR is enabled.
+
+### Workaround 1: platform check in `AuthService.init()`
 
 ```typescript
 async init() {
   if (!isPlatformBrowser(this.platformId)) return;  // SSR → no-op
-  // ... reszta init
+  // ... rest of init
 }
 ```
 
-### Obejście 2: `RenderMode.Client` dla tras używających Keycloak
+### Workaround 2: `RenderMode.Client` for routes that use Keycloak
 
-`/profile` jest chroniony `authGuard`, który używa `AuthService.isAuthenticated()`. Na serwerze sygnał **zawsze jest false** — guard zwróciłby redirect.
+`/profile` is protected by `authGuard`, which uses `AuthService.isAuthenticated()`. On the server the signal is **always false** — the guard would redirect.
 
-`src/app/app.routes.server.ts` ustawia trasy używające Keycloak jako `RenderMode.Prerender` (statyczny prerender bez wywoływania guarda) lub `RenderMode.Client` (renderowanie tylko w przeglądarce).
+`src/app/app.routes.server.ts` sets routes as `RenderMode.Prerender` (static prerender without running the guard) or `RenderMode.Client` (browser-only rendering).
 
-> ⚠️ **Krytyczna reguła:** jeśli dodajesz nową trasę używającą `authGuard` lub Keycloak, **musisz zdecydować o `RenderMode`** w `app.routes.server.ts`. Brak wpisu = trasa próbuje prerenderować z `isAuthenticated = false`, co psuje UX.
+> ⚠️ **Critical rule (once SSR is enabled):** if you add a new route using `authGuard` or Keycloak, you **must decide its `RenderMode`** in `app.routes.server.ts`. A missing entry = the route tries to prerender with `isAuthenticated = false`, which breaks UX.
 
 ---
 
 ## Troubleshooting
 
-| Problem | Przyczyna | Rozwiązanie |
+| Problem | Cause | Fix |
 |---|---|---|
-| Po loginie wraca na `/` zamiast `/profile` | Brakuje `redirectUri` w `login()` | Sprawdź `auth.service.ts:login()` — powinno przekazywać `redirectPath` |
-| `401 Unauthorized` mimo zalogowania | Token wygasł, refresh failed | Hard refresh (Ctrl+Shift+R) — re-init Keycloak |
-| Realm `it-hell` not found | Volume `keycloak-data` istnieje ale realm nie zaimportowany | `docker compose down -v` → `docker compose up -d` (UWAGA: kasuje userów) |
-| Zmiany w `it-hell-realm.json` nie działają | Realm już istnieje w volume — `--import-realm` jest skipped | Zmień przez Admin Console (`localhost:8080`) lub wipe volume |
-| `CORS error` na żądaniach `/v1/*` | Backend zwrócił 500 (response bez nagłówków CORS) | `docker compose logs backend` — popraw błąd backendu, nie CORS |
-| Po wylogowaniu w innej karcie ta nadal pokazuje "Zalogowano" | Brak `checkLoginIframe: true` (intencjonalnie wyłączone — powodował problemy z cookies) | Hard refresh karty — `init()` wykryje brak sesji |
-| Logowanie kończy się błędem **SSR** | Trasa Prerender próbuje renderować Keycloak-zależny content | `app.routes.server.ts` — ustaw trasę na `RenderMode.Client` |
-| `keycloak.init()` wisi 5+ sekund | Keycloak nie odpowiada | APP_INITIALIZER timeout zwolni bootstrap, aplikacja działa anonimowo |
-| Social login (Google/GitHub) nie działa | Provider nie skonfigurowany w realmie | Admin Console → Identity Providers → dodaj |
+| After login it returns to `/` instead of `/profile` | Missing `redirectUri` in `login()` | Check `auth.service.ts:login()` — it should pass `redirectPath` |
+| `401 Unauthorized` despite being logged in | Token expired, refresh failed | Hard refresh (Ctrl+Shift+R) — re-init Keycloak |
+| Realm `it-hell` not found | The `keycloak-data` volume exists but the realm wasn't imported | Import `frontend/it-hell-realm.json` via the Admin Console, or `docker compose down -v` and re-import (WARNING: deletes users) |
+| Changes to `it-hell-realm.json` don't take effect | The realm already exists in the volume | Change it via the Admin Console (`localhost:8080`) or wipe the volume |
+| `CORS error` on `/v1/*` requests | The backend returned 500 (response without CORS headers) | `docker compose logs backend` — fix the backend error, not CORS |
+| After logging out in another tab, this one still shows "logged in" | The login-iframe check isn't used | Hard refresh the tab — `init()` will detect the missing session |
+| Login fails with an **SSR** error (once SSR is on) | A Prerender route tries to render Keycloak-dependent content | `app.routes.server.ts` — set the route to `RenderMode.Client` |
+| `keycloak.init()` hangs 5+ seconds | Keycloak isn't responding | The APP_INITIALIZER timeout releases bootstrap; the app runs anonymously |
+| Social login (Google/GitHub) doesn't work | The provider isn't configured in the realm | Admin Console → Identity Providers → add |
 
 ---
 
-## 📚 Powiązane dokumenty
+## 📚 Related documents
 
-- [`README.md`](../README.md) — quick-start i troubleshooting ogólny
-- [`docs/architecture.md`](architecture.md) — wzorce Angular (Signals, APP_INITIALIZER)
-- [`docs/api-services.md`](api-services.md) — jak token jest dołączany do API
-- [`docs/features.md`](features.md) — features używające auth (profile)
+- [`README.md`](../README.md) — quick-start and general troubleshooting
+- [`docs/architecture.md`](architecture.md) — Angular patterns (Signals, APP_INITIALIZER, SSR status)
+- [`docs/api-services.md`](api-services.md) — how the token is attached to API calls
+- [`docs/features.md`](features.md) — features that use auth (profile)

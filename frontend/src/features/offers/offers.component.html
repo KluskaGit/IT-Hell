@@ -1,38 +1,38 @@
-<!-- Pasek nawigacyjny - komponent NavbarComponent (shared/navbar/navbar.component.ts).
-     Wyświetla logo, linki do stron i przycisk logowania/wylogowania przez Keycloak. -->
+<!-- Navigation bar - the NavbarComponent (shared/navbar/navbar.component.ts).
+     Shows the logo, page links and the Keycloak login/logout button. -->
 <app-navbar></app-navbar>
 
-<!-- Dekoracyjne elementy tła - rozmyte plamy kolorów (CSS gradient blur).
-     aria-hidden="true" sprawia że czytniki ekranu je ignorują (czysto estetyczne) -->
+<!-- Decorative background elements - blurred color blobs (CSS gradient blur).
+     aria-hidden="true" makes screen readers ignore them (purely decorative) -->
 <div class="bg-glow" aria-hidden="true">
   <div class="bg-glow-1"></div>
   <div class="bg-glow-2"></div>
 </div>
 
-<!-- Pasek górny przyklejony do górnej krawędzi ekranu (sticky, z-index 90).
-     Zawiera przycisk toggle filtrów i pole wyszukiwania tytułu oferty.
-     Podzielony na dwie kolumny: lewa (sidebar-space) i prawa (main-space),
-     żeby przycisk toggle był dokładnie nad sidebarem, a wyszukiwarka nad listą ofert. -->
+<!-- Top bar pinned to the top edge of the screen (sticky, z-index 90).
+     Contains the filters toggle button and the offer title search field.
+     Split into two columns: left (sidebar-space) and right (main-space),
+     so the toggle button sits exactly above the sidebar and the search above the offer list. -->
 <div class="top-bar">
   <div class="top-bar__inner">
 
-    <!-- Lewa część paska - szerokość dopasowana do aktualnej szerokości sidebara.
-         Gdy sidebar jest ukryty, przyjmuje stałą szerokość 160px żeby przycisk toggle był widoczny.
-         sidebarWidth i isFiltersVisible są polami komponentu (offers.component.ts) -->
+    <!-- Left part of the bar - width matched to the current sidebar width.
+         When the sidebar is hidden, it takes a fixed 160px width so the toggle button stays visible.
+         sidebarWidth and isFiltersVisible are component fields (offers.component.ts) -->
     <div class="top-bar__sidebar-space"
          [style.width.px]="isFiltersVisible ? sidebarWidth : 160"
          [class.top-bar__sidebar-space--hidden]="!isFiltersVisible">
 
-      <!-- Przycisk pokazujący/ukrywający panel filtrów.
-           Kliknięcie zmienia isFiltersVisible bezpośrednio w szablonie (prosta flaga boolean).
-           Klasa toggle-btn--active zmienia wygląd przycisku gdy filtry są widoczne. -->
+      <!-- Button that shows/hides the filter panel.
+           Clicking toggles isFiltersVisible directly in the template (a simple boolean flag).
+           The toggle-btn--active class changes the button's look when filters are visible. -->
       <button
         type="button"
         class="toggle-btn"
         (click)="isFiltersVisible = !isFiltersVisible"
         [class.toggle-btn--active]="isFiltersVisible"
         title="{{ isFiltersVisible ? 'Ukryj filtry' : 'Pokaż filtry' }}">
-        <!-- Ikona "filtr" - trzy poziome linie malejącej długości -->
+        <!-- "filter" icon - three horizontal lines of decreasing length -->
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
           <line x1="4" y1="6"  x2="20" y2="6"/>
           <line x1="8" y1="12" x2="16" y2="12"/>
@@ -42,17 +42,17 @@
       </button>
     </div>
 
-    <!-- Prawa część paska - pole wyszukiwania ofert po tytule/firmie/lokalizacji.
-         Wyszukiwanie wysyła request do backendu z parametrem "title" po 500ms debounce
-         (logika w offers.component.ts: searchTrigger$, onSearchChange, onSearchClear) -->
+    <!-- Right part of the bar - the field for searching offers by title/company/location.
+         The search sends a request to the backend with the "title" param after a 500ms debounce
+         (logic in offers.component.ts: searchTrigger$, onSearchChange, onSearchClear) -->
     <div class="top-bar__main-space">
-      <!-- searchbar--focused dodaje styl active (obramowanie) gdy pole jest aktywne -->
+      <!-- searchbar--focused adds the active style (border) when the field is focused -->
       <div class="searchbar" [class.searchbar--focused]="searchFocused">
-        <!-- Ikona lupy - czysto dekoracyjna, nie jest klikalna -->
+        <!-- Magnifier icon - purely decorative, not clickable -->
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <!-- ngModelChange zamiast [(ngModel)] bo onSearchChange() musi byc wywolane przy kazdej zmianie, nie tylko na blur -->
+        <!-- ngModelChange instead of [(ngModel)] because onSearchChange() must run on every change, not just on blur -->
         <input
           class="searchbar__input"
           type="text"
@@ -62,8 +62,8 @@
           (focus)="searchFocused = true"
           (blur)="searchFocused = false"
           autocomplete="off">
-        <!-- Przycisk "X" do czyszczenia wyszukiwania - pojawia się tylko gdy coś jest wpisane (*ngIf).
-             onSearchClear() czyści searchQuery i uruchamia ponowne ładowanie ofert bez filtra tytułu -->
+        <!-- "X" button to clear the search - shows up only when something is typed (*ngIf).
+             onSearchClear() clears searchQuery and reloads offers without the title filter -->
         <button *ngIf="searchQuery" type="button" class="searchbar__clear" (click)="onSearchClear()">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -75,15 +75,15 @@
   </div>
 </div>
 
-<!-- Główny obszar roboczy - układ flex: sidebar po lewej, lista ofert po prawej.
-     workspace--no-sidebar zmienia układ gdy sidebar jest ukryty (lista zajmuje całą szerokość) -->
+<!-- Main work area - a flex layout: sidebar on the left, offer list on the right.
+     workspace--no-sidebar changes the layout when the sidebar is hidden (list takes full width) -->
 <div class="workspace" [class.workspace--no-sidebar]="!isFiltersVisible">
 
-  <!-- Panel filtrów po lewej stronie.
-       sidebar--hidden ukrywa panel (width: 0, overflow: hidden) gdy isFiltersVisible = false.
-       sidebar--dragging dodaje klasę podczas przeciągania uchwytu (blokuje zaznaczanie tekstu).
-       Szerokość sidebara kontrolowana jest przez sidebarWidth (px) z komponentu.
-       Wartość sidebarWidth jest zapamiętywana w localStorage między wizytami. -->
+  <!-- Filter panel on the left side.
+       sidebar--hidden hides the panel (width: 0, overflow: hidden) when isFiltersVisible = false.
+       sidebar--dragging adds a class while dragging the handle (blocks text selection).
+       The sidebar width is controlled by sidebarWidth (px) from the component.
+       The sidebarWidth value is remembered in localStorage between visits. -->
   <aside
     class="sidebar"
     [class.sidebar--hidden]="!isFiltersVisible"
@@ -91,16 +91,16 @@
     [style.width.px]="isFiltersVisible ? sidebarWidth : 0"
     aria-label="Panel filtrów">
 
-    <!-- Uchwyt do zmiany szerokości sidebara przez przeciąganie myszą.
-         mousedown uruchamia onDragStart() w offers.component.ts, który podpina globalne
-         listenery mousemove i mouseup na document (żeby drag działał poza elementem).
-         Nowa szerokość jest automatycznie zapisywana w localStorage po puszczeniu myszy. -->
+    <!-- Handle for resizing the sidebar by dragging with the mouse.
+         mousedown starts onDragStart() in offers.component.ts, which attaches global
+         mousemove and mouseup listeners on document (so the drag works outside the element).
+         The new width is automatically saved to localStorage on mouse release. -->
     <div class="drag-handle" (mousedown)="onDragStart($event)" title="Przeciągnij aby zmienić szerokość">
       <span class="drag-handle__dots"></span>
     </div>
 
-    <!-- Formularz filtrow - filtry dzialaja na zywo (bez przycisku "Zastosuj").
-         "Uzupelnij z profilu" wyswietla sie tylko dla zalogowanych uzytkownikow -->
+    <!-- The filter form - filters work live (no "Apply" button).
+         "Fill from profile" is only shown to logged-in users -->
     <div class="sidebar__inner">
       <app-filters-form
         [initialFilters]="initialFilters"
@@ -116,20 +116,20 @@
     </div>
   </aside>
 
-  <!-- Główny obszar z listą ofert. #mainScroll to referencja do elementu przekazywana
-       do IntersectionObserver jako "root" (obszar widoczności dla infinite scroll) -->
+  <!-- Main area with the offer list. #mainScroll is the element reference passed
+       to IntersectionObserver as the "root" (the viewport area for infinite scroll) -->
   <main class="main" id="offers-scroll-area" #mainScroll>
 
-    <!-- Stan ładowania pierwszej strony - widoczny zamiast listy gdy isLoading = true.
-         isLoading jest ustawiany w loadOffersFromApi() gdy page === 0 (pierwsza strona) -->
+    <!-- First-page loading state - shown instead of the list when isLoading = true.
+         isLoading is set in loadOffersFromApi() when page === 0 (the first page) -->
     <div *ngIf="isLoading" class="state-loading">
       <div class="spinner"></div>
       <span>Ładowanie ofert…</span>
     </div>
 
-    <!-- Komunikat błędu - pokazywany gdy request do backendu się nie powiódł.
-         loadError zawiera gotowy komunikat po polsku (ustawiany w loadOffersFromApi()).
-         Ukrywany gdy isLoading = true żeby nie nakładał się ze spinnerem -->
+    <!-- Error message - shown when the request to the backend failed.
+         loadError holds a ready Polish message (set in loadOffersFromApi()).
+         Hidden when isLoading = true so it doesn't overlap with the spinner -->
     <div *ngIf="loadError && !isLoading" class="state-error">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
         <circle cx="12" cy="12" r="10"/>
@@ -139,25 +139,25 @@
       {{ loadError }}
     </div>
 
-    <!-- Lista ofert - renderowana gdy displayedOffers nie jest pusta.
-         Gdy pusta, pokazywany jest #emptyState (ng-template poniżej).
-         displayedOffers to getter zwracający matchedOffers (przefiltrowane i wzbogacone oferty) -->
+    <!-- Offer list - rendered when displayedOffers is not empty.
+         When empty, #emptyState (the ng-template below) is shown.
+         displayedOffers is a getter returning matchedOffers (filtered and enriched offers) -->
     <section *ngIf="displayedOffers.length > 0; else emptyState">
 
-      <!-- Jedna karta oferty. trackBy: trackOffer uzywa offer.id - Angular nie niszczy DOM przy paginacji -->
+      <!-- A single offer card. trackBy: trackOffer uses offer.id - Angular doesn't destroy DOM on pagination -->
       <article class="offer-card" *ngFor="let offer of displayedOffers; trackBy: trackOffer">
 
-        <!-- Górna część karty: logo firmy (inicjał), tytuł stanowiska i widełki wynagrodzenia -->
+        <!-- Top part of the card: company logo (initial), job title and salary range -->
         <div class="offer-card__header">
-          <!-- Logo firmy zastąpione pierwszą literą nazwy - brak zewnętrznych obrazków.
-               '?' jako fallback gdy nazwa firmy jest pusta -->
+          <!-- Company logo replaced with the first letter of the name - no external images.
+               '?' as a fallback when the company name is empty -->
           <div class="offer-card__logo">{{ offer.company.charAt(0) || '?' }}</div>
 
           <div class="offer-card__content">
             <div class="offer-card__title-row">
               <h2 class="offer-card__title">{{ offer.title }}</h2>
-              <!-- Wynagrodzenie - widełki PLN lub "Nie podano" gdy hasSalary() = false.
-                   Pipe number:'1.0-0' formatuje liczby bez miejsc dziesietnych (np. 10 000) -->
+              <!-- Salary - PLN range or "Nie podano" when hasSalary() = false.
+                   The number:'1.0-0' pipe formats numbers without decimals (e.g. 10 000) -->
               <span class="offer-card__salary" [class.offer-card__salary--na]="!hasSalary(offer)">
                 <ng-container *ngIf="hasSalary(offer); else salNa">
                   {{ offer.salaryMin | number:'1.0-0' }}–{{ offer.salaryMax | number:'1.0-0' }} PLN
@@ -166,25 +166,25 @@
               </span>
             </div>
 
-            <!-- Metadane oferty w jednym wierszu oddzielone kropkami.
-                 getWorkModeLabel() i formatSource() delegują do filtersFormRef
-                 bo tam są załadowane pełne dane lookupów z backendu -->
+            <!-- Offer metadata in a single row separated by dots.
+                 getWorkModeLabel() and formatSource() delegate to filtersFormRef
+                 because that's where the full lookup data from the backend is loaded -->
             <div class="offer-card__meta">
               <span class="offer-card__company">{{ offer.company }}</span>
               <span class="dot">·</span>
               <span>{{ offer.location }}</span>
               <span class="dot">·</span>
-              <!-- getWorkModeLabel() zamienia ID trybu pracy (np. "hybrid") na etykietę (np. "Hybrydowo") -->
+              <!-- getWorkModeLabel() turns a work mode ID (e.g. "hybrid") into a label (e.g. "Hybrydowo") -->
               <span>{{ getWorkModeLabel(offer.workTypeId) }}</span>
               <span class="dot">·</span>
-              <!-- formatSource() zamienia klucz portalu (np. "pracuj") na nazwę (np. "Pracuj.pl") -->
+              <!-- formatSource() turns a job board key (e.g. "pracuj") into a name (e.g. "Pracuj.pl") -->
               <span>{{ formatSource(offer.source) }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Tagi rol i technologii - tag--match swieci sie gdy technologia pasuje do filtrow uzytkownika.
-             technologyNames[i] to czytelna nazwa z backendu, formatTech(tech) to fallback -->
+        <!-- Role and technology tags - tag--match lights up when a technology matches the user's filters.
+             technologyNames[i] is the readable name from the backend, formatTech(tech) is the fallback -->
         <div class="offer-card__tags">
           <span class="tag tag--role" *ngFor="let role of offer.matchedRoles; trackBy: trackByString">{{ formatRole(role) }}</span>
           <span class="tag" [class.tag--match]="offer.matchedTech.includes(tech)"
@@ -193,18 +193,18 @@
           </span>
         </div>
 
-        <!-- Stopka karty z datami (lewa strona) i przyciskiem (prawa strona).
-             openOffer() otwiera offer.url w nowej karcie (window.open z noopener/noreferrer).
-             Przycisk jest nieaktywny ([disabled]) gdy oferta nie ma URL -->
+        <!-- Card footer with dates (left side) and a button (right side).
+             openOffer() opens offer.url in a new tab (window.open with noopener/noreferrer).
+             The button is disabled ([disabled]) when the offer has no URL -->
         <div class="offer-card__footer">
-          <!-- Daty po lewej - widoczne tylko gdy backend zwrócił wartość (nie null) -->
+          <!-- Dates on the left - shown only when the backend returned a value (not null) -->
           <div class="offer-card__dates">
             <span *ngIf="offer.publicationDate">Dodano: {{ offer.publicationDate | date:'dd.MM.yyyy' }}</span>
             <span *ngIf="offer.expirationDate" class="offer-card__date--expiry">Wygasa: {{ offer.expirationDate | date:'dd.MM.yyyy' }}</span>
           </div>
           <button type="button" class="btn-primary" (click)="openOffer(offer)" [disabled]="!offer.url">
             Otwórz ofertę
-            <!-- Ikona strzałki w prawo -->
+            <!-- Right-pointing arrow icon -->
             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>
@@ -213,8 +213,8 @@
 
       </article>
 
-      <!-- Sentinel na koncu listy - obserwowany przez IntersectionObserver,
-           ktory wywoluje loadMore() gdy element wejdzie w pole widzenia (infinite scroll) -->
+      <!-- Sentinel at the end of the list - observed by IntersectionObserver,
+           which calls loadMore() when the element enters the viewport (infinite scroll) -->
       <div #scrollSentinel class="scroll-sentinel">
         <div *ngIf="isLoadingMore" class="state-loading state-loading--sm">
           <div class="spinner"></div>
@@ -223,8 +223,8 @@
       </div>
     </section>
 
-    <!-- Stan pusty - wyświetlany gdy lista displayedOffers jest pusta i ładowanie zakończyło się.
-         *ngIf="!isLoading" ukrywa ten stan podczas ładowania (żeby nie migał przed wynikami) -->
+    <!-- Empty state - shown when displayedOffers is empty and loading has finished.
+         *ngIf="!isLoading" hides this state during loading (so it doesn't flash before results) -->
     <ng-template #emptyState>
       <div class="state-empty" *ngIf="!isLoading">
         <span class="state-empty__icon">🔍</span>

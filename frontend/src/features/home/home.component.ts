@@ -1,18 +1,18 @@
-// Komponent strony głównej (/home) - punkt wejścia aplikacji dla kandydatów.
-// Odpowiada za:
-//   1. Formularz filtrów (technologie, doświadczenie, lokalizacja...) - delegowany do FiltersFormComponent
-//   2. Upload i analizę CV (POST /v1/cv/analyze przez CvApiService) - wypełnia technologie automatycznie
-//   3. Przycisk "Uzupełnij z profilu" - pobiera dane z GET /v1/users/me/profile (UserApiService)
-//   4. Nawigację do /offers z filtrami w history.state (router.navigate + state)
-//   5. Zapis filtrów do localStorage pod kluczem FILTERS_STORAGE_KEY (patrz: filters-form.types.ts)
+// Home page component (/home) - the application entry point for candidates.
+// Responsibilities:
+//   1. Filter form (technologies, experience, location...) - delegated to FiltersFormComponent
+//   2. CV upload and analysis (POST /v1/cv/upload via CvApiService) - fills technologies automatically
+//   3. The "Fill from profile" button - fetches data from GET /v1/users/me/profile (UserApiService)
+//   4. Navigation to /offers with the filters in history.state (router.navigate + state)
+//   5. Saving filters to localStorage under FILTERS_STORAGE_KEY (see: filters-form.types.ts)
 //
-// Powiązane pliki:
-//   home.component.html   - szablon z formularzem filtrów i dropzoną CV
-//   home.component.css    - style strony
-//   filters-form.component.ts  - cały formularz filtrów jako reużywalny komponent
-//   cv-api.service.ts     - upload CV do backendu (POST /v1/cv/analyze)
-//   user-api.service.ts   - pobranie profilu użytkownika (GET /v1/users/me/profile)
-//   filters-form.types.ts - typy FiltersValue, FiltersInitialState, FILTERS_STORAGE_KEY
+// Related files:
+//   home.component.html   - template with the filter form and the CV dropzone
+//   home.component.css    - page styles
+//   filters-form.component.ts  - the whole filter form as a reusable component
+//   cv-api.service.ts     - CV upload to the backend (POST /v1/cv/upload)
+//   user-api.service.ts   - fetching the user profile (GET /v1/users/me/profile)
+//   filters-form.types.ts - the FiltersValue, FiltersInitialState, FILTERS_STORAGE_KEY types
 
 import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
@@ -27,125 +27,125 @@ import { AuthService } from '../auth/auth.service';
 import { CvApiService } from '../../app/core/services/cv-api.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
 
-// Limit rozmiaru pliku CV - zdefiniowany poza klasą jako stała modułu (nie zmienia się w runtime).
-// 10 MB to kompromis: większość CV w PDF/DOC mieści się w tym limicie,
-// a zbyt duże pliki spowalniają upload i analizę po stronie backendu.
-// MAX_CV_SIZE_BYTES to przeliczona wartość do porównania z file.size (które jest w bajtach)
+// CV file size limit - defined outside the class as a module constant (does not change at runtime).
+// 10 MB is a compromise: most CVs in PDF/DOC fit within this limit,
+// while files that are too large slow down upload and analysis on the backend.
+// MAX_CV_SIZE_BYTES is the converted value to compare against file.size (which is in bytes)
 const MAX_CV_SIZE_MB = 10;
 const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  // Standalone component - nie wymaga NgModule. Importuje tylko to czego używa bezpośrednio.
-  // CommonModule: *ngIf, *ngFor, AsyncPipe itp.
-  // RouterModule: routerLink w szablonie
-  // NavbarComponent, FooterComponent: wspólne elementy layoutu strony
-  // FiltersFormComponent: cały formularz filtrów (sekcja "Szukaj ofert")
+  // Standalone component - no NgModule required. Imports only what it uses directly.
+  // CommonModule: *ngIf, *ngFor, AsyncPipe, etc.
+  // RouterModule: routerLink in the template
+  // NavbarComponent, FooterComponent: shared page layout elements
+  // FiltersFormComponent: the whole filter form (the "Search offers" section)
   imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FiltersFormComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
 
-  // Referencja do instancji FiltersFormComponent w szablonie.
-  // Używana do bezpośredniego wywoływania metod komponentu:
-  //   filtersFormRef?.computeValue() - odczytanie aktualnych filtrów przed zapisem
-  //   filtersFormRef?.patchValue(...)  - programatyczne ustawienie wartości formularza
-  //                                     np. po analizie CV lub po "Uzupełnij z profilu"
+  // Reference to the FiltersFormComponent instance in the template.
+  // Used to call the component's methods directly:
+  //   filtersFormRef?.computeValue() - read the current filters before saving
+  //   filtersFormRef?.patchValue(...)  - programmatically set the form values,
+  //                                     e.g. after CV analysis or "Fill from profile"
   @ViewChild(FiltersFormComponent) filtersFormRef?: FiltersFormComponent;
 
-  // Subject do zarządzania cyklem życia subskrypcji RxJS.
-  // takeUntil(this.destroy$) w każdej subskrypcji sprawia że RxJS automatycznie
-  // odsubskrybuje strumień gdy destroy$.next() wywoła się w ngOnDestroy.
-  // Bez tego - subskrypcje żyłyby po zniszczeniu komponentu (wyciek pamięci).
+  // Subject for managing the RxJS subscription lifecycle.
+  // takeUntil(this.destroy$) in every subscription makes RxJS automatically
+  // unsubscribe from the stream when destroy$.next() is called in ngOnDestroy.
+  // Without it, subscriptions would live on after the component is destroyed (memory leak).
   private readonly destroy$ = new Subject<void>();
 
-  // Tablica identyfikatorów setTimeout - przechowywana żeby można było je anulować w ngOnDestroy.
-  // analyzeCV() tworzy kilka timerów (fałszywa animacja postępu) które muszą być
-  // wyczyszczone gdy użytkownik opuści stronę zanim animacja się skończy.
-  // ReturnType<typeof setTimeout> zamiast "number" - kompatybilność z Node.js (zwraca obiekt Timeout)
+  // Array of setTimeout ids - kept so they can be cancelled in ngOnDestroy.
+  // analyzeCV() creates several timers (a fake progress animation) that must be
+  // cleared if the user leaves the page before the animation finishes.
+  // ReturnType<typeof setTimeout> instead of "number" - compatibility with Node.js (returns a Timeout object)
   private scanTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor(
-    // Router - do nawigacji na /offers po kliknięciu "Szukaj ofert" (onSubmit)
+    // Router - for navigating to /offers after clicking "Search offers" (onSubmit)
     private readonly router: Router,
-    // AuthService - sprawdzenie czy użytkownik jest zalogowany (Keycloak).
-    // Używany przez getter isAuthenticated do warunkowego wyświetlania "Uzupełnij z profilu"
+    // AuthService - checks whether the user is logged in (Keycloak).
+    // Used by the isAuthenticated getter to conditionally show "Fill from profile"
     private readonly authService: AuthService,
-    // ChangeDetectorRef - ręczne powiadamianie Angular że stan się zmienił.
-    // Potrzebne bo operacje wewnątrz setTimeout / callback API nie są wykrywane automatycznie
-    // przez Angular Change Detection (nie przechodzą przez zone.js w niektórych przypadkach)
+    // ChangeDetectorRef - manually notifying Angular that the state changed.
+    // Needed because operations inside setTimeout / API callbacks are not detected automatically
+    // by Angular change detection (they don't go through zone.js in some cases)
     private readonly cdr: ChangeDetectorRef,
-    // CvApiService - upload pliku CV do backendu (POST /v1/cv/analyze).
-    // Backend zwraca listę wykrytych technologii, które wpadają do filtra automatycznie
+    // CvApiService - uploads the CV file to the backend (POST /v1/cv/upload).
+    // The backend returns a list of detected technologies, which are placed into the filter automatically
     private readonly cvApi: CvApiService,
-    // UserApiService - pobranie profilu użytkownika z backendu (GET /v1/users/me/profile).
-    // Używany przez fillFromProfile() do wstępnego wypełnienia formularza filtrów
+    // UserApiService - fetches the user profile from the backend (GET /v1/users/me/profile).
+    // Used by fillFromProfile() to pre-populate the filter form
     private readonly userApi: UserApiService,
-    // PLATFORM_ID - token Angular który identyfikuje platformę uruchomienia (browser/server).
-    // Używany z isPlatformBrowser() żeby zabezpieczyć się przed SSR (Server Side Rendering):
-    // localStorage i FileReader nie istnieją w środowisku Node.js - bez tego guard aplikacja crashuje
+    // PLATFORM_ID - the Angular token identifying the runtime platform (browser/server).
+    // Used with isPlatformBrowser() to guard against SSR (Server Side Rendering):
+    // localStorage and FileReader don't exist in Node.js - without the guard the app crashes
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
-  // Wybrany plik CV - ustawiany po walidacji w handleFile(), kasowany przez removeFile()
+  // The selected CV file - set after validation in handleFile(), cleared by removeFile()
   selectedFile: File | null = null;
-  // Komunikat błędu uploadu (np. zły format, zbyt duży plik)
+  // Upload error message (e.g. wrong format, file too large)
   uploadError: string | null = null;
-  // Flaga drag&drop - true gdy użytkownik przeciąga plik nad dropzoną
+  // Drag&drop flag - true while the user drags a file over the dropzone
   isDragging = false;
-  // Flaga skanowania - true od momentu wysłania pliku do API do zakończenia animacji
+  // Scanning flag - true from the moment the file is sent to the API until the animation ends
   isScanning = false;
-  // Postęp animacji skanowania (0-100) - steruje paskiem w szablonie
+  // Scan animation progress (0-100) - drives the progress bar in the template
   scanProgress = 0;
-  // Tekst statusu skanowania - zmienia się etapami ("Analiza CV...", "Zakończono!")
+  // Scan status text - changes in stages ("Analiza CV...", "Zakończono!")
   scanStatus = '';
-  // Flaga zakończenia - true gdy API zwróciło wynik i animacja dobiegła końca
+  // Completion flag - true once the API returned a result and the animation finished
   scanComplete = false;
-  // Flaga trwania "Uzupełnij z profilu" - blokuje wielokrotne kliknięcia
+  // "Fill from profile" in-progress flag - blocks repeated clicks
   isFillingFromProfile = false;
-  // Komunikat błędu gdy pobranie profilu z backendu nie powiodło się
+  // Error message when fetching the profile from the backend failed
   fillProfileError: string | null = null;
 
-  // Stan filtrów przekazywany do FiltersFormComponent jako [initialFilters].
-  // Ustawiany przez fillFromProfile() po pobraniu danych z API.
-  // Typ FiltersInitialState (patrz: filters-form.types.ts) - częściowy, nie wszystkie pola muszą być wypełnione
+  // Filter state passed to FiltersFormComponent as [initialFilters].
+  // Set by fillFromProfile() after fetching data from the API.
+  // Type FiltersInitialState (see: filters-form.types.ts) - partial, not all fields must be filled
   savedFilters: FiltersInitialState | null = null;
 
-  // Pobiera dane z profilu użytkownika i wstępnie wypełnia formularz filtrów.
-  // Wywołanie z HTML: (profileFillClicked)="fillFromProfile()" w app-filters-form.
-  // Dostępne tylko dla zalogowanych użytkowników (guard isPlatformBrowser + isAuthenticated).
-  // async/await zamiast .subscribe() bo UserApiService.getMyProfile() zwraca Promise
+  // Fetches the user's profile data and pre-populates the filter form.
+  // Called from HTML: (profileFillClicked)="fillFromProfile()" on app-filters-form.
+  // Available only to logged-in users (isPlatformBrowser + isAuthenticated guard).
+  // async/await instead of .subscribe() because UserApiService.getMyProfile() returns a Promise
   async fillFromProfile(): Promise<void> {
-    // isPlatformBrowser - zabezpieczenie przed SSR (Node.js nie ma localStorage/Keycloak)
+    // isPlatformBrowser - guard against SSR (Node.js has no localStorage/Keycloak)
     if (!isPlatformBrowser(this.platformId) || !this.isAuthenticated()) return;
 
     this.isFillingFromProfile = true;
     this.fillProfileError = null;
 
     try {
-      // GET /v1/users/me/profile - pobiera technologie i poziom doświadczenia z backendu.
-      // Rzuci błąd 404 jeśli użytkownik nigdy nie zapisał profilu
+      // GET /v1/users/me/profile - fetches technologies and experience level from the backend.
+      // Throws a 404 if the user never saved a profile
       const profile = await this.userApi.getMyProfile();
 
-      // Mapowanie technologii z formatu API ({ id, name, ...inne pola }) na LocationItem { id, name }.
-      // FiltersFormComponent (TechPicker) oczekuje dokładnie tego formatu
+      // Map technologies from the API format ({ id, name, ...other fields }) to LocationItem { id, name }.
+      // FiltersFormComponent (TechPicker) expects exactly this format
       const selectedTechnologies = (profile.technologies ?? []).map(t => ({
         id: t.id,
         name: t.name,
       }));
 
-      // exp_level może być null (jeśli użytkownik nie wybrał) - ?? '' zwraca pusty string
+      // exp_level may be null (if the user did not choose one) - ?? '' returns an empty string
       const expLevelId = profile.exp_level?.id ?? '';
 
-      // Budowanie nowego stanu filtrów: spread aktualnych filtrów z formularza,
-      // nadpisując tylko technologie i seniority danymi z profilu.
-      // computeValue() odczytuje aktualny stan FiltersFormComponent (lokalizacja, wynagrodzenie itp.)
-      // dzięki temu dane które użytkownik już ustawił ręcznie nie są kasowane.
-      // technologies: Object.fromEntries(...) - stary format { id: true } dla wstecznej kompatybilności.
-      // selectedTechnologies - nowy format tablic obiektów { id, name } dla TechPickera.
-      // Oba formaty opisane w FiltersInitialState w filters-form.types.ts
+      // Build the new filter state: spread the current filters from the form,
+      // overriding only technologies and seniority with profile data.
+      // computeValue() reads the current FiltersFormComponent state (location, salary, etc.)
+      // so data the user already set manually is not wiped.
+      // technologies: Object.fromEntries(...) - the old { id: true } format for backward compat.
+      // selectedTechnologies - the new array-of-objects { id, name } format for the TechPicker.
+      // Both formats are described in FiltersInitialState in filters-form.types.ts
       const nextFilters: FiltersInitialState = {
         ...(this.filtersFormRef?.computeValue() ?? {}),
         selectedTechnologies,
@@ -153,14 +153,14 @@ export class HomeComponent implements OnInit, OnDestroy {
         seniority: expLevelId ? { [expLevelId]: true } : {},
       };
 
-      // savedFilters to @Input dla FiltersFormComponent - zmiana wartości wyzwoli ponowne
-      // patchValue w FiltersFormComponent.ngOnChanges() (patrz: filters-form.component.ts)
+      // savedFilters is an @Input for FiltersFormComponent - changing the value triggers another
+      // patchValue in FiltersFormComponent.ngOnChanges() (see: filters-form.component.ts)
       this.savedFilters = nextFilters;
-      // Bezpośredni patch - szybsza ścieżka niż czekanie na ngOnChanges
+      // Direct patch - a faster path than waiting for ngOnChanges
       this.filtersFormRef?.patchValue(nextFilters);
-      // Zapis do localStorage żeby stan przeżył nawigację do /offers i powrót
+      // Save to localStorage so the state survives navigation to /offers and back
       this.autoFillForm();
-      // Ręczne powiadomienie Angular CD - konieczne bo to async callback
+      // Manually notify Angular CD - required because this is an async callback
       this.cdr.markForCheck();
     } catch (error) {
       console.error('Failed to fill form from profile:', error);
@@ -171,40 +171,40 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Blok tylko dla przeglądarki - guard przed SSR.
-    // Na serwerze nie ma router.events do subskrybowania
+    // Browser-only block - guard against SSR.
+    // On the server there are no router.events to subscribe to
     if (!isPlatformBrowser(this.platformId)) return;
-    // Subskrypcja na zdarzenia routera - wywołuje markForCheck() przy każdej nawigacji.
-    // Konieczne gdy komponent używa OnPush change detection i router zmienia URL
-    // bez fizycznego zniszczenia i ponownego stworzenia komponentu
+    // Subscribe to router events - calls markForCheck() on every navigation.
+    // Required when the component uses OnPush change detection and the router changes the URL
+    // without physically destroying and recreating the component
     this.router.events.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.cdr.markForCheck();
     });
   }
 
   ngOnDestroy(): void {
-    // Anulowanie wszystkich aktywnych timerów (setTimeout z analyzeCV).
-    // Bez tego callback timera może uruchomić się po zniszczeniu komponentu
-    // i próbować zmienić stan nieistniejącego komponentu (błąd w Angular)
+    // Cancel all active timers (setTimeout from analyzeCV).
+    // Without this a timer callback may run after the component is destroyed
+    // and try to change the state of a non-existent component (an Angular error)
     this.scanTimers.forEach(t => clearTimeout(t));
-    // Sygnał do wszystkich takeUntil(destroy$) - kończy wszystkie aktywne subskrypcje RxJS
+    // Signal all takeUntil(destroy$) - completes every active RxJS subscription
     this.destroy$.next();
-    // Zamknięcie Subject - zwalnia zasoby wewnętrzne RxJS
+    // Close the Subject - releases RxJS internal resources
     this.destroy$.complete();
   }
 
-  // Zapisuje aktualny stan filtrów do localStorage.
-  // Zapisywane są tylko surowe obiekty boolean i indeksy (nie przeliczone tablice ID),
-  // bo te są wyliczane dynamicznie przez computeValue() przy każdym odczycie.
-  // FILTERS_STORAGE_KEY (patrz: filters-form.types.ts) to stały klucz współdzielony
-  // z /offers i /profile - zmiana filtrów na /home jest widoczna na /offers po nawigacji
+  // Saves the current filter state to localStorage.
+  // Only raw boolean objects and indexes are saved (not the computed ID arrays),
+  // because those are derived dynamically by computeValue() on every read.
+  // FILTERS_STORAGE_KEY (see: filters-form.types.ts) is a shared key used by
+  // /offers and /profile - changing filters on /home is visible on /offers after navigation
   private saveFilters(value: FiltersValue): void {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      // Destrukturyzacja tylko tych pól które mają sens w localStorage.
-      // Nie zapisujemy specializationIds / technologyIds itp. bo są przeliczane dynamicznie.
-      // selectedLocations / selectedTechnologies zapisujemy jako obiekty { id, name }
-      // żeby picker mógł odtworzyć stan bez ponownego szukania po ID w backendzie
+      // Destructure only the fields that make sense in localStorage.
+      // We don't save specializationIds / technologyIds etc. because they are computed dynamically.
+      // selectedLocations / selectedTechnologies are saved as { id, name } objects
+      // so the picker can restore its state without looking IDs up in the backend again
       const { itArea, jobSites, workMode, seniority,
               salaryFromIndex, salaryToIndex,
               selectedLocations, selectedTechnologies } = value;
@@ -213,44 +213,44 @@ export class HomeComponent implements OnInit, OnDestroy {
         salaryFromIndex, salaryToIndex,
         selectedLocations, selectedTechnologies,
       }));
-    } catch { /* ignore - localStorage może być niedostępny (tryb prywatny, brak miejsca) */ }
+    } catch { /* ignore - localStorage may be unavailable (private mode, no space) */ }
   }
 
-  // Wywoływane przez (applyClicked) z FiltersFormComponent gdy użytkownik kliknie "Szukaj ofert".
-  // Zapisuje filtry do localStorage i nawiguje do /offers z filtrami w history.state.
-  // history.state (state: { filters, cvFileName }) jest odczytywany w offers.component.ts
-  // w subskrypcji route.queryParamMap - patrz logika priorytetu źródeł w offers.component.ts
+  // Called via (applyClicked) from FiltersFormComponent when the user clicks "Search offers".
+  // Saves the filters to localStorage and navigates to /offers with the filters in history.state.
+  // history.state (state: { filters, cvFileName }) is read in offers.component.ts
+  // in the route.queryParamMap subscription - see the source priority logic in offers.component.ts
   onSubmit(value: FiltersValue): void {
     this.saveFilters(value);
     this.router.navigate(['/offers'], {
-      // cvFileName - nazwa pliku CV (jeśli wgrany) przekazywana do /offers żeby wyświetlić badge
+      // cvFileName - the CV file name (if uploaded) passed to /offers to show a badge
       state: { filters: value, cvFileName: this.selectedFile?.name ?? null },
     });
   }
 
-  // Prywatna metoda - zapisuje aktualny stan formularza do localStorage po programatycznym patchu.
-  // Wywołana po fillFromProfile() i po analizie CV żeby localStorage był zawsze aktualny.
-  // Bez tego: fillFromProfile() zmieniłby formularz ale localStorage zostałby z poprzednim stanem,
-  // a przy następnej nawigacji /offers->/home stan formularza cofnąłby się
+  // Private method - saves the current form state to localStorage after a programmatic patch.
+  // Called after fillFromProfile() and after CV analysis so localStorage is always up to date.
+  // Without it: fillFromProfile() would change the form but localStorage would keep the old state,
+  // and on the next /offers->/home navigation the form state would roll back
   private autoFillForm(): void {
     const value = this.filtersFormRef?.computeValue();
     if (value) this.saveFilters(value);
   }
 
-  // Usuwa wgrany plik CV i resetuje stan analizy.
-  // e.stopPropagation() - przycisk "Usuń" jest wewnątrz elementu dropzone który ma (click).
-  // Bez stopPropagation kliknięcie "Usuń" wywołałoby też kliknięcie dropzone -> otwarcie dialogu
+  // Removes the uploaded CV file and resets the analysis state.
+  // e.stopPropagation() - the "Remove" button is inside the dropzone element which has a (click).
+  // Without stopPropagation, clicking "Remove" would also trigger the dropzone click -> open the dialog
   removeFile(e: Event): void {
     e.stopPropagation();
     this.selectedFile = null;
     this.scanComplete = false;
-    // Czyszczenie technologii wykrytych z CV w formularzu filtrów
+    // Clear the technologies detected from the CV in the filter form
     this.filtersFormRef?.patchValue({ selectedTechnologies: [] });
   }
 
-  // Waliduje plik i inicjuje analizę.
-  // Sprawdza format i rozmiar PRZED wysłaniem do API - szybka odpowiedź dla użytkownika.
-  // file.name.toLowerCase() - porównanie case-insensitive (ważne na Windows gdzie "CV.PDF" jest OK)
+  // Validates the file and starts the analysis.
+  // Checks the format and size BEFORE sending to the API - fast feedback for the user.
+  // file.name.toLowerCase() - case-insensitive comparison (important on Windows where "CV.PDF" is OK)
   private handleFile(file: File): void {
     const allowedExtensions = ['.pdf', '.doc', '.docx'];
     if (!allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
@@ -258,7 +258,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // file.size jest w bajtach - porównanie z MAX_CV_SIZE_BYTES (10 * 1024 * 1024)
+    // file.size is in bytes - compared against MAX_CV_SIZE_BYTES (10 * 1024 * 1024)
     if (file.size > MAX_CV_SIZE_BYTES) {
       this.uploadError = `Plik jest za duży. Maksymalny rozmiar to ${MAX_CV_SIZE_MB} MB.`;
       return;
@@ -266,48 +266,48 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.uploadError = null;
     this.selectedFile = file;
-    // Plik przeszedł walidację - rozpocznij upload i animację skanowania
+    // The file passed validation - start the upload and the scanning animation
     this.analyzeCV(file);
   }
 
-  // Wysyła plik CV do API i zarządza animacją postępu skanowania.
-  // Backend (POST /v1/cv/analyze) nie zwraca postępu w czasie rzeczywistym,
-  // dlatego animacja jest "fałszywa" - setTimeout skacze do 35% po 200ms
-  // żeby użytkownik widział że coś się dzieje, a nie patrzył na pasek w 0%.
-  // 150ms opóźnienie po odpowiedzi API daje czas na wyświetlenie "100% Zakończono!"
-  // zanim UI zmieni się na baner sukcesu
+  // Sends the CV file to the API and manages the scanning progress animation.
+  // The backend (POST /v1/cv/upload) does not return real-time progress,
+  // so the animation is "fake" - setTimeout jumps to 35% after 200ms
+  // so the user sees something happening instead of staring at a 0% bar.
+  // A 150ms delay after the API response gives time to show "100% Zakończono!"
+  // before the UI switches to the success banner
   private analyzeCV(file: File): void {
     this.isScanning = true; this.scanProgress = 0; this.scanStatus = 'Analiza CV...';
-    // Timer 1: po 200ms przeskakuje do 35% - sygnalizuje że API pracuje
+    // Timer 1: after 200ms jump to 35% - signals that the API is working
     this.scanTimers.push(setTimeout(() => { this.scanProgress = 35; this.cdr.markForCheck(); }, 200));
 
-    // Wysłanie pliku do backendu - CvApiService.uploadCv() zwraca Observable<LookupDto[]>
-    // takeUntil(destroy$) - anuluje request gdy użytkownik nawiguje poza /home
+    // Send the file to the backend - CvApiService.uploadCv() returns Observable<LookupDto[]>
+    // takeUntil(destroy$) - cancels the request when the user navigates away from /home
     this.cvApi.uploadCv(file).pipe(takeUntil(this.destroy$)).subscribe({
       next: (techs) => {
-        // API odpowiedziało sukcesem - ustawienie 100% i czekanie 150ms żeby użytkownik to zobaczył
+        // The API responded successfully - set 100% and wait 150ms so the user sees it
         this.scanProgress = 100; this.scanStatus = 'Zakończono!';
-        // Mapowanie odpowiedzi API (LookupDto[]) na LocationItem[] { id, name }
-        // potrzebny format dla TechPickera - patrz: tech-picker.component.ts
+        // Map the API response (LookupDto[]) to LocationItem[] { id, name }
+        // the format the TechPicker needs - see: tech-picker.component.ts
         const selectedTechnologies = techs.map(t => ({ id: t.id, name: t.name }));
-        // Timer 2: po 150ms przełącza UI na baner sukcesu i wstrzykuje technologie do formularza
+        // Timer 2: after 150ms switch the UI to the success banner and inject technologies into the form
         this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = true;
-          // Programatyczne ustawienie technologii wykrytych przez AI w FiltersFormComponent
+          // Programmatically set the technologies detected from the CV in FiltersFormComponent
           this.filtersFormRef?.patchValue({ selectedTechnologies });
-          // Zapis do localStorage żeby nowe technologie przeżyły nawigację do /offers
+          // Save to localStorage so the new technologies survive navigation to /offers
           this.autoFillForm();
           this.cdr.markForCheck();
         }, 150));
       },
       error: () => {
-        // Błąd API - ustawienie 100% i komunikatu błędu, potem reset UI
+        // API error - set 100% and an error message, then reset the UI
         this.scanProgress = 100; this.scanStatus = 'Nie udało się przeanalizować CV';
         this.scanTimers.push(setTimeout(() => {
           this.isScanning = false;
           this.scanComplete = false;
-          // Usunięcie pliku - użytkownik musi spróbować ponownie
+          // Remove the file - the user has to try again
           this.selectedFile = null;
           this.cdr.markForCheck();
         }, 150));
@@ -315,27 +315,27 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Handlery drag&drop dla dropzony CV.
-  // e.preventDefault() w onDragOver JEST KONIECZNE - bez tego przeglądarka ignoruje (drop).
-  // Zachowanie domyślne przeglądarki: otwórz plik bezpośrednio - preventDefault blokuje to.
-  // isDragging kontroluje klasę CSS .dragging na dropzonie (wizualne podświetlenie)
+  // Drag&drop handlers for the CV dropzone.
+  // e.preventDefault() in onDragOver IS REQUIRED - without it the browser ignores (drop).
+  // The browser's default behavior: open the file directly - preventDefault blocks that.
+  // isDragging controls the .dragging CSS class on the dropzone (visual highlight)
   onDragOver(e: DragEvent): void { e.preventDefault(); this.isDragging = true; }
   onDragLeave(e: DragEvent): void { e.preventDefault(); this.isDragging = false; }
   onDrop(e: DragEvent): void {
     e.preventDefault(); this.isDragging = false;
-    // dataTransfer?.files[0] - pierwszy upuszczony plik (obsługujemy tylko jeden)
+    // dataTransfer?.files[0] - the first dropped file (we only handle one)
     if (e.dataTransfer?.files.length) this.handleFile(e.dataTransfer.files[0]);
   }
 
-  // Handler dla natywnego <input type="file"> (ukryty, wyzwalany kliknięciem dropzony).
-  // e.target as HTMLInputElement - TypeScript nie zna dokładnego typu EventTarget
+  // Handler for the native <input type="file"> (hidden, triggered by clicking the dropzone).
+  // e.target as HTMLInputElement - TypeScript doesn't know the exact EventTarget type
   onFileSelected(e: Event): void {
     const input = e.target as HTMLInputElement;
     if (input.files?.length) this.handleFile(input.files[0]);
   }
 
-  // Getter delegowany do AuthService - zwraca funkcję isAuthenticated z Keycloak.
-  // Getter (a nie właściwość) bo authService.isAuthenticated to funkcja, nie wartość boolean.
-  // Używany w szablonie: *ngIf="isAuthenticated()" do warunkowego pokazania "Uzupełnij z profilu"
+  // Getter delegated to AuthService - returns the isAuthenticated function from Keycloak.
+  // A getter (not a property) because authService.isAuthenticated is a function, not a boolean value.
+  // Used in the template: *ngIf="isAuthenticated()" to conditionally show "Fill from profile"
   get isAuthenticated() { return this.authService.isAuthenticated; }
 }

@@ -1,5 +1,5 @@
-// Strona /legal - dwie zakładki: "Jak korzystać" i "Regulamin".
-// Odczytuje aktywną zakładkę z query param ?tab= i synchronizuje URL przez replaceUrl.
+// /legal page - two tabs: "How to use" and "Terms".
+// Reads the active tab from the ?tab= query param and syncs the URL via replaceUrl.
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -21,8 +21,8 @@ export class LegalComponent implements OnInit {
 
   activeTab: 'how' | 'terms' = 'how';
 
-  // snapshot zamiast subskrypcji - zakładka nie zmienia się przez nawigację,
-  // bo setTab() używa replaceUrl (nie tworzy nowego wpisu w historii)
+  // snapshot instead of a subscription - the tab does not change through navigation,
+  // because setTab() uses replaceUrl (it doesn't create a new history entry)
   ngOnInit(): void {
     const tab = this.route.snapshot.queryParamMap.get('tab');
     if (tab === 'how') {
@@ -32,7 +32,7 @@ export class LegalComponent implements OnInit {
     }
   }
 
-  // replaceUrl: true - "Wstecz" wraca do poprzedniej strony, nie do poprzedniej zakładki
+  // replaceUrl: true - "Back" returns to the previous page, not the previous tab
   setTab(tab: 'how' | 'terms'): void {
     this.activeTab = tab;
     this.router.navigate([], {
@@ -42,7 +42,7 @@ export class LegalComponent implements OnInit {
     });
   }
 
-  // Dane statyczne trzymane w klasie (nie w HTML) żeby łatwo dodawać/usuwać pozycje
+  // Static data kept in the class (not in HTML) to make adding/removing items easy
   readonly steps = [
     { number: '01', icon: '🎛️', title: 'Ustaw filtry preferencji', desc: 'Wybierz interesujące Cię role, poziom doświadczenia, technologie, lokalizację, tryb pracy i widełki płacowe. Filtry działają w czasie rzeczywistym.' },
     { number: '02', icon: '📄', title: 'Wgraj CV (wymaga konta)', desc: 'Prześlij plik PDF, DOC lub DOCX — backend wyciągnie z niego technologie i automatycznie uzupełni je w filtrach. Funkcja dostępna po zalogowaniu.' },
@@ -68,7 +68,7 @@ export class LegalComponent implements OnInit {
     { q: 'Jak często pojawiają się nowe oferty?', a: 'Oferty są regularnie aktualizowane i od razu widoczne na liście.' },
   ];
 
-  // null gdy żadne pytanie nie jest otwarte - wzorzec "jeden otwarty naraz"
+  // null when no question is open - the "one open at a time" pattern
   expandedFaq: number | null = null;
 
   toggleFaq(index: number): void {
