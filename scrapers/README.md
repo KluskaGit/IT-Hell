@@ -20,7 +20,9 @@ IT-Hell Scrapers is a data collection project designed to concurrently scrape jo
       REDIS_CONSUMER=
 
      ```
-4. **Run scrapers**:
+4. **Configure scrapers (optional)**:
+   - Edit `app-config.yaml` to adjust scraper settings.
+5. **Run scrapers**:
     1. Run all scrapers:
     ```
     uv run main.py
