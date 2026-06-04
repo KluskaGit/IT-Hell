@@ -1,0 +1,9 @@
+pracuj_pl:
+  min_delay: 5
+  max_delay: 7
+  pages: 1 # Number of pages to scrape
+
+theprotocol_it:
+  min_delay: 5
+  max_delay: 7
+  pages: 1 # Number of pages to scrape

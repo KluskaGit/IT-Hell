@@ -35,7 +35,6 @@ class UserProfileService:
                 technologies.append(tech)
 
         if not existing_profile:
-            # Mechanizm UPSERT - jeśli profil nie istnieje, tworzymy go w locie
             return await self.repo.create_profile(
                 user_id=user_id,
                 raw_cv=profile_data.raw_cv,

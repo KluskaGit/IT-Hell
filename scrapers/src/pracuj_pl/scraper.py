@@ -10,7 +10,7 @@ from logging import Logger
 from curl_cffi.requests import AsyncSession
 
 from src.core.redis import redis_connect
-from src.pracuj_pl.job_offers.job_offers import extract_job_offers, fill_out_offer
+from src.pracuj_pl.offers import extract_job_offers, fill_out_offer
 from src.schemas import JobOffer
 from src.helpers import html_to_json
 
@@ -18,10 +18,15 @@ DATA_PATH = "pracuj_pl/data"
 
 class ScraperPracujPL:
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, config: Dict):
         self.logger = logger
-        self.min_delay = 4
-        self.max_delay = 7
+        
+        try:
+            self.min_delay = config["min_delay"]
+            self.max_delay = config["max_delay"]
+            self.page_limit = config["pages"]
+        except KeyError as e:
+            raise KeyError(f"Please specify min_delay, max_delay and pages, {e}")
 
         load_dotenv()
         self.redis_client = redis_connect()
@@ -113,8 +118,9 @@ class ScraperPracujPL:
                     self.logger.error(f"Failed to extract offers on page {page}: {e}")
                     break
                 
+                if page >= self.page_limit:
+                    break
                 page += 1
-                break
 
             self.logger.info("Finished putting pages in queue. Waiting for workers to finish.")
             await self.job_que.join()

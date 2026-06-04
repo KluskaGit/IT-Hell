@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from datetime import datetime
 
 class JobOffer(BaseModel):
     site: str
@@ -14,3 +15,7 @@ class JobOffer(BaseModel):
     salary_from: Optional[float] = None
     salary_to: Optional[float] = None
     description: str = "Brak"
+    publication_date: Optional[datetime] = None
+    expiration_date: Optional[datetime] = None
+
+    model_config = ConfigDict(validate_assignment=True)

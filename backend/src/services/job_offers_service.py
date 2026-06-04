@@ -1,5 +1,6 @@
 from typing import List, Optional, Type, TypeVar
 from uuid import UUID
+from datetime import datetime
 
 from src.repositories.job_offers import JobOffersRepository
 from src.models.job_offers import JobOffer
@@ -91,6 +92,8 @@ class JobOffersService:
         description: str,
         salary_from: Optional[float] = None,
         salary_to: Optional[float] = None,
+        publication_date: Optional[datetime] = None,
+        expiration_date: Optional[datetime] = None,
     ) -> JobOffer:
         """
         Create a new job offer with validation.
@@ -123,6 +126,8 @@ class JobOffersService:
             description=description,
             salary_from=salary_from,
             salary_to=salary_to,
+            publication_date=publication_date,
+            expiration_date=expiration_date,
         )
 
     async def update(
@@ -135,6 +140,8 @@ class JobOffersService:
         salary_to: Optional[float] = None,
         work_type_id: Optional[UUID] = None,
         exp_level_id: Optional[UUID] = None,
+        publication_date: Optional[datetime] = None,
+        expiration_date: Optional[datetime] = None,
     ) -> JobOffer:
         """
         Update a job offer with validation.
@@ -152,6 +159,8 @@ class JobOffersService:
             salary_to=salary_to,
             work_type_id=work_type_id,
             exp_level_id=exp_level_id,
+            publication_date=publication_date,
+            expiration_date=expiration_date,
         )
 
         if updated_offer is None:
@@ -244,4 +253,6 @@ class JobOffersService:
             locations=locations,
             salary_from=offer_data.salary_from,
             salary_to=offer_data.salary_to,
+            publication_date=offer_data.publication_date,
+            expiration_date=offer_data.expiration_date,
         )

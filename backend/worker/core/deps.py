@@ -11,8 +11,7 @@ from src.services.lookups_service import LookupsService
 @asynccontextmanager
 async def get_lookups_service() -> AsyncGenerator[LookupsService, None]:
     """
-    Kapsułkuje logikę otwierania sesji DB, tworzenia repozytorium 
-    i wstrzykiwania go do serwisu.
+    Async context manager for LookupsService.
     """
     async with a_sessionmaker() as session:
         try:
@@ -28,8 +27,7 @@ async def get_lookups_service() -> AsyncGenerator[LookupsService, None]:
 @asynccontextmanager
 async def get_job_offers_service() -> AsyncGenerator[JobOffersService, None]:
     """
-    Kapsułkuje logikę otwierania sesji DB, tworzenia repozytorium 
-    i wstrzykiwania go do serwisu.
+    Async context manager for JobOffersService.
     """
     async with a_sessionmaker() as session:
         try:

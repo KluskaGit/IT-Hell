@@ -140,30 +140,4 @@ class TechExtractorService:
         # Return as list in any order (duplicates already removed by dict)
         return list(matched_techs_dict.values())
 
-    async def get_extraction_stats(self, cv_text: str) -> Dict:
-        """
-        Get detailed statistics about technology extraction.
-        Useful for debugging and testing.
-        """
-        await self._ensure_tech_cache()
-        
-        candidates = self._extract_words_from_text(cv_text)
-        matched_list: List[TechMatch] = []
-        
-        for candidate in candidates:
-            match = self._match_word(candidate)
-            if match:
-                matched_list.append(match)
-
-        return {
-            "total_candidates_found": len(candidates),
-            "unique_candidates": len(set(candidates)),
-            "matches_above_threshold": len(matched_list),
-            "matched_technologies": [
-                {
-                    "name": m.technology.name,
-                    "confidence": f"{m.confidence:.2%}"
-                }
-                for m in matched_list
-            ]
-        }
+    

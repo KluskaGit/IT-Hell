@@ -21,6 +21,8 @@ async def save_job_offer_to_db(payload: Dict) -> None:
             salary_from = payload.get("salary_from")
             salary_to = payload.get("salary_to")
             description = payload["description"]
+            publication_date = payload.get("publication_date")
+            expiration_date = payload.get("expiration_date")
 
             offer = JobOfferScraperCreate(
                 site_name=site,
@@ -34,7 +36,9 @@ async def save_job_offer_to_db(payload: Dict) -> None:
                 description=description,
                 location_names=locations,
                 salary_from=salary_from,
-                salary_to=salary_to
+                salary_to=salary_to,
+                publication_date=publication_date,
+                expiration_date=expiration_date
             )
             # Normalization process
             normalize_offer(offer)
