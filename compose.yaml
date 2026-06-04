@@ -19,6 +19,12 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
   scrapers:
     build: ./scrapers
@@ -54,7 +60,8 @@ services:
     networks:
       - app-network
     depends_on:
-      - database
+      database:
+        condition: service_healthy
 
   backend:
     build: ./backend
@@ -70,11 +77,12 @@ services:
     depends_on:
       - database
       - keycloak
+      - migrations
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.0
     container_name: keycloak-dev
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
@@ -82,6 +90,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
+      - ./frontend/it-hell-realm.json:/opt/keycloak/data/import/it-hell-realm.json:ro
 
   frontend:
     build: ./frontend
