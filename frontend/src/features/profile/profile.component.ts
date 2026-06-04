@@ -128,7 +128,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Buduje savedFilters i currentFilterValue z danych profilu.
   // Wywoływane też po udanym onSave() żeby zsynchronizować stan z odpowiedzią backendu
   private patchProfileData(profile: UserProfileDto): void {
-    const selectedTechnologies = profile.technologies.map(t => ({
+    const selectedTechnologies = (profile.technologies ?? []).map(t => ({
       id: t.id,
       name: t.name,
     }));

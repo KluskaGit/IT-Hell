@@ -95,7 +95,7 @@ describe('AuthService', () => {
     expect(keycloakInstanceMock.init).toHaveBeenCalledWith({
       onLoad: 'check-sso',
       pkceMethod: 'S256',
-      redirectUri: window.location.href,
+      redirectUri: window.location.origin + window.location.pathname,
     });
 
     expect(service.isAuthenticated()).toBe(true);
@@ -157,11 +157,11 @@ describe('AuthService', () => {
     });
   });
 
-  it('login should use current location href when redirectPath is not provided', async () => {
+  it('login should use origin+pathname without query params when redirectPath is not provided', async () => {
     await service.login();
 
     expect(keycloakInstanceMock.login).toHaveBeenCalledWith({
-      redirectUri: window.location.href,
+      redirectUri: window.location.origin + window.location.pathname,
     });
   });
 
@@ -180,7 +180,7 @@ describe('AuthService', () => {
 
     expect(keycloakInstanceMock.logout).toHaveBeenCalledTimes(1);
     expect(keycloakInstanceMock.logout).toHaveBeenCalledWith({
-      redirectUri: window.location.origin,
+      redirectUri: window.location.origin + '/',
     });
     expect(clearIntervalSpy).toHaveBeenCalledWith(123);
     expect(service.isAuthenticated()).toBe(false);

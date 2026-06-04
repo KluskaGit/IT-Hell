@@ -1,13 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject, of, Subject } from 'rxjs';
+import { BehaviorSubject, NEVER, of, Subject } from 'rxjs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { OffersComponent } from './offers.component';
 import { AuthService } from '../auth/auth.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
 import { JobOffersApiService, MappedOffer } from '../../app/core/services/job-offers-api.service';
+import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 import { FILTERS_STORAGE_KEY, FiltersValue } from '../../app/shared/filters-form/filters-form.types';
 
 describe('OffersComponent', () => {
@@ -31,6 +32,18 @@ describe('OffersComponent', () => {
   const jobOffersApiMock = {
     getOffers: vi.fn(),
     mapToOffer: vi.fn(),
+  };
+
+  // NEVER - forkJoin nigdy nie kończy, FiltersFormComponent nie emituje filtersChange automatycznie.
+  // Gdyby użyć of([]), forkJoin zakończyłby się i wyemitował filtersChange na starcie,
+  // co triggerowałoby getOffers() raz extra (przed jawnym wywołaniem w testach).
+  const lookupsApiMock = {
+    getTechnologies:     vi.fn().mockReturnValue(NEVER),
+    getSpecializations:  vi.fn().mockReturnValue(NEVER),
+    getLocations:        vi.fn().mockReturnValue(NEVER),
+    getSites:            vi.fn().mockReturnValue(NEVER),
+    getExperienceLevels: vi.fn().mockReturnValue(NEVER),
+    getWorkTypes:        vi.fn().mockReturnValue(NEVER),
   };
 
   const emptyFilters: FiltersValue = {
@@ -140,6 +153,7 @@ describe('OffersComponent', () => {
         { provide: AuthService, useValue: authServiceMock },
         { provide: UserApiService, useValue: userApiMock },
         { provide: JobOffersApiService, useValue: jobOffersApiMock },
+        { provide: LookupsApiService, useValue: lookupsApiMock },
         { provide: PLATFORM_ID, useValue: 'browser' },
       ],
     }).compileComponents();

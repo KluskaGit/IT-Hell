@@ -5,7 +5,7 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnChanges, O
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { forkJoin, of, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, catchError } from 'rxjs/operators';
 
 import { LocationItem, LocationPickerComponent } from '../location-picker/location-picker.component';
 import { TechPickerComponent } from '../tech-picker/tech-picker.component';
@@ -105,12 +105,12 @@ export class FiltersFormComponent implements OnInit, OnChanges, OnDestroy {
     // forkJoin wysyła wszystkie requesty równolegle i czeka aż wszystkie się zakończą.
     // of([]) jako fallback gdy dana sekcja jest ukryta przez @Input (np. showRoles = false)
     forkJoin({
-      techs:     this.showTechnologies ? this.lookupsApi.getTechnologies()      : of([]),
-      specs:     this.showRoles        ? this.lookupsApi.getSpecializations()    : of([]),
-      locations: this.showLocation     ? this.lookupsApi.getLocations()          : of([]),
-      sites:     this.showSites        ? this.lookupsApi.getSites()              : of([]),
-      expLevels: this.showExpLevel     ? this.lookupsApi.getExperienceLevels()   : of([]),
-      workTypes: this.showWorkMode     ? this.lookupsApi.getWorkTypes()          : of([]),
+      techs:     this.showTechnologies ? this.lookupsApi.getTechnologies().pipe(catchError(() => of([])))     : of([]),
+      specs:     this.showRoles        ? this.lookupsApi.getSpecializations().pipe(catchError(() => of([])))  : of([]),
+      locations: this.showLocation     ? this.lookupsApi.getLocations().pipe(catchError(() => of([])))        : of([]),
+      sites:     this.showSites        ? this.lookupsApi.getSites().pipe(catchError(() => of([])))            : of([]),
+      expLevels: this.showExpLevel     ? this.lookupsApi.getExperienceLevels().pipe(catchError(() => of([]))) : of([]),
+      workTypes: this.showWorkMode     ? this.lookupsApi.getWorkTypes().pipe(catchError(() => of([])))        : of([]),
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: ({ techs, specs, locations, sites, expLevels, workTypes }) => {
         // dedupeByKey usuwa duplikaty które backend czasem zwraca (ten sam ID kilka razy)

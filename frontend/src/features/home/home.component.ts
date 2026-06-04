@@ -131,7 +131,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       // Mapowanie technologii z formatu API ({ id, name, ...inne pola }) na LocationItem { id, name }.
       // FiltersFormComponent (TechPicker) oczekuje dokładnie tego formatu
-      const selectedTechnologies = profile.technologies.map(t => ({
+      const selectedTechnologies = (profile.technologies ?? []).map(t => ({
         id: t.id,
         name: t.name,
       }));

@@ -601,7 +601,7 @@ export class OffersComponent implements OnInit, OnDestroy {
     try {
       const profile = await this.userApi.getMyProfile();
 
-      const selectedTechnologies = profile.technologies.map((t: { id: string; name: string }) => ({
+      const selectedTechnologies = (profile.technologies ?? []).map((t: { id: string; name: string }) => ({
         id: t.id,
         name: t.name,
       }));

@@ -80,12 +80,19 @@ export class AuthService {
     //   onLoad: 'check-sso'   - sprawdza czy istnieje aktywna sesja SSO (nie wymaga logowania)
     //   pkceMethod: 'S256'     - PKCE (Proof Key for Code Exchange) - zabezpieczenie OAuth2
     //                            dla aplikacji SPA (brak backendu w przepływie tokenu)
-    //   redirectUri            - adres powrotu po zalogowaniu/wylogowaniu w Keycloak
-    await this.keycloak.init({
-      onLoad: 'check-sso',
-      pkceMethod: 'S256',
-      redirectUri: window.location.href,
-    });
+    //   redirectUri            - adres powrotu po zalogowaniu/wylogowaniu w Keycloak.
+    //                            Używamy origin+pathname (bez query params) - Keycloak wildcard *
+    //                            nie obejmuje query parameters, więc np. /offers?seniority=...
+    //                            byłoby odrzucone jako "Invalid parameter: redirect_uri"
+    try {
+      await this.keycloak.init({
+        onLoad: 'check-sso',
+        pkceMethod: 'S256',
+        redirectUri: window.location.origin + window.location.pathname,
+      });
+    } catch {
+      // Keycloak niedostępny - aplikacja działa w trybie niezalogowanym
+    }
 
     this.initialized = true;
     // Aktualizacja sygnałów isAuthenticated i username na podstawie odpowiedzi Keycloak
@@ -170,10 +177,12 @@ export class AuthService {
       await this.init();
     }
 
-    // Budowanie absolutnego URL powrotu - Keycloak wymaga pełnego URL (nie relatywnego)
+    // Budowanie absolutnego URL powrotu - Keycloak wymaga pełnego URL (nie relatywnego).
+    // window.location.href pominięty celowo - zawiera query params których Keycloak wildcard
+    // nie akceptuje; po zalogowaniu filtry są odtwarzane z localStorage
     const redirectUri = redirectPath
       ? `${window.location.origin}${redirectPath}`
-      : window.location.href;
+      : window.location.origin + window.location.pathname;
 
     try {
       // keycloak.login() przekierowuje przeglądarkę na stronę logowania Keycloak.
@@ -193,7 +202,9 @@ export class AuthService {
     this.stopTokenRefresh();
 
     try {
-      await this.keycloak?.logout({ redirectUri: window.location.origin });
+      // window.location.origin nie ma ukośnika (np. "http://localhost"), a Keycloak wildcard
+      // "http://localhost/*" wymaga ścieżki - dodajemy "/" żeby pasowało do wzorca
+      await this.keycloak?.logout({ redirectUri: window.location.origin + '/' });
     } catch { /* keycloak unavailable */ }
 
     // Reset stanu - na wypadek gdyby logout() nie przekierował (np. Keycloak niedostępny)

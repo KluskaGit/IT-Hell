@@ -79,14 +79,7 @@ services:
     networks:
       - app-network
     volumes:
-      # Brak trwalego wolumenu danych Keycloak (dev): start-dev --import-realm importuje realm
-      # tylko gdy NIE istnieje. Bez persystencji realm jest re-importowany przy kazdym starcie,
-      # wiec zmiany w keyCloak/import/it-hell-realm.json (np. redirect URI) dzialaja po restarcie.
       - ./keyCloak/themes:/opt/keycloak/themes
-      # Realm it-hell sledzony jest w frontend/it-hell-realm.json (galaz frontend-Marek2),
-      # a nie w keyCloak/import (ten katalog jest pusty). Montujemy plik wprost do katalogu
-      # importu, zeby start-dev --import-realm mial co zaimportowac (inaczej brak realmu,
-      # klienta backend-client i kont testowych -> logowanie nie dziala).
       - ./frontend/it-hell-realm.json:/opt/keycloak/data/import/it-hell-realm.json:ro
     restart: unless-stopped
 
@@ -131,8 +124,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      # 127.0.0.1 zamiast localhost - nginx nasluchuje tylko na IPv4 (listen 80),
-      # a wget z "localhost" probuje najpierw IPv6 ::1 -> falszywe "unhealthy"
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 10s
       timeout: 3s

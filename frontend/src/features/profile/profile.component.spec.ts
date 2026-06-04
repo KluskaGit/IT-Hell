@@ -3,12 +3,13 @@ import { PLATFORM_ID } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { of, throwError  } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { ProfileComponent } from './profile.component';
 import { AuthService } from '../auth/auth.service';
 import { UserApiService } from '../../app/core/services/user-api.service';
 import { CvApiService } from '../../app/core/services/cv-api.service';
+import { LookupsApiService } from '../../app/core/services/lookups-api.service';
 
 describe('ProfileComponent', () => {
   let fixture: ComponentFixture<ProfileComponent>;
@@ -30,6 +31,18 @@ describe('ProfileComponent', () => {
 
   const cvApiMock = {
     uploadCv: vi.fn(),
+  };
+
+  // NEVER - forkJoin w FiltersFormComponent nigdy nie kończy, więc filtersChange nie jest
+  // emitowany automatycznie podczas init. Dzięki temu currentFilterValue zostaje null
+  // dopóki test jawnie nie wywoła onFiltersChange().
+  const lookupsApiMock = {
+    getTechnologies:     vi.fn().mockReturnValue(NEVER),
+    getSpecializations:  vi.fn().mockReturnValue(NEVER),
+    getLocations:        vi.fn().mockReturnValue(NEVER),
+    getSites:            vi.fn().mockReturnValue(NEVER),
+    getExperienceLevels: vi.fn().mockReturnValue(NEVER),
+    getWorkTypes:        vi.fn().mockReturnValue(NEVER),
   };
 
     beforeEach(async () => {
@@ -81,6 +94,7 @@ describe('ProfileComponent', () => {
         { provide: AuthService, useValue: authServiceMock },
         { provide: UserApiService, useValue: userApiMock },
         { provide: CvApiService, useValue: cvApiMock },
+        { provide: LookupsApiService, useValue: lookupsApiMock },
         { provide: PLATFORM_ID, useValue: 'browser' },
         ],
     }).compileComponents();
