@@ -7,7 +7,6 @@ services:
     entrypoint: ["redis-server", "--port", "${REDIS_PORT}", "--requirepass", "${REDIS_PASSWORD}"]
     networks:
       - app-network
-    restart: unless-stopped
 
   database:
     image: postgres:18-alpine
@@ -20,83 +19,6 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
-
-  migrations:
-    build: ./backend
-    container_name: migrations
-    env_file:
-      - .env
-    entrypoint: ["uv", "run", "alembic", "upgrade", "head"]
-    networks:
-      - app-network
-    depends_on:
-      database:
-        condition: service_healthy
-    restart: "no"
-
-  backend:
-    build: ./backend
-    container_name: backend
-    extra_hosts:
-      - "localhost:host-gateway"
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    networks:
-      - app-network
-    depends_on:
-      database:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
-      migrations:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/docs').status==200 else 1)\""]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 10s
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.6.0
-    container_name: keycloak-dev
-    command: start-dev --import-realm
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-    ports:
-      - "127.0.0.1:8080:8080"
-    networks:
-      - app-network
-    volumes:
-      - ./keyCloak/themes:/opt/keycloak/themes
-      - ./frontend/it-hell-realm.json:/opt/keycloak/data/import/it-hell-realm.json:ro
-    restart: unless-stopped
-
-  worker:
-    build: ./backend
-    container_name: worker
-    entrypoint: ["uv", "run", "python", "-m", "worker.main"]
-    env_file:
-      - .env
-    networks:
-      - app-network
-    depends_on:
-      message-broker:
-        condition: service_started
-      migrations:
-        condition: service_completed_successfully
-    restart: unless-stopped
 
   scrapers:
     build: ./scrapers
@@ -110,7 +32,56 @@ services:
       - app-network
     depends_on:
       - worker
-    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    container_name: worker
+    entrypoint: ["uv", "run", "python", "-m", "worker.main"]
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - message-broker
+      - migrations
+
+  migrations:
+    build: ./backend
+    container_name: migrations
+    env_file:
+      - .env
+    entrypoint: ["uv", "run", "alembic", "upgrade", "head"]
+    networks:
+      - app-network
+    depends_on:
+      - database
+
+  backend:
+    build: ./backend
+    container_name: backend
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - database
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.0
+    container_name: keycloak-dev
+    command: start-dev
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
 
   frontend:
     build: ./frontend
@@ -120,19 +91,12 @@ services:
     networks:
       - app-network
     depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
-
+      - backend
 
 volumes:
   db-data:
+    driver: local
+  keycloak-data:
     driver: local
 
 networks:
