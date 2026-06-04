@@ -71,7 +71,6 @@ class ScraperPracujPL:
                 if next_data is not None:
                     fill_out_offer(next_data, offer)
                 
-                print(offer)
                 await self.redis_que.put(offer)
 
             except asyncio.CancelledError:
