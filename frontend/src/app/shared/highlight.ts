@@ -1,5 +1,5 @@
-// Podświetla fragment tekstu pasujący do query przez owinięcie w <strong> z kolorem.
-// escapeHtml zabezpiecza przed XSS - używane w [innerHTML] w location-picker i tech-picker.
+// Highlights the part of the text matching the query by wrapping it in a colored <strong>.
+// escapeHtml guards against XSS - used with [innerHTML] in location-picker and tech-picker.
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')

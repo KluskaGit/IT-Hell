@@ -1,49 +1,49 @@
-<!-- Wspólny pasek nawigacji - komponent app/shared/navbar/navbar.component.ts.
-     Wyświetla logo, linki i przycisk logowania/wylogowania (Keycloak przez AuthService) -->
+<!-- Shared navigation bar - the app/shared/navbar/navbar.component.ts component.
+     Shows the logo, links and the login/logout button (Keycloak via AuthService) -->
 <app-navbar></app-navbar>
 
-<!-- Dekoracyjne rozmyte plamy indigo w tle - identyczna technika jak na /home i /profile.
-     position: fixed w CSS sprawia że plamy pozostają nieruchome przy scrollowaniu.
-     z-index: -1 - pod wszystkimi elementami strony, tylko dekoracja wizualna -->
+<!-- Decorative blurred indigo background blobs - same technique as on /home and /profile.
+     position: fixed in CSS keeps the blobs static while scrolling.
+     z-index: -1 - below all page elements, purely visual decoration -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
 </div>
 
-<!-- Główny wrapper strony - wyśrodkowany kontener z max-width i paddingiem.
-     Zawiera trzy sekcje: hero (nagłówek), team (zespół), nav (linki nawigacyjne) -->
+<!-- Main page wrapper - a centered container with max-width and padding.
+     Contains three sections: hero (header), team, nav (navigation links) -->
 <div class="about-wrapper">
 
-  <!-- Sekcja hero - krótki nagłówek identyfikujący stronę i cel aplikacji.
-       Statyczny tekst, brak logiki Angular - żadne bindingi ani dyrektywy -->
+  <!-- Hero section - a short header identifying the page and the app's purpose.
+       Static text, no Angular logic - no bindings or directives -->
   <section class="hero-section">
-    <!-- Mała etykieta nad tytułem - styl "badge" z about.component.css,
-         identyczny wzorzec jak na /home (badge "Skaner Kompetencji") -->
+    <!-- Small label above the title - the "badge" style from about.component.css,
+         same pattern as on /home (the "Skaner Kompetencji" badge) -->
     <div class="badge">O projekcie</div>
-    <!-- text-gradient to klasa CSS nakładająca gradient indigo na tekst przez
-         background-clip: text + -webkit-text-fill-color: transparent - patrz: about.component.css -->
+    <!-- text-gradient is a CSS class applying an indigo gradient to the text via
+         background-clip: text + -webkit-text-fill-color: transparent - see: about.component.css -->
     <h1>Zespół <span class="text-gradient">IT-Hell</span></h1>
     <p class="hero-sub">Budujemy narzędzie, które pomaga programistom trafiać na oferty pracy naprawdę dla nich — nie kolejny agregator, który zalewa Cię spamem.</p>
   </section>
 
-  <!-- Sekcja zespołu - lista członków podzielona na dwie grupy: Frontend i Backend.
-       Czysto statyczna - avatary z inicjałami, brak zdjęć ani danych z API -->
+  <!-- Team section - a member list split into two groups: Frontend and Backend.
+       Purely static - avatars with initials, no photos or API data -->
   <section class="team-section">
     <h2 class="section-label">Zespół</h2>
 
-    <!-- Grupa Frontend - fioletowy kolor identyfikacyjny (#6366f1 = indigo primary).
-         team-group-dot to kolorowa kropka przy etykiecie grupy (inline style) -->
+    <!-- Frontend group - purple identifying color (#6366f1 = indigo primary).
+         team-group-dot is a colored dot next to the group label (inline style) -->
     <div class="team-group">
       <div class="team-group-label">
-        <!-- Kolorowa kropka identyfikująca grupę - kolor ustawiony inline style'em
-             żeby był widoczny od razu bez szukania klasy CSS -->
+        <!-- Colored dot identifying the group - color set via inline style
+             so it's visible right away without looking up a CSS class -->
         <span class="team-group-dot" style="background:#6366f1"></span>Frontend
       </div>
-      <!-- Siatka kart członków - CSS grid w about.component.css -->
+      <!-- Member card grid - a CSS grid in about.component.css -->
       <div class="team-grid">
-        <!-- Karta członka zespołu: avatar z inicjałami + imię.
-             Gradient avatara indywidualny dla każdej osoby (różne kolory gradientu).
-             MK = Marek K. (indigo -> fiolet) -->
+        <!-- Team member card: avatar with initials + name.
+             The avatar gradient is individual per person (different gradient colors).
+             MK = Marek K. (indigo -> purple) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#6366f1,#a855f7)">MK</div>
           <div class="team-info">
@@ -60,21 +60,21 @@
       </div>
     </div>
 
-    <!-- Grupa Backend - zielony kolor identyfikacyjny (#10b981 = emerald).
-         Osobny kolor grupy żeby wizualnie odróżnić frontend od backendu -->
+    <!-- Backend group - green identifying color (#10b981 = emerald).
+         A separate group color to visually distinguish frontend from backend -->
     <div class="team-group">
       <div class="team-group-label">
         <span class="team-group-dot" style="background:#10b981"></span>Backend
       </div>
       <div class="team-grid">
-        <!-- KK = Kamil K. (zielony -> cyan) -->
+        <!-- KK = Kamil K. (green -> cyan) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4)">KK</div>
           <div class="team-info">
             <strong>Kamil K.</strong>
           </div>
         </div>
-        <!-- MG = Marek G. (żółty -> zielony) -->
+        <!-- MG = Marek G. (yellow -> green) -->
         <div class="team-card">
           <div class="team-avatar" style="background: linear-gradient(135deg,#f59e0b,#10b981)">MG</div>
           <div class="team-info">
@@ -85,9 +85,9 @@
     </div>
   </section>
 
-  <!-- Sekcja nawigacyjna - karty z linkami do kluczowych stron aplikacji.
-       Używa Angular Router (routerLink) zamiast href żeby nie przeładowywać strony.
-       Każda karta to element <a> z routerLink - klikalny obszar prowadzący do innej trasy -->
+  <!-- Navigation section - cards with links to the app's key pages.
+       Uses Angular Router (routerLink) instead of href to avoid full page reloads.
+       Each card is an <a> with routerLink - a clickable area leading to another route -->
   <section class="nav-section">
     <h2 class="section-label">Eksploruj serwis</h2>
     <div class="nav-cards">
@@ -98,11 +98,11 @@
           <strong>Strona główna</strong>
           <span>Wgraj CV i znajdź oferty</span>
         </div>
-        <!-- Ikona strzałki w prawo - SVG inline, kolor dziedziczony przez stroke="currentColor" -->
+        <!-- Right-pointing arrow icon - inline SVG, color inherited via stroke="currentColor" -->
         <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
 
-      <!-- Link do listy ofert pracy -->
+      <!-- Link to the job offers list -->
       <a routerLink="/offers" class="nav-card">
         <div class="nav-card-icon">💼</div>
         <div class="nav-card-body">
@@ -112,9 +112,9 @@
         <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
 
-      <!-- Link do strony /legal z parametrem ?tab=how - otwiera zakładkę "Jak to działa".
-           [queryParams]="{tab:'how'}" dodaje parametr query do URL przez Angular Router.
-           Strona /legal odczytuje ten parametr i aktywuje odpowiednią zakładkę -->
+      <!-- Link to /legal with the ?tab=how param - opens the "How it works" tab.
+           [queryParams]="{tab:'how'}" adds a query param to the URL via Angular Router.
+           The /legal page reads this param and activates the matching tab -->
       <a routerLink="/legal" [queryParams]="{tab:'how'}" class="nav-card">
         <div class="nav-card-icon">⚡</div>
         <div class="nav-card-body">
@@ -124,7 +124,7 @@
         <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
 
-      <!-- Link do strony /legal z parametrem ?tab=terms - otwiera zakładkę "Regulamin" -->
+      <!-- Link to /legal with the ?tab=terms param - opens the "Terms" tab -->
       <a routerLink="/legal" [queryParams]="{tab:'terms'}" class="nav-card">
         <div class="nav-card-icon">📄</div>
         <div class="nav-card-body">
@@ -134,7 +134,7 @@
         <svg class="nav-card-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
 
-      <!-- Polityka i Regulamin wskazuja ten sam tab=terms bo sa w jednym dokumencie -->
+      <!-- Privacy Policy and Terms point to the same tab=terms because they're in one document -->
       <a routerLink="/legal" [queryParams]="{tab:'terms'}" class="nav-card">
         <div class="nav-card-icon">🔒</div>
         <div class="nav-card-body">
@@ -148,5 +148,5 @@
 
 </div>
 
-<!-- Stopka strony - komponent app/shared/footer/footer.component.ts -->
+<!-- Page footer - the app/shared/footer/footer.component.ts component -->
 <app-footer></app-footer>

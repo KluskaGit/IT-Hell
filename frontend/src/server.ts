@@ -12,7 +12,7 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-// Pliki statyczne z katalogu /browser - maxAge: 1y bo Angular dodaje hash do nazw bundli
+// Static files from the /browser folder - maxAge: 1y because Angular hashes bundle names
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
@@ -21,7 +21,7 @@ app.use(
   }),
 );
 
-// Pozostałe requesty obsługuje Angular SSR
+// All other requests are handled by Angular SSR
 app.use((req, res, next) => {
   angularApp
     .handle(req)
@@ -31,7 +31,7 @@ app.use((req, res, next) => {
     .catch(next);
 });
 
-// pm_id - obecne gdy proces uruchomiony przez PM2 (produkcja)
+// pm_id - present when the process is started by PM2 (production)
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
   app.listen(port, (error) => {

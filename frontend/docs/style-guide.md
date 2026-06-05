@@ -1,105 +1,105 @@
-# 🎨 Style Guide — CV_ANALIZER Frontend
+# 🎨 Style Guide — IT-Hell Frontend
 
-Design tokens, paleta kolorów, typografia, efekty wizualne i wzorce CSS używane w aplikacji. Uzupełnienie [głównego README](../README.md) i [`docs/features.md`](features.md).
+Design tokens, color palette, typography, visual effects and CSS patterns used in the app. Complements the [main README](../README.md) and [`docs/features.md`](features.md).
 
-## 📑 Spis treści
+## 📑 Table of contents
 
-- [Filozofia designu](#filozofia-designu)
-- [Paleta kolorów](#-paleta-kolorów)
-- [Skala szarości tekstu](#-skala-szarości-tekstu)
-- [Typografia](#-typografia)
-- [Spacing i radius](#-spacing-i-radius)
-- [Cienie (shadows)](#-cienie-shadows)
+- [Design philosophy](#design-philosophy)
+- [Color palette](#-color-palette)
+- [Text grayscale](#-text-grayscale)
+- [Typography](#-typography)
+- [Spacing and radius](#-spacing-and-radius)
+- [Shadows](#-shadows)
 - [Glassmorphism](#-glassmorphism)
 - [Glow effects](#-glow-effects)
-- [Gradienty](#-gradienty)
-- [Animacje](#-animacje)
-- [Wzorzec pill cards](#-wzorzec-pill-cards)
-- [Stany walidacji Angular](#-stany-walidacji-angular)
-- [Breakpointy responsive](#-breakpointy-responsive)
+- [Gradients](#-gradients)
+- [Animations](#-animations)
+- [Pill cards pattern](#-pill-cards-pattern)
+- [Angular validation states](#-angular-validation-states)
+- [Responsive breakpoints](#-responsive-breakpoints)
 - [CSS encapsulation](#-css-encapsulation)
 
 ---
 
-## Filozofia designu
+## Design philosophy
 
-| Cecha | Wartość |
+| Trait | Value |
 |---|---|
-| **Theme** | Light mode only (brak dark mode) |
-| **Główny kolor** | Indigo (`#6366f1` / Tailwind `indigo-500`) |
-| **Akcent** | Fiolet (`#a855f7` / Tailwind `violet-500`) w gradientach |
+| **Theme** | Light mode only (no dark mode) |
+| **Main color** | Indigo (`#6366f1` / Tailwind `indigo-500`) |
+| **Accent** | Violet (`#a855f7` / Tailwind `violet-500`) in gradients |
 | **Font** | DM Sans → Inter → system fallback |
-| **Locale** | `pl` (polskie formaty dat, separatorów) |
-| **Estetyka** | Glassmorphism (półprzezroczyste karty + backdrop-blur), miękkie cienie, animowane glow w tle |
-| **Typografia** | Duże, pogrubione nagłówki (font-weight 900), ściśnięte letter-spacing |
-| **Mikrointerakcje** | Hover lift (`translateY(-5px)`), animacje wejścia `fadeInUp` |
-| **Brak** | Bibliotek UI (Tailwind/Material/Bootstrap) — wszystko ręcznie w CSS |
+| **Locale** | `pl` (Polish date/separator formats) |
+| **Aesthetic** | Glassmorphism (semi-transparent cards + backdrop-blur), soft shadows, animated glow in the background |
+| **Typography** | Large, bold headings (font-weight 900), tight letter-spacing |
+| **Micro-interactions** | Hover lift (`translateY(-5px)`), `fadeInUp` entry animations |
+| **No** | UI libraries (Tailwind/Material/Bootstrap) — everything is hand-written CSS |
 
 ---
 
-## 🎨 Paleta kolorów
+## 🎨 Color palette
 
 ### Indigo (brand primary)
 
-Główny kolor aplikacji. Używany w przyciskach, ikonach, aktywnych elementach, focus rings.
+The app's main color. Used in buttons, icons, active elements, focus rings.
 
-| Token | Hex | Tailwind eq. | Użycie |
+| Token | Hex | Tailwind eq. | Used for |
 |---|---|---|---|
-| `--primary` | `#6366f1` | indigo-500 | Bazowy kolor akcentów, ikony, focus, pill checked |
-| `--primary-hover` | `#4f46e5` | indigo-600 | Hover na przyciskach |
-| `--primary-dark` | `#4338ca` | indigo-700 | Ciemniejsze tło submit-button |
-| `--primary-deep` | `#3730a3` | indigo-800 | Końcówka gradientu submit |
-| `--primary-light` | `#eef2ff` | indigo-50 | Tła tagów, hover secondary-button |
-| `--primary-ring` | `rgba(99,102,241,.16)` | — | Focus ring (półprzezroczyste indigo) |
+| `--primary` | `#6366f1` | indigo-500 | Base accent color, icons, focus, pill checked |
+| `--primary-hover` | `#4f46e5` | indigo-600 | Button hover |
+| `--primary-dark` | `#4338ca` | indigo-700 | Darker submit-button background |
+| `--primary-deep` | `#3730a3` | indigo-800 | Submit gradient end |
+| `--primary-light` | `#eef2ff` | indigo-50 | Tag backgrounds, secondary-button hover |
+| `--pri-ring` | `rgba(99,102,241,.16)` | — | Focus ring (semi-transparent indigo) |
 
-### Fiolet (akcent)
+### Violet (accent)
 
-Używany w gradientach (`text-gradient` w hero, kombo z indigo).
+Used in gradients (`text-gradient` in the hero, combined with indigo).
 
 | Token | Hex | Tailwind eq. |
 |---|---|---|
 | (inline) | `#a855f7` | violet-500 |
 | (inline) | `rgba(139,92,246,0.06)` | violet-500/6% — bg-glow-2 |
 
-### Stany (semantic colors)
+### States (semantic colors)
 
-| Token | Hex | Użycie |
+| Token | Hex | Used for |
 |---|---|---|
-| `--success` | `#10b981` | Banner sukcesu CV, komunikat zapisu |
-| `--success-bg` | `#ecfdf5` | Tło bannera sukcesu |
-| `--success-text` | `#065f46` | Tekst sukcesu (dark green) |
-| `--danger` | `#ef4444` | Błędy, przycisk „Usuń" |
-| `--danger-bg` | `#fef2f2` | Tło inputu z błędem |
-| `--danger-ring` | `rgba(239, 68, 68, 0.15)` | Focus ring inputu z błędem |
+| `--success` | `#10b981` | CV success banner, save message |
+| (inline) | `#ecfdf5` | Success banner background |
+| (inline) | `#065f46` | Success text (dark green) |
+| `--danger` | `#ef4444` | Errors, the "Remove" button |
+| (inline) | `#fef2f2` | Errored input background |
+| (inline) | `rgba(239, 68, 68, 0.15)` | Errored input focus ring |
 
 ---
 
-## 🌑 Skala szarości tekstu
+## 🌑 Text grayscale
 
-4-stopniowa skala oparta na Tailwind `slate-*`. Wszystkie strony używają tych samych odcieni.
+A 4-step scale based on Tailwind `slate-*`. All pages use the same shades.
 
-| Token | Hex | Slate eq. | Użycie |
+| Token | Hex | Slate eq. | Used for |
 |---|---|---|---|
-| `--ink-1` | `#0f172a` | slate-900 | Główne nagłówki (`h1`, `h2`) |
-| `--text-main` / `--ink-2` | `#1e293b` | slate-800 | Główny kolor tekstu, nazwy firm |
-| `--ink-3` / `--text-sub` | `#475569` / `#64748b` | slate-600 / slate-500 | Metadane, podpisy, etykiety |
-| `--text-muted` / `--ink-4` | `#94a3b8` | slate-400 | Placeholder, mało ważne info |
+| `--ink-1` | `#0f172a` | slate-900 | Main headings (`h1`, `h2`) |
+| `--text-main` / `--ink-2` | `#1e293b` | slate-800 | Main text color, company names |
+| `--ink-3` / `--text-sub` | `#475569` / `#64748b` | slate-600 / slate-500 | Metadata, captions, labels |
+| `--text-muted` / `--ink-4` | `#94a3b8` | slate-400 | Placeholder, low-importance info |
 
-### Tło i obramowania
+### Background and borders
 
-| Token | Hex | Użycie |
+| Token | Hex | Used for |
 |---|---|---|
-| `--bg` | `#f8fafc` | Główne tło strony (slate-50) |
-| `--bg-mesh-1` | `#e0e7ff` | Blado-indigo, gradient tła |
-| `--bg-mesh-2` | `#f1f5f9` | Blado-szary, środek gradientu |
-| `--border` | `rgba(226, 232, 240, 0.8)` | Półprzezroczyste obramowanie kart |
-| `--b-lt` | `#e8edf5` | Border light (linie między elementami) |
+| `--bg` | `#f8fafc` | Main page background (slate-50) |
+| `--bg-mesh-1` | `#e0e7ff` | Pale indigo, background gradient |
+| `--bg-mesh-2` | `#f1f5f9` | Pale gray, gradient middle |
+| `--border` | `rgba(226, 232, 240, 0.8)` | Semi-transparent card border |
+| `--b-lt` | `#e8edf5` | Border light (lines between elements) |
 | `--b-md` | `#dde4f0` | Border medium |
-| (inline) | `#cbd5e1` | Inputy, dropzone (slate-300) |
+| (inline) | `#cbd5e1` | Inputs, dropzone (slate-300) |
 
 ---
 
-## ✍️ Typografia
+## ✍️ Typography
 
 ### Font stack
 
@@ -107,95 +107,95 @@ Używany w gradientach (`text-gradient` w hero, kombo z indigo).
 font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 ```
 
-> 💡 **DM Sans** to font display użyty na nagłówkach. **Inter** to fallback i font tekstów. Brak importu Google Fonts w kodzie — fonty trzeba dodać do `index.html` (TODO).
+> 💡 **DM Sans** is the display font used in headings. **Inter** is the fallback and body font. There is no Google Fonts import in the code yet — the fonts need to be added to `index.html` (TODO).
 
-### Skala fontów (typowa)
+### Font scale (typical)
 
-| Element | Rozmiar | Weight | Letter-spacing |
+| Element | Size | Weight | Letter-spacing |
 |---|---|---|---|
 | Hero `h1` | `3rem` (48px) | `900` | `-1.5px` |
-| Sekcja `h2` | `1.5rem` (24px) | `800` | — |
-| Karta `h3` | `1.1rem` (17.6px) | `800` | — |
+| Section `h2` | `1.5rem` (24px) | `800` | — |
+| Card `h3` | `1.1rem` (17.6px) | `800` | — |
 | Body | `1rem` (16px) | `400-500` | — |
 | Subtitle / desc | `1.15rem` (18.4px) | `400` | — |
 | Meta / label | `0.85rem` (13.6px) | `600-700` | — |
 | Badge / pill | `0.8rem` (12.8px) | `700` | `0.05em` (uppercase) |
 | Small | `0.75rem` (12px) | `500-600` | — |
 
-### Hierarchia weight
+### Weight hierarchy
 
 ```
-font-weight: 400  → body text, opisy
-font-weight: 600  → labelki, etykiety
-font-weight: 700  → badge, pill, metadane
-font-weight: 800  → tytuły sekcji (h2, h3)
-font-weight: 900  → hero h1 (ekstremalnie bold)
+font-weight: 400  → body text, descriptions
+font-weight: 600  → labels
+font-weight: 700  → badge, pill, metadata
+font-weight: 800  → section titles (h2, h3)
+font-weight: 900  → hero h1 (extremely bold)
 ```
 
 ### Letter-spacing
 
-Hero używa **ujemnego** letter-spacingu (`-1.5px`) dla nowoczesnego, premium wyglądu. Badge i sekcje uppercase używają **dodatniego** (`0.05em`) dla czytelności.
+The hero uses **negative** letter-spacing (`-1.5px`) for a modern, premium look. Badges and uppercase sections use **positive** spacing (`0.05em`) for readability.
 
 ---
 
-## 📐 Spacing i radius
+## 📐 Spacing and radius
 
-### Promienie zaokrągleń
+### Border radii
 
-| Token | Wartość | Użycie |
+| Token | Value | Used for |
 |---|---|---|
-| `--radius-lg` | `20px` | Karty (glass-card, main-card) |
-| `--radius-md` | `12px` | Inputy, mniejsze elementy |
-| `--radius-md` (alt) | `10px` | Pola formularza |
-| (inline) | `50px` / `9999px` | Pille, badge (pill shape) |
-| (inline) | `50%` | Avatary, kółka (ikona success, logo firmy) |
-| (inline) | `4px` / `6px` | Pasek postępu, salary track |
+| `--radius-lg` | `20px` | Cards (glass-card, main-card) |
+| `--radius-md` | `12px` | Inputs, smaller elements |
+| (inline) | `10px` | Form fields |
+| (inline) | `50px` / `999px` | Pills, badges (pill shape) |
+| (inline) | `50%` | Avatars, circles (success icon, company logo) |
+| (inline) | `4px` / `6px` | Progress bar, salary track |
 
 ### Spacing
 
-Brak globalnych zmiennych spacing — wartości używane bezpośrednio w komponentach:
+No global spacing variables — values are used directly in the components:
 
-| Skala | Użycie |
+| Scale | Used for |
 |---|---|
-| `0.3rem` (5px) | Tight (między iconą a tekstem w meta) |
-| `0.5rem` (8px) | Default gap między elementami inline |
-| `0.75rem` (12px) | Padding inputu (góra-dół) |
-| `1rem` (16px) | Standardowy gap między sekcjami |
-| `1.5rem` (24px) | Większy gap (między grupami pól) |
-| `2rem` (32px) | Margin między sekcjami formularza |
-| `3rem` (48px) | Padding karty hero, dropzone |
+| `0.3rem` (5px) | Tight (between an icon and text in meta) |
+| `0.5rem` (8px) | Default gap between inline elements |
+| `0.75rem` (12px) | Input padding (top-bottom) |
+| `1rem` (16px) | Standard gap between sections |
+| `1.5rem` (24px) | Larger gap (between field groups) |
+| `2rem` (32px) | Margin between form sections |
+| `3rem` (48px) | Hero card / dropzone padding |
 
 ---
 
-## 🌫️ Cienie (shadows)
+## 🌫️ Shadows
 
-Skala 3-stopniowa:
+A 3-step scale:
 
-| Token | Wartość | Użycie |
+| Token | Value | Used for |
 |---|---|---|
-| `--sh-xs` | `0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02)` | Karty oferty (spoczynek) |
+| `--sh-xs` | `0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02)` | Offer cards (at rest) |
 | `--shadow-card` | `0 20px 40px -10px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)` | Glass-card, main-card |
-| `--sh-md` | `0 8px 32px -6px rgba(99,102,241,.18), 0 2px 8px rgba(0,0,0,.04)` | Karty oferty (hover) — **kolorowy cień indigo** |
+| `--sh-md` | `0 8px 32px -6px rgba(99,102,241,.18), 0 2px 8px rgba(0,0,0,.04)` | Offer cards (hover) — **colored indigo shadow** |
 | `--shadow-hover` | `0 28px 56px -12px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.04)` | Glass-card (hover) |
 
-> 💡 **Trick:** cienie z negatywnym offsetem Y i dużym spread (np. `-10px` w `--shadow-card`) dają miękki, rozlany efekt — bardziej naturalny niż klasyczne `box-shadow: 0 4px 8px`.
+> 💡 **Trick:** shadows with a negative Y offset and a large spread (e.g. `-10px` in `--shadow-card`) give a soft, diffused effect — more natural than a classic `box-shadow: 0 4px 8px`.
 
-> 💡 **Kolorowy cień:** karty ofert na hover dostają **indigo cień** (`rgba(99,102,241,.18)`) zamiast czarnego. To subtelnie wzmacnia brand color w mikrointerakcji.
+> 💡 **Colored shadow:** offer cards on hover get an **indigo shadow** (`rgba(99,102,241,.18)`) instead of a black one. It subtly reinforces the brand color in the micro-interaction.
 
 ---
 
 ## 💎 Glassmorphism
 
-Efekt „mlecznego szkła" używany w głównych kartach na `/profile` i `/offers`.
+The "milky glass" effect used in the main cards on `/profile` and `/offers`.
 
-### Tokeny
+### Tokens
 
 ```css
---glass-bg: rgba(255, 255, 255, 0.72);  /* białe tło z 72% przezroczystości */
---glass-blur: 16px;                      /* rozmycie backdrop-filter */
+--glass-bg: rgba(255, 255, 255, 0.72);  /* white background with 72% transparency */
+--glass-blur: 16px;                      /* backdrop-filter blur */
 ```
 
-### Implementacja
+### Implementation
 
 ```css
 .glass-card {
@@ -208,28 +208,28 @@ Efekt „mlecznego szkła" używany w głównych kartach na `/profile` i `/offer
 }
 ```
 
-> ⚠️ **Wymagania:**
-> - `backdrop-filter` nie działa bez tła pod spodem (potrzebne `bg-glow` lub gradient na `:host`)
-> - `-webkit-` prefix obowiązkowy dla Safari (do iOS 17.x)
-> - `border: 1px solid rgba(226, 232, 240, 0.8)` daje subtelną krawędź zamiast ostrego cięcia
+> ⚠️ **Requirements:**
+> - `backdrop-filter` doesn't work without a background behind it (needs `bg-glow` or a gradient on `:host`)
+> - the `-webkit-` prefix is mandatory for Safari (up to iOS 17.x)
+> - `border: 1px solid rgba(226, 232, 240, 0.8)` gives a subtle edge instead of a hard cut
 
-### Gdzie używane
+### Where it's used
 
-| Strona | Element |
+| Page | Element |
 |---|---|
-| `/profile` | `glass-card` (główne karty z danymi i CV) |
-| `/offers` | `.card` z `--card: rgba(255,255,255,0.92)` |
-| `/home` | NIE — proste białe tło (`rgba(255,255,255,0.95)`), lżejsze |
+| `/profile` | `glass-card` (the main data and CV cards) |
+| `/offers` | `.offer-card` with `--card: rgba(255,255,255,0.92)` |
+| `/home` | NO — a plain white background (`rgba(255,255,255,0.95)`), lighter |
 
-> 💡 **Decyzja designu:** home jest „lekka", profile i offers — „premium" (glassmorphism). Spójne ale różnicowane per kontekst.
+> 💡 **Design decision:** home is "light", profile and offers are "premium" (glassmorphism). Consistent but differentiated per context.
 
 ---
 
 ## ✨ Glow effects
 
-Animowane plamy tła używane na każdej stronie jako dekoracja.
+Blurred background blobs used on every page as decoration.
 
-### Implementacja
+### Implementation
 
 ```css
 .background-glow {
@@ -239,7 +239,7 @@ Animowane plamy tła używane na każdej stronie jako dekoracja.
   top: 0; left: 0;
   z-index: -1;
   background: var(--bg);
-  overflow: hidden;  /* zapobiega poziomemu scrollbarowi */
+  overflow: hidden;  /* prevents a horizontal scrollbar */
 }
 
 .glow-1 {
@@ -257,32 +257,31 @@ Animowane plamy tła używane na każdej stronie jako dekoracja.
 }
 ```
 
-### Kluczowe cechy
+### Key traits
 
-- **`position: fixed`** + `z-index: -1` → tło nie scrolluje się z resztą strony
-- **`radial-gradient(circle, color 0%, transparent 70%)`** → miękkie krawędzie, brak ostrych przejść
-- **`width/height: 50vw`** → plamy skalują się z viewportem
-- **Negatywne top/left** → częściowe schowanie poza ekran (większa głębia)
-- **`pointer-events: none`** (opcjonalne) → kliknięcia przechodzą przez glow
+- **`position: fixed`** + `z-index: -1` → the background doesn't scroll with the page
+- **`radial-gradient(circle, color 0%, transparent 70%)`** → soft edges, no hard transitions
+- **`width/height: 50vw`** → the blobs scale with the viewport
+- **Negative top/left** → partly hidden off-screen (more depth)
 
-### Wariant animowany (`/home` — opcjonalny)
+### Animated variant (`/profile`)
 
 ```css
 @keyframes glowFloat {
-  0%, 100% { transform: translate(0, 0); }
-  50%      { transform: translate(20px, -30px); }
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -20px) scale(1.05); }
 }
 
 .glow-1 {
-  animation: glowFloat 12s ease-in-out infinite;
+  animation: glowFloat 20s ease-in-out infinite alternate;
 }
 ```
 
-> 💡 Statyczne glow (offers, profile) są tańsze dla GPU. Animowane (home) sprzedają „WOW factor" na landing page.
+> 💡 Static glow (`/home`, `/offers`) is cheaper for the GPU. The animated version (`/profile`) sells a "WOW factor". The three blobs there use different durations and `alternate` / `alternate-reverse` to move out of sync for an organic feel.
 
 ---
 
-## 🌈 Gradienty
+## 🌈 Gradients
 
 ### Text gradient (hero)
 
@@ -295,9 +294,9 @@ Animowane plamy tła używane na każdej stronie jako dekoracja.
 }
 ```
 
-**Użycie:** wyróżnione słowa w `h1` (np. „wyższym poziomie" w hero).
+**Used for:** highlighted words in `h1` (e.g. "wyższym poziomie" in the hero).
 
-> ⚠️ Wymaga **wszystkich 4 reguł** — Safari potrzebuje `-webkit-*` prefixów, inaczej tekst będzie niewidoczny (transparent).
+> ⚠️ Requires **all 4 rules** — Safari needs the `-webkit-*` prefixes, otherwise the text would be invisible (transparent).
 
 ### Background mesh (`/offers`)
 
@@ -305,29 +304,29 @@ Animowane plamy tła używane na każdej stronie jako dekoracja.
 background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #fafbff 100%);
 ```
 
-3-stopniowy gradient pod kątem 135° — subtelny, ledwo widoczny, daje głębię bez krzykliwości.
+A 3-stop gradient at 135° — subtle, barely visible, adds depth without being loud.
 
 ### Submit button gradient
 
 ```css
-background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+background: linear-gradient(135deg, var(--primary-dark), var(--primary-deep));
 ```
 
-Indigo → indigo deep, pod kątem — premium feel.
+Indigo → indigo deep, at an angle — a premium feel.
 
 ---
 
-## 🎬 Animacje
+## 🎬 Animations
 
-### Krzywa łagodzenia
+### Easing curve
 
 ```css
---ease: cubic-bezier(0.25, 0.8, 0.25, 1);  /* ease-in-out z trzymaniem na końcu */
+--ease: cubic-bezier(0.25, 0.8, 0.25, 1);  /* ease-in-out with a hold at the end */
 ```
 
-Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
+Another one in use: `cubic-bezier(0.2, 0.8, 0.2, 1)` (springy).
 
-### Wejście (`fadeInUp`)
+### Entry (`fadeInUp`)
 
 ```css
 @keyframes fadeInUp {
@@ -336,7 +335,7 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 }
 
 .animate-up {
-  opacity: 0;  /* startuje niewidoczny */
+  opacity: 0;  /* starts invisible */
   animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
@@ -346,11 +345,11 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 .delay-4 { animation-delay: 0.4s; }
 ```
 
-**Wzorzec waterfall:** sekcje pojawiają się sekwencyjnie (hero → main-card → filters-form → feature cards).
+**Waterfall pattern:** sections appear sequentially (hero → main-card → filters-form → feature cards).
 
-> ⚠️ `forwards` jest konieczne — bez tego element wraca do `opacity: 0` po zakończeniu animacji.
+> ⚠️ `forwards` is required — without it the element returns to `opacity: 0` after the animation ends.
 
-### Hover lift (karty)
+### Hover lift (cards)
 
 ```css
 .feature-card { transition: 0.3s; }
@@ -361,7 +360,7 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 }
 ```
 
-### Radar sweep (animacja CV)
+### Radar sweep (CV animation)
 
 ```css
 @keyframes radarSpin {
@@ -379,7 +378,7 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 }
 ```
 
-### Pop-in (checkmark sukcesu)
+### Pop-in (success checkmark)
 
 ```css
 @keyframes popIn {
@@ -390,15 +389,15 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 
 ---
 
-## 🔘 Wzorzec pill cards
+## 🔘 Pill cards pattern
 
-**Technika „ukrytego checkboxa"** — checkboxy/radio wyglądają jak karty bez JavaScript.
+The **"hidden checkbox" technique** — checkboxes/radios look like cards without JavaScript.
 
-### Implementacja
+### Implementation
 
 ```html
 <label class="pill-card">
-  <input type="checkbox" [checked]="value" (change)="onChange()">
+  <input type="checkbox" [formControlName]="option.id">
   <span class="pill-content">Frontend Developer</span>
 </label>
 ```
@@ -407,7 +406,7 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
 .pill-card input[type="checkbox"] {
   position: absolute;
   opacity: 0;
-  width: 0; height: 0;  /* niewidoczny ALE w tab-indexie */
+  width: 0; height: 0;  /* invisible BUT still in the tab order */
 }
 
 .pill-content {
@@ -421,25 +420,25 @@ Inna używana: `cubic-bezier(0.2, 0.8, 0.2, 1)` (sprężysta).
   transition: all 0.2s;
 }
 
-/* Stan zaznaczony — CSS adjacent sibling */
+/* Checked state — CSS adjacent sibling */
 .pill-card input:checked + .pill-content {
   border-color: var(--primary);
   background: #eef2ff;
   color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary);  /* wewnętrzna ramka bez resize */
+  box-shadow: 0 0 0 1px var(--primary);  /* inner border without resizing */
 }
 ```
 
-### Dlaczego nie `display: none` na checkboxie?
+### Why not `display: none` on the checkbox?
 
-`display: none` usuwa element z **tab-indexu** — klawiatura przestałaby działać. `opacity: 0 + width/height: 0` ukrywa wizualnie ale zachowuje accessibility.
+`display: none` removes the element from the **tab order** — keyboard navigation would stop working. `opacity: 0 + width/height: 0` hides it visually while keeping accessibility.
 
 ---
 
-## ⚠️ Stany walidacji Angular
+## ⚠️ Angular validation states
 
 ```css
-/* Klasy dodawane automatycznie przez Angular ReactiveForms */
+/* Classes added automatically by Angular ReactiveForms */
 input.ng-invalid.ng-touched,
 select.ng-invalid.ng-touched {
   border-color: #ef4444 !important;
@@ -448,30 +447,30 @@ select.ng-invalid.ng-touched {
 }
 ```
 
-> ⚠️ `!important` jest konieczne, bo standardowe style inputu (`border: 1px solid #cbd5e1`) mają wyższą specyficzność.
+> ⚠️ `!important` is required because the standard input styles (`border: 1px solid #cbd5e1`) have higher specificity.
 
-| Klasa | Co znaczy |
+| Class | Meaning |
 |---|---|
-| `.ng-touched` | Użytkownik kliknął na pole (focus + blur) |
-| `.ng-invalid` | Walidator zwrócił błąd |
-| `.ng-dirty` | Wartość została zmieniona |
+| `.ng-touched` | The user touched the field (focus + blur) |
+| `.ng-invalid` | A validator returned an error |
+| `.ng-dirty` | The value was changed |
 
-**Reguła:** pokaż błąd **dopiero** gdy `.ng-touched` AND `.ng-invalid` — bez pierwszego użytkownik widziałby błąd zanim coś wpisał.
+**Rule:** show the error **only** when `.ng-touched` AND `.ng-invalid` — without the first, the user would see an error before typing anything.
 
 ---
 
-## 📱 Breakpointy responsive
+## 📱 Responsive breakpoints
 
-Aplikacja używa **mobile-first** mindset, ale punkty graniczne są standardowe:
+The app uses a **mobile-first** mindset, but the breakpoints are standard:
 
-| Breakpoint | Wartość | Tailwind eq. | Co się zmienia |
+| Breakpoint | Value | Tailwind eq. | What changes |
 |---|---|---|---|
-| Mobile | `< 640px` | `sm` | 1-kolumnowe siatki, mniejsze paddingi |
-| Tablet | `< 768px` | `md` | Hero h1 redukcja do `2.2rem`, formularze do 1 kolumny, features-grid do 1 kolumny |
-| Desktop | `≥ 768px` | `md+` | Pełen układ — 2-3 kolumny, większe paddingi |
-| Wide | `≥ 1280px` | `xl` | Offers sidebar resizable, max-width 1200px |
+| Mobile | `< 640px` | `sm` | 1-column grids, smaller paddings |
+| Tablet | `< 768px` | `md` | Hero h1 reduced to `2.2rem`, forms to 1 column, features-grid to 1 column |
+| Tablet/down | `< 900px` | — | `/offers` switches to a vertical layout (sidebar on top, list below) |
+| Desktop | `≥ 900px` | — | `/offers` full layout — sidebar + list side by side |
 
-### Przykład media query
+### Media query example
 
 ```css
 @media (max-width: 768px) {
@@ -482,71 +481,56 @@ Aplikacja używa **mobile-first** mindset, ale punkty graniczne są standardowe:
 }
 ```
 
-### Specyficzne dla `/offers`
+### Specific to `/offers`
 
-| Element | Mobile | Desktop |
+| Element | Mobile (< 900px) | Desktop (≥ 900px) |
 |---|---|---|
-| Sidebar | Ukryty (button toggle pokazuje overlay) | 240-480px, resizable |
-| Lista ofert | Pełna szerokość | Po prawej od sidebara |
-| Karta oferty | 1 kolumna meta info | Wieloliniowa meta z separatorami `·` |
+| Sidebar | Full-width, stacked on top (toggle hides it) | 240-480px, resizable by dragging |
+| Offer list | Full width, scrolls with the page | To the right of the sidebar, own scroll |
+| Workspace max-width | — | `1600px`, centered |
 
 ---
 
 ## 🔐 CSS encapsulation
 
-Angular domyślnie używa **Emulated View Encapsulation** — atrybuty `_nghost-*` i `_ngcontent-*` dodawane do selektorów żeby style komponentu nie wyciekały na zewnątrz.
+Angular uses **Emulated View Encapsulation** by default — `_nghost-*` and `_ngcontent-*` attributes are added to selectors so a component's styles don't leak outside.
 
-### `:host` jako `:root` dla komponentu
+### `:host` as the component's `:root`
 
 ```css
 :host {
   --primary: #6366f1;
-  display: block;  /* domyślnie inline — bez tego padding/margin nie działają */
+  display: block;  /* inline by default — without this padding/margin don't work */
   font-family: 'DM Sans', sans-serif;
 }
 ```
 
-### `::ng-deep` (deprecated, ale działa)
+### `::ng-deep` (deprecated, but works)
 
-Używane do stylowania **child componentów** (np. `<app-filters-form>` z poziomu `/profile`):
+Used to style **child components** (e.g. `<app-filters-form>` from `/profile` or `/offers`):
 
 ```css
-:host ::ng-deep app-filters-form .filters-form__section {
-  background: var(--glass-bg);
+:host ::ng-deep app-filters-form .ff-card {
+  padding: 3rem;
 }
 ```
 
-> ⚠️ `::ng-deep` jest **deprecated** w Angular, ale brak oficjalnego zamiennika dla scoped child styling. Zalecane: dodać `[host-context]` lub przejść na global styles dla child componentów.
-
-### Wzorzec wariantów
-
-Klasa modyfikator (BEM-like) na hoście:
-
-```css
-:host { --card-bg: white; }
-:host.dark { --card-bg: #1e293b; }
-```
-
-Komponent ojca może wymusić wariant:
-
-```html
-<app-filters-form class="dark"></app-filters-form>
-```
+> ⚠️ `::ng-deep` is **deprecated** in Angular, but there's no official replacement for scoped child styling. The `:host ::ng-deep` prefix limits the scope to this component so it doesn't override the child's styles on other pages.
 
 ---
 
-## 📚 Powiązane dokumenty
+## 📚 Related documents
 
-- [`README.md`](../README.md) — overview projektu
-- [`docs/features.md`](features.md) — gdzie te tokeny są używane (per strona)
-- [`docs/architecture.md`](architecture.md) — wzorce Angular (standalone, Signals)
+- [`README.md`](../README.md) — project overview
+- [`docs/features.md`](features.md) — where these tokens are used (per page)
+- [`docs/architecture.md`](architecture.md) — Angular patterns (standalone, Signals)
 
-### Pliki źródłowe z design tokens
+### Source files with design tokens
 
-| Plik | Co definiuje |
+| File | What it defines |
 |---|---|
-| `src/styles.css` | Globalne (obecnie pusty — wszystko per-component) |
-| `src/features/home/home.component.css` | Tokeny `/home` (uproszczone, jasne) |
-| `src/features/offers/offers.component.css` | Tokeny `/offers` (rozbudowane, ink-* skala) |
-| `src/features/profile/profile.component.css` | Tokeny `/profile` (glassmorphism, success/danger) |
+| `src/styles.css` | Global (currently empty — everything is per-component) |
+| `src/features/home/home.component.css` | `/home` tokens (simplified, light) |
+| `src/features/offers/offers.component.css` | `/offers` tokens (extended, ink-* scale) |
+| `src/features/profile/profile.component.css` | `/profile` tokens (glassmorphism, success/danger) |
 | `src/app/shared/filters-form/filters-form.component.css` | Salary slider, pill cards |

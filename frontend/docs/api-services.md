@@ -1,153 +1,116 @@
-# 🌐 API & Services — CV_ANALIZER Frontend
+# 🌐 API & Services — IT-Hell Frontend
 
-Warstwa komunikacji z backendem FastAPI. Dokument opisuje wszystkie serwisy, DTO i konfigurację proxy. Uzupełnienie [głównego README](../README.md).
+The communication layer with the FastAPI backend. This document describes all services, DTOs and the proxy config. It complements the [main README](../README.md).
 
-## 📑 Spis treści
+## 📑 Table of contents
 
-- [Przegląd](#przegląd)
-- [Proxy config (dev)](#proxy-config-dev)
-- [Environment](#environment)
+- [Overview](#overview)
+- [Configuration (proxy & environment)](#configuration-proxy--environment)
 - [UserApiService](#userapiservice)
 - [CvApiService](#cvapiservice)
 - [JobOffersApiService](#joboffersapiservice)
 - [LookupsApiService](#lookupsapiservice)
 - [AuthService](#authservice)
-- [DTOs (modele)](#dtos-modele)
+- [DTOs (models)](#dtos-models)
 
 ---
 
-## Przegląd
+## Overview
 
-Wszystkie serwisy żyją w `src/app/core/services/` (z wyjątkiem `AuthService` w `src/features/auth/`). Każdy serwis jest **standalone singletonem** (`providedIn: 'root'`).
+All services live in `src/app/core/services/` (except `AuthService` in `src/features/auth/`). Each service is a **standalone singleton** (`providedIn: 'root'`).
 
-| Serwis | Plik | Endpointy backendu |
+| Service | File | Backend endpoints |
 |---|---|---|
-| `AuthService` | `src/features/auth/auth.service.ts` | (Keycloak, nie API) |
-| `UserApiService` | `src/app/core/services/user-api.service.ts` | `GET/PUT /v1/users/me/profile`, `GET /v1/users/me` |
+| `AuthService` | `src/features/auth/auth.service.ts` | (Keycloak, not the API) |
+| `UserApiService` | `src/app/core/services/user-api.service.ts` | `GET /v1/users/me`, `GET/PUT /v1/users/me/profile` |
 | `CvApiService` | `src/app/core/services/cv-api.service.ts` | `POST /v1/cv/upload` (multipart) |
 | `JobOffersApiService` | `src/app/core/services/job-offers-api.service.ts` | `GET /v1/job-offers/get_offer_filter` |
 | `LookupsApiService` | `src/app/core/services/lookups-api.service.ts` | `GET /v1/lookups/*` |
 
-**Konwencje:**
+**Conventions:**
 
-- Metody publiczne zwracają `Observable<T>` (RxJS) — komponent decyduje czy używa `subscribe()` z `takeUntil()`, czy konwertuje przez `firstValueFrom()` na Promise.
-- Brak globalnego error interceptora — błędy obsługiwane w komponentach (różne strategie dla 401/404/500).
-- DTO są typowane jako TypeScript interfaces, zdefiniowane w `core/models/` lub w samym pliku serwisu.
-
----
-
-## Proxy config (dev)
-
-`frontend/proxy.conf.json`:
-
-```json
-{
-  "/v1": {
-    "target": "http://localhost:8000",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  }
-}
-```
-
-**Działanie:** w trybie `npm start` Angular Dev Server uruchamia własny proxy — wszystkie żądania frontendu na `/v1/*` są przepinane na `http://localhost:8000/v1/*` (bez CORS, bo z perspektywy przeglądarki to ten sam origin `localhost:4200`).
-
-W **produkcji** ten plik nie ma znaczenia — backend i frontend powinny być za reverse proxy (nginx/Traefik) który rozpoznaje prefix `/v1`.
+- `JobOffersApiService`, `LookupsApiService` and `CvApiService` return `Observable<T>` (RxJS) — the component decides whether to `subscribe()` with `takeUntil()`.
+- `UserApiService` returns `Promise<T>` (it converts the `Observable` with `firstValueFrom()`), so components can `await` it.
+- No global error interceptor — errors are handled in the components (different strategies for 401/404/500).
+- DTOs are typed as TypeScript interfaces, defined in `core/models/` or in the service file itself.
 
 ---
 
-## Environment
+## Configuration (proxy & environment)
 
-`frontend/src/environments/environment.ts`:
+The API layer reads its base URL from `environment.apiUrl` (`/v1`) and, in dev, relies on
+`proxy.conf.json` to forward `/v1/*` to the backend. Both are documented in one place —
+see [`docs/env-vars.md`](env-vars.md):
 
-```typescript
-export const environment = {
-  apiUrl: '/v1',
-  keycloakUrl: 'http://localhost:8080',
-  keycloakRealm: 'it-hell',
-  keycloakClientId: 'backend-client',
-};
-```
-
-| Zmienna | Wartość | Użycie |
-|---|---|---|
-| `apiUrl` | `/v1` | Prefix wszystkich żądań HTTP w serwisach (`${environment.apiUrl}/users/me`) |
-| `keycloakUrl` | `http://localhost:8080` | URL serwera Keycloak |
-| `keycloakRealm` | `it-hell` | Nazwa realmu Keycloak |
-| `keycloakClientId` | `backend-client` | Public client ID dla SPA (PKCE) |
-
-**Produkcja:** Angular CLI podmienia plik przez `fileReplacements` w `angular.json` (obecnie brak `environment.prod.ts` — do dodania przed deploymentem).
+- **`environment.ts`** — `apiUrl`, `keycloakUrl`, `keycloakRealm`, `keycloakClientId` (and the
+  production `fileReplacements` note).
+- **`proxy.conf.json`** — the dev-only `/v1 → http://localhost:8000` proxy.
 
 ---
 
 ## UserApiService
 
-**Plik:** `src/app/core/services/user-api.service.ts`
+**File:** `src/app/core/services/user-api.service.ts`
 
-Operacje na profilu zalogowanego użytkownika.
+Operations on the logged-in user's profile. All methods return a `Promise` (via `firstValueFrom`).
 
 ### DTOs
 
 ```typescript
 interface UserMeDto {
-  id: string;
   id_keycloak: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface UserProfileDto {
   id: string;
   user_id: string;
-  raw_cv: string | null;        // JSON: { name, data: base64 }
-  exp_level: LookupDto | null;
-  technologies: LookupDto[];
-  created_at: string;
-  updated_at: string;
+  raw_cv: string | null;        // null means the user has no CV uploaded
+  exp_level: { id: string; name: string } | null;
+  technologies: Array<{ id: string; name: string }>;
 }
 
 interface UserProfileUpdateDto {
-  exp_level_id?: string;
-  technology_ids?: string[];
-  raw_cv?: string;              // JSON.stringify({ name, data: base64 })
+  exp_level_id?: string | null;
+  technology_ids?: string[] | null;
 }
 ```
 
-### Metody
+### Methods
 
-| Metoda | HTTP | Endpoint | Zwraca |
+| Method | HTTP | Endpoint | Returns |
 |---|---|---|---|
-| `getMe()` | `GET` | `/v1/users/me` | `Observable<UserMeDto>` |
-| `getMyProfile()` | `GET` | `/v1/users/me/profile` | `Observable<UserProfileDto>` |
-| `updateMyProfile(payload)` | `PUT` | `/v1/users/me/profile` | `Observable<UserProfileDto>` |
+| `getMe()` | `GET` | `/v1/users/me` | `Promise<UserMeDto>` |
+| `getMyProfile()` | `GET` | `/v1/users/me/profile` | `Promise<UserProfileDto>` |
+| `updateMyProfile(payload)` | `PUT` | `/v1/users/me/profile` | `Promise<UserProfileDto>` |
 
-**Uwagi:**
-- `getMyProfile()` zwraca **404 dla nowych użytkowników** — komponent musi obsłużyć (`catchError`).
-- `updateMyProfile()` używa **upsert semantics** w backendzie — nie trzeba osobnego `createProfile()`.
-- Token JWT dołączany **automatycznie** przez `authInterceptor` (`app.config.ts`).
+**Notes:**
+- `getMyProfile()` returns **404 for new users** — the component must handle it (`profile.component.ts` treats a 404 as "empty profile").
+- `updateMyProfile()` uses **upsert semantics** in the backend — no separate `createProfile()` is needed.
+- The JWT is attached **automatically** by `authInterceptor` (`app.config.ts`).
 
 ---
 
 ## CvApiService
 
-**Plik:** `src/app/core/services/cv-api.service.ts`
+**File:** `src/app/core/services/cv-api.service.ts`
 
-Analiza CV — wyciąga technologie i metadane.
+CV analysis — extracts technologies.
 
-### Metody
+### Methods
 
-| Metoda | HTTP | Endpoint | Zwraca |
+| Method | HTTP | Endpoint | Returns |
 |---|---|---|---|
 | `uploadCv(file: File)` | `POST` | `/v1/cv/upload` | `Observable<LookupDto[]>` |
 
-**Request body:** `multipart/form-data` z polem `file` (PDF lub DOCX, max 10 MB)
+**Request body:** `multipart/form-data` with a `file` field (PDF/DOC/DOCX; the frontend validates a 10 MB max)
 
-**Response:** lista wykrytych technologii (`LookupDto[]`)
+**Response:** a list of detected technologies (`LookupDto[]`)
 
 ```typescript
 [
@@ -157,25 +120,20 @@ Analiza CV — wyciąga technologie i metadane.
 ]
 ```
 
-**Backend (informacyjnie):**
-- PDF: parsowane przez `pdfplumber` (max 8 stron)
-- DOCX: paragrafy + tabele + headery/stopki + text boxy
-- Detekcja przez pre-compiled regex (~25 technologii z aliasami)
-
-> 📖 Szczegóły algorytmu CV analysis — zobacz dokumentację backendu.
+> 📖 For the CV analysis algorithm details, see the backend documentation.
 
 ---
 
 ## JobOffersApiService
 
-**Plik:** `src/app/core/services/job-offers-api.service.ts`
+**File:** `src/app/core/services/job-offers-api.service.ts`
 
-Lista ofert pracy z filtrami i paginacją.
+The job offer list with filters and pagination.
 
 ### DTOs
 
 ```typescript
-// Surowa odpowiedź backendu
+// Raw backend response
 interface JobOfferApiResponse {
   id: string;
   url: string;
@@ -190,136 +148,135 @@ interface JobOfferApiResponse {
   specialization: LookupDto | null;
   technologies: LookupDto[];
   locations: LookupDto[];
-  publication_date: string | null;   // ISO 8601, null gdy scraper nie podał daty
-  expiration_date: string | null;    // ISO 8601, null gdy scraper nie podał daty
+  publication_date: string | null;   // ISO 8601, null when the scraper gave no date
+  expiration_date: string | null;    // ISO 8601, null when the scraper gave no date
 }
 
-// Zmapowany model używany w UI
+// Mapped model used in the UI
 interface MappedOffer {
   id: string;
   title: string;
   company: string;
   location: string;
   workMode: string;
-  workTypeId: string;          // ID trybu pracy (do getWorkModeLabel)
+  workTypeId: string;          // work mode ID (for getWorkModeLabel)
   salaryMin: number;
   salaryMax: number;
   technologies: string[];      // IDs
-  technologyNames: string[];   // wyświetlane nazwy
+  technologyNames: string[];   // display names
   roles: string[];
   seniority: string;
-  source: string;              // ID portalu (do formatSource)
+  source: string;              // job board ID (for formatSource)
   postedLabel: string;
   description: string;
   url?: string;
-  publicationDate: string | null;   // przepisane z publication_date
-  expirationDate: string | null;    // przepisane z expiration_date
+  publicationDate: string | null;   // copied from publication_date
+  expirationDate: string | null;    // copied from expiration_date
 }
 ```
 
-### Metody
+### Methods
 
-| Metoda | HTTP | Endpoint | Zwraca |
+| Method | HTTP | Endpoint | Returns |
 |---|---|---|---|
 | `getOffers(params?)` | `GET` | `/v1/job-offers/get_offer_filter` | `Observable<JobOfferApiResponse[]>` |
 | `mapToOffer(api: JobOfferApiResponse)` | — | (pure function) | `MappedOffer` |
 
 ### Query parameters
 
-| Parametr | Typ | Opis |
+| Parameter | Type | Description |
 |---|---|---|
-| `skip` | number | offset paginacji |
-| `limit` | number | rozmiar strony (default 20) |
-| `salary_from_min` | number | dolny próg widełek |
-| `salary_to_max` | number | górny próg widełek |
-| `technology_ids[]` | string[] | filtr po technologiach |
-| `specialization_ids[]` | string[] | obszar IT (backend/frontend/...) |
-| `work_type_ids[]` | string[] | tryb pracy (remote/hybrid/onsite) |
+| `skip` | number | pagination offset |
+| `limit` | number | page size (default 20) |
+| `salary_from_min` | number | lower salary bound |
+| `salary_to_max` | number | upper salary bound |
+| `technology_ids[]` | string[] | technology filter |
+| `specialization_ids[]` | string[] | IT area (backend/frontend/...) |
+| `work_type_ids[]` | string[] | work mode (remote/hybrid/onsite) |
 | `exp_level_ids[]` | string[] | seniority |
-| `site_ids[]` | string[] | portale (pracuj/jjit/nfj) |
-| `location_ids[]` | string[] | miasta |
-| `title` | string | wyszukiwanie po tytule (LIKE) |
+| `site_ids[]` | string[] | job boards (e.g. pracuj, theprotocol) |
+| `location_ids[]` | string[] | cities |
+| `title` | string | title search (LIKE) |
 
-### Mapowanie DTO → UI
+### DTO → UI mapping
 
-`mapToOffer()` obsługuje:
-- `null` wartości z bazy (np. brak firmy)
-- String `'None'` zwracany czasem przez Pythona/FastAPI dla pustych pól
-- Fallbacki: `'Nieznana firma'`, `'Zdalnie'`, `'Nie podano'`
+`mapToOffer()` handles:
+- `null` values from the database (e.g. no company)
+- The string `'None'` that Python/FastAPI sometimes returns for empty fields
+- Fallbacks: `'Nieznana firma'`, `'Zdalnie'`, `'Nie podano'`
 
 ---
 
 ## LookupsApiService
 
-**Plik:** `src/app/core/services/lookups-api.service.ts`
+**File:** `src/app/core/services/lookups-api.service.ts`
 
-Słowniki używane w formularzach (technologie, lokalizacje, specjalizacje, ...).
+Lookups used in the forms (technologies, locations, specializations, ...).
 
-### Metody
+### Methods
 
-Wszystkie metody zwracają `Observable<LookupDto[]>`:
+All methods return `Observable<LookupDto[]>`:
 
-| Metoda | Endpoint | Co zwraca |
+| Method | Endpoint | What it returns |
 |---|---|---|
-| `getTechnologies()` | `GET /v1/lookups/technologies` | lista technologii (React, Vue, Python, ...) |
-| `getSpecializations()` | `GET /v1/lookups/specializations` | obszary IT (Frontend Dev, DevOps, ...) |
-| `getWorkTypes()` | `GET /v1/lookups/work-types` | tryby pracy (remote/hybrid/onsite) |
+| `getTechnologies()` | `GET /v1/lookups/technologies` | technology list (React, Vue, Python, ...) |
+| `getSpecializations()` | `GET /v1/lookups/specializations` | IT areas (Frontend Dev, DevOps, ...) |
+| `getWorkTypes()` | `GET /v1/lookups/work-types` | work modes (remote/hybrid/onsite) |
 | `getExperienceLevels()` | `GET /v1/lookups/experience-levels` | seniority (Junior/Mid/Senior/Lead) |
-| `getSites()` | `GET /v1/lookups/sites` | portale (Pracuj.pl, JustJoin.it, NoFluffJobs) |
-| `getLocations()` | `GET /v1/lookups/locations` | miasta z bazy |
+| `getSites()` | `GET /v1/lookups/sites` | job boards scraped into the DB (Pracuj.pl, TheProtocol.it) |
+| `getLocations()` | `GET /v1/lookups/locations` | cities from the database |
 
-### Wzorzec użycia
+### Usage pattern
 
-`FiltersFormComponent` pobiera **wszystkie słowniki równolegle** przez `forkJoin()`:
+`FiltersFormComponent` fetches **all lookups in parallel** via `forkJoin()`:
 
 ```typescript
 forkJoin({
-  technologies: this.lookups.getTechnologies(),
-  specializations: this.lookups.getSpecializations(),
-  workTypes: this.lookups.getWorkTypes(),
-  expLevels: this.lookups.getExperienceLevels(),
-  sites: this.lookups.getSites(),
-  locations: this.lookups.getLocations()
+  techs:     this.lookupsApi.getTechnologies(),
+  specs:     this.lookupsApi.getSpecializations(),
+  workTypes: this.lookupsApi.getWorkTypes(),
+  expLevels: this.lookupsApi.getExperienceLevels(),
+  sites:     this.lookupsApi.getSites(),
+  locations: this.lookupsApi.getLocations()
 }).pipe(takeUntil(this.destroy$)).subscribe(...);
 ```
 
-**Cache:** brak w samym serwisie (każde wywołanie = nowy request). Cache de-facto przez to, że `FiltersFormComponent` ładuje słowniki **raz** w `ngOnInit()` i trzyma je w properties.
+**Cache:** none in the service itself (each call = a new request). The de-facto cache comes from `FiltersFormComponent` loading the lookups **once** in `ngOnInit()` and keeping them in properties.
 
 ---
 
 ## AuthService
 
-**Plik:** `src/features/auth/auth.service.ts`
+**File:** `src/features/auth/auth.service.ts`
 
-Centralny serwis autoryzacji. **Nie wywołuje backendu** — komunikuje się tylko z Keycloak przez `keycloak-js`.
+The central authorization service. **Does not call the backend** — it only talks to Keycloak via `keycloak-js`.
 
-### Stan (Signals)
+### State (Signals)
 
 ```typescript
-isAuthenticated: Signal<boolean>     // true gdy aktywny JWT
-username: Signal<string | null>      // given_name z tokenu lub null
+isAuthenticated: Signal<boolean>     // true when there's an active JWT
+username: Signal<string | null>      // given_name from the token (or preferred_username), or null
 ```
 
-### Metody publiczne
+### Public methods
 
-| Metoda | Co robi |
+| Method | What it does |
 |---|---|
-| `init()` | Inicjalizuje klienta Keycloak (PKCE S256, check-sso). Wywoływana z `APP_INITIALIZER`. |
-| `login(redirectPath?)` | Przekierowuje na formularz Keycloak. `redirectPath` = gdzie wrócić po loginie. |
-| `logout()` | Wylogowuje + redirect na `/`. Resetuje signals. |
-| `getToken()` | Zwraca surowy JWT (do `Authorization: Bearer`). |
-| `getProfile()` | Imię, nazwisko, email z `tokenParsed` — **bez wywołania API**. |
-| `refreshToken(minValidity?)` | Odświeża token jeśli wygasa za < `minValidity` sekund (default 30). |
-| `startTokenRefresh()` | Uruchamia `setInterval(20s)` automatycznego refresh. |
-| `stopTokenRefresh()` | `clearInterval` (wywołane w `logout()`). |
+| `init()` | Initializes the Keycloak client (PKCE S256, check-sso). Called from `APP_INITIALIZER`. |
+| `login(redirectPath?)` | Redirects to the Keycloak form. `redirectPath` = where to return after login. |
+| `logout()` | Logs out + redirect to `/`. Resets the signals. |
+| `getToken()` | Returns the raw JWT (for `Authorization: Bearer`). |
+| `getUsername()` | Returns the username as `string | undefined`. |
+| `getProfile()` | First name, last name, email from `tokenParsed` — **without an API call**. |
+| `refreshToken(minValidity?)` | Refreshes the token if it expires in < `minValidity` seconds (default 30). |
 
-> 🔐 Pełen flow autoryzacji opisany w [`docs/auth-flow.md`](auth-flow.md).
+> The token-refresh interval helpers (`startTokenRefresh` / `stopTokenRefresh`) are private. See [`docs/auth-flow.md`](auth-flow.md) for the full flow.
 
 ---
 
-## DTOs (modele)
+## DTOs (models)
 
-**Plik:** `src/app/core/models/offers.models.ts`
+**File:** `src/app/core/models/offers.models.ts`
 
 ```typescript
 interface LookupDto {
@@ -328,11 +285,11 @@ interface LookupDto {
 }
 ```
 
-Podstawowy typ używany przez wszystkie słowniki (technologie, miasta, portale, ...). Zwracany przez `LookupsApiService` i embedowany w `JobOfferApiResponse`, `UserProfileDto`.
+The base type used by all lookups (technologies, cities, job boards, ...). Returned by `LookupsApiService` and embedded in `JobOfferApiResponse` and `UserProfileDto`.
 
-**Pliki z dodatkowymi typami:**
+**Files with additional types:**
 
-| Plik | Eksportowane typy |
+| File | Exported types |
 |---|---|
 | `core/models/offers.models.ts` | `LookupDto`, `JobOfferApiResponse` |
 | `core/services/user-api.service.ts` | `UserMeDto`, `UserProfileDto`, `UserProfileUpdateDto` |
@@ -342,9 +299,9 @@ Podstawowy typ używany przez wszystkie słowniki (technologie, miasta, portale,
 
 ---
 
-## 📚 Powiązane dokumenty
+## 📚 Related documents
 
 - [`README.md`](../README.md) — quick-start
-- [`docs/architecture.md`](architecture.md) — wzorce architektury
-- [`docs/features.md`](features.md) — gdzie serwisy są używane
+- [`docs/architecture.md`](architecture.md) — architecture patterns
+- [`docs/features.md`](features.md) — where the services are used
 - [`docs/auth-flow.md`](auth-flow.md) — Keycloak + interceptor + guard

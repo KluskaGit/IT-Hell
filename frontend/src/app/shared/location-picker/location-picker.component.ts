@@ -1,8 +1,8 @@
-// Picker lokalizacji - pole tekstowe z dropdownem sugestii miast.
-// Eksportuje tez interfejs LocationItem uzyany przez FiltersFormComponent i ProfileComponent.
+// Location picker - a text field with a dropdown of city suggestions.
+// Also exports the LocationItem interface used by FiltersFormComponent and ProfileComponent.
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // [(ngModel)] na polu tekstowym query
+import { FormsModule } from '@angular/forms'; // [(ngModel)] on the query text field
 import { highlightMatch } from '../highlight';
 
 export interface LocationItem {
@@ -69,7 +69,7 @@ export interface LocationItem {
 
     .lp-root { position: relative; }
 
-    /* === pole === */
+    /* === field === */
     .lp-field {
       display: flex;
       align-items: center;
@@ -106,7 +106,7 @@ export interface LocationItem {
       min-width: 0;
     }
 
-    /* chipsy - styl jak .pill-card:checked */
+    /* chips - styled like .pill-card:checked */
     .lp-tag {
       display: inline-flex;
       align-items: center;
@@ -133,7 +133,7 @@ export interface LocationItem {
     }
     .lp-tag-x:hover { color: #ef4444; }
 
-    /* input w polu */
+    /* input inside the field */
     .lp-input {
       border: none;
       outline: none;
@@ -146,7 +146,7 @@ export interface LocationItem {
     }
     .lp-input::placeholder { color: #94a3b8; }
 
-    /* przycisk wyczyść */
+    /* clear button */
     .lp-clear {
       display: flex;
       align-items: center;
@@ -208,7 +208,7 @@ export interface LocationItem {
 
     .lp-option-pin { color: #cbd5e1; flex-shrink: 0; transition: color 0.1s; }
 
-    /* podświetlenie dopasowania */
+    /* match highlight */
     .lp-option :global(strong) { color: #4f46e5; font-weight: 700; }
   `]
 })
@@ -220,7 +220,7 @@ export class LocationPickerComponent {
   query = '';
   showDropdown = false;
 
-  // Zwraca max 8 dopasowań - wyklucza juz wybrane lokalizacje zeby nie pokazywac duplikatow
+  // Returns at most 8 matches - excludes already selected locations to avoid duplicates
   get filtered(): LocationItem[] {
     const q = this.query.trim().toLowerCase();
     if (!q) return [];
@@ -235,7 +235,7 @@ export class LocationPickerComponent {
 
   onInput(): void { this.showDropdown = this.query.trim().length > 0; }
   onFocus(): void { if (this.query.trim()) this.showDropdown = true; }
-  // 160ms delay - daje czas na mousedown opcji z dropdownu zanim blur zamknie liste
+  // 160ms delay - gives time for an option's mousedown before blur closes the list
   onBlur(): void { setTimeout(() => { this.showDropdown = false; }, 160); }
 
   select(loc: LocationItem): void {

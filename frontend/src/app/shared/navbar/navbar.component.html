@@ -7,19 +7,19 @@
     </a>
 
     <div class="nav-links">
-      <!-- exact: true - bez tego "/" byloby zawsze aktywne bo kazda trasa zaczyna sie od "/" -->
+      <!-- exact: true - without it "/" would always be active because every route starts with "/" -->
       <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{exact: true}">Strona główna</a>
       <a routerLink="/offers" routerLinkActive="nav-active">Oferty pracy</a>
     </div>
 
-    <!-- loggedInBlock - ng-template renderowany przez else gdy uzytkownik jest zalogowany -->
+    <!-- loggedInBlock - ng-template rendered via else when the user is logged in -->
     <div class="nav-actions" *ngIf="!isAuthenticated(); else loggedInBlock">
       <button type="button" class="btn-login" (click)="login()">Zaloguj się</button>
     </div>
 
     <ng-template #loggedInBlock>
       <div class="nav-actions nav-actions--logged">
-        <!-- (username() || 'U')[0] - pierwsza litera nazwy uzytkownika jako awatar, fallback "U" -->
+        <!-- (username() || 'U')[0] - first letter of the username as an avatar, fallback "U" -->
         <a class="user-badge" routerLink="/profile">
           <div class="user-avatar">{{ (username() || 'U')[0].toUpperCase() }}</div>
           <span>{{ username() || 'Użytkownik' }}</span>

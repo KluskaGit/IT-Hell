@@ -9,7 +9,7 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   { path: '', component: HomeComponent },
 
-  // Stare trasy logowania - przekierowanie na home bo auth obsługuje Keycloak, nie własny routing
+  // Legacy login routes - redirect to home because auth is handled by Keycloak, not our own routing
   { path: 'login', redirectTo: '', pathMatch: 'full' },
   { path: 'register', redirectTo: '', pathMatch: 'full' },
   { path: 'forgot-password', redirectTo: '', pathMatch: 'full' },

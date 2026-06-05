@@ -1,34 +1,34 @@
-// Typy i stałe współdzielone przez FiltersFormComponent i strony które go używają (home, offers, profile).
+// Types and constants shared by FiltersFormComponent and the pages that use it (home, offers, profile).
 import { LocationItem } from '../location-picker/location-picker.component';
 
-// Klucz localStorage pod którym zapisywany jest stan formularza filtrów.
-// Współdzielony przez home, offers i profile - zmiana na jednej stronie widoczna po nawigacji
+// localStorage key under which the filter form state is saved.
+// Shared by home, offers and profile - a change on one page is visible after navigation
 export const FILTERS_STORAGE_KEY = 'cv_analizer_candidate_filters';
 
 export type ContractType = 'uop' | 'b2b' | 'uz';
 
-// Pełny stan formularza emitowany przez (filtersChange) i (ready).
-// Zawiera dane w dwóch formatach: surowe obiekty boolean (do badge'y dopasowania w ofertach)
-// i przetworzone tablice ID (*Ids) gotowe jako parametry HTTP do backendu.
+// The full form state emitted by (filtersChange) and (ready).
+// Holds data in two formats: raw boolean objects (for the match badges in offers)
+// and processed ID arrays (*Ids) ready to be used as HTTP params for the backend.
 export interface FiltersValue {
-  // Surowe obiekty boolean ze stanu FormGroup - { id: true/false, ... }
-  // Używane przez offers.component.ts do obliczania matchedRoles i matchedTech w kartach ofert
+  // Raw boolean objects from the FormGroup state - { id: true/false, ... }
+  // Used by offers.component.ts to compute matchedRoles and matchedTech in offer cards
   itArea:       Record<string, boolean>;
   technologies: Record<string, boolean>;
   jobSites:     Record<string, boolean>;
   workMode:     Record<string, boolean>;
   seniority:    Record<string, boolean>;
 
-  // Indeksy w tablicy SALARY_OPTIONS (nie kwoty PLN) - krótsze do URL i localStorage
+  // Indexes into the SALARY_OPTIONS array (not PLN amounts) - shorter for the URL and localStorage
   salaryFromIndex: number;
   salaryToIndex:   number;
 
-  // Pełne obiekty LocationItem - potrzebne do odtworzenia stanu pickera po nawigacji
+  // Full LocationItem objects - needed to restore the picker state after navigation
   selectedLocations:    LocationItem[];
   selectedTechnologies: LocationItem[];
 
-  // Tablice ID gotowe jako parametry HTTP do GET /v1/job-offers/get_offer_filter.
-  // Puste tablice oznaczają brak filtra - backend zwraca wyniki dla wszystkich wartości
+  // ID arrays ready to be used as HTTP params for GET /v1/job-offers/get_offer_filter.
+  // Empty arrays mean no filter - the backend returns results for all values
   specializationIds: string[];
   technologyIds:     string[];
   expLevelIds:       string[];
@@ -36,32 +36,32 @@ export interface FiltersValue {
   siteIds:           string[];
   locationIds:       string[];
 
-  // Kwoty PLN przeliczone z indeksów przez SALARY_OPTIONS[index]
+  // PLN amounts resolved from the indexes via SALARY_OPTIONS[index]
   salaryFrom: number;
   salaryTo:   number;
 }
 
-// Częściowy stan przekazywany do FiltersFormComponent przez @Input() initialFilters.
-// Obsługuje dwa formaty niektórych pól (backward compat):
-//   - stary: jobSites = { klucz: true/false } (obiekt boolean z FormGroup)
-//   - nowy:  jobSiteKeys = ['pracuj', 'nofluff'] (tablica kluczy - krótszy do URL i localStorage)
+// Partial state passed to FiltersFormComponent via @Input() initialFilters.
+// Supports two formats for some fields (backward compat):
+//   - old: jobSites = { key: true/false } (boolean object from the FormGroup)
+//   - new: jobSiteKeys = ['pracuj', 'nofluff'] (array of keys - shorter for the URL and localStorage)
 export interface FiltersInitialState {
-  // Stary format obiektów boolean wprost z FormGroup
+  // Old format: boolean objects straight from the FormGroup
   itArea?:       Record<string, boolean>;
-  technologies?: Record<string, boolean>; // stary format (nowy: selectedTechnologies)
-  jobSites?:     Record<string, boolean>; // stary format (nowy: jobSiteKeys)
-  workMode?:     Record<string, boolean>; // stary format (nowy: workModeIds)
+  technologies?: Record<string, boolean>; // old format (new: selectedTechnologies)
+  jobSites?:     Record<string, boolean>; // old format (new: jobSiteKeys)
+  workMode?:     Record<string, boolean>; // old format (new: workModeIds)
   seniority?:    Record<string, boolean>;
 
   salaryFromIndex?: number;
   salaryToIndex?:   number;
 
-  // Pełne obiekty do bezpośredniego ustawienia stanu pickera
+  // Full objects to set the picker state directly
   selectedLocations?:    LocationItem[];
-  selectedTechnologies?: LocationItem[]; // nowy format (stary: technologies)
+  selectedTechnologies?: LocationItem[]; // new format (old: technologies)
 
-  // Nowe formaty tablicowe - prostsze do serializacji w URL i history.state
+  // New array formats - simpler to serialize in the URL and history.state
   locationIds?:  string[];
-  workModeIds?:  string[]; // zastępuje workMode gdy przekazywane z URL
-  jobSiteKeys?:  string[]; // zastępuje jobSites gdy przekazywane z URL/state
+  workModeIds?:  string[]; // replaces workMode when passed from the URL
+  jobSiteKeys?:  string[]; // replaces jobSites when passed from the URL/state
 }

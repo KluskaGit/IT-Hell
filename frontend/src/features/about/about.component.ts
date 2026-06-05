@@ -1,4 +1,4 @@
-// Strona /about - czysto prezentacyjna, statyczna. Brak logiki, serwisów i API.
+// /about page - purely presentational and static. No logic, services or API.
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NavbarComponent } from '../../app/shared/navbar/navbar.component';

@@ -1,139 +1,139 @@
-/* Architektura układu strony /offers:
-   Navbar (fixed, 68px) stoi na górze poza przepływem dokumentu.
-   TopBar (sticky) przykleja się do górnej krawędzi :host tuż pod Navbarem.
-   Workspace to flex: sidebar po lewej | lista ofert po prawej.
-   TYLKO .main ma overflow-y: auto i scrolluje sie - sidebar i topbar są nieruchome.
-   Dzięki temu sidebar z filtrami jest zawsze widoczny podczas scrollowania listy ofert. */
+/* Layout architecture of the /offers page:
+   The Navbar (fixed, 68px) sits at the top, outside the document flow.
+   The TopBar (sticky) sticks to the top edge of :host just below the Navbar.
+   Workspace is a flex: sidebar on the left | offer list on the right.
+   ONLY .main has overflow-y: auto and scrolls - the sidebar and topbar are static.
+   This keeps the filter sidebar always visible while scrolling the offer list. */
 
 
-/* Zmienne CSS (design tokens) dla całego komponentu.
-   :host to selektor Angular dla elementu <app-offers> w DOM - odpowiednik :root ale scoped do komponentu.
-   Zmieniając wartości tutaj zmieniasz kolory i rozmiary w całym pliku naraz. */
+/* CSS variables (design tokens) for the whole component.
+   :host is the Angular selector for the <app-offers> element in the DOM - like :root but scoped to the component.
+   Changing the values here changes colors and sizes across the whole file at once. */
 :host {
-  /* Wysokości elementów stałych - używane do obliczeń calc() w całym pliku */
-  --nav-h:    68px;   /* wysokość Navbara (shared/navbar/navbar.component) */
-  --topbar-h: 56px;   /* wysokość paska górnego z wyszukiwarką */
+  /* Heights of fixed elements - used in calc() throughout the file */
+  --nav-h:    68px;   /* Navbar height (shared/navbar/navbar.component) */
+  --topbar-h: 56px;   /* height of the top bar with the search */
 
-  /* Kolory główne - odcienie indigo/fioletowe (brand color aplikacji) */
+  /* Main colors - indigo/purple shades (the app's brand color) */
   --pri:      #6366f1;              /* primary: indigo-500 */
-  --pri-dk:   #4338ca;              /* primary dark: indigo-700, hover dla przycisków */
-  --pri-lt:   #eef2ff;              /* primary light: indigo-50, tła tagów i aktywnych elementów */
-  --pri-ring: rgba(99,102,241,.16); /* półprzezroczyste indigo do efektu focus ring */
+  --pri-dk:   #4338ca;              /* primary dark: indigo-700, hover for buttons */
+  --pri-lt:   #eef2ff;              /* primary light: indigo-50, tag backgrounds and active elements */
+  --pri-ring: rgba(99,102,241,.16); /* semi-transparent indigo for the focus ring effect */
 
-  /* Skala szarości tekstu - od najciemniejszego do najjaśniejszego */
-  --ink-1: #0f172a; /* slate-900, główne nagłówki */
-  --ink-2: #1e293b; /* slate-800, nazwy firm */
-  --ink-3: #475569; /* slate-600, metadane, etykiety */
-  --ink-4: #94a3b8; /* slate-400, placeholder, mało ważne informacje */
+  /* Text grayscale - from darkest to lightest */
+  --ink-1: #0f172a; /* slate-900, main headings */
+  --ink-2: #1e293b; /* slate-800, company names */
+  --ink-3: #475569; /* slate-600, metadata, labels */
+  --ink-4: #94a3b8; /* slate-400, placeholder, low-importance info */
 
-  /* Kolory obramowań - jasne linie między elementami */
+  /* Border colors - light lines between elements */
   --b-lt:  #e8edf5; /* border light */
   --b-md:  #dde4f0; /* border medium */
 
-  /* Kolor tła karty oferty - lekko przeźroczysty biały (efekt glass) */
+  /* Offer card background color - slightly transparent white (glass effect) */
   --card:  rgba(255,255,255,0.92);
   --bg:    transparent;
 
-  /* Cienie - xs dla kart w spoczynku, md dla kart po najechaniu myszą */
+  /* Shadows - xs for cards at rest, md for cards on hover */
   --sh-xs: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
   --sh-md: 0 8px 32px -6px rgba(99,102,241,.18), 0 2px 8px rgba(0,0,0,.04);
-  /* Krzywa animacji - płynne przyśpieszenie i zwolnienie (ease-in-out) */
+  /* Animation curve - smooth acceleration and deceleration (ease-in-out) */
   --ease:  cubic-bezier(.25,.8,.25,1);
 
   font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   display: block;
-  /* Wysokość = cały ekran minus navbar, żeby workspace wypełniał resztę ekranu */
+  /* Height = the whole screen minus the navbar, so workspace fills the rest of the screen */
   height: calc(100vh - var(--nav-h));
-  /* Przesunięcie w dół żeby treść nie była przykryta przez fixed navbar */
+  /* Push down so the content isn't covered by the fixed navbar */
   margin-top: var(--nav-h);
-  /* overflow: hidden na :host - scrolluje sie TYLKO .main, nie cała strona */
+  /* overflow: hidden on :host - ONLY .main scrolls, not the whole page */
   overflow: hidden;
   background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 55%, #fafbff 100%);
   position: relative;
 }
 
-/* Reset box-sizing dla wszystkich elementów wewnątrz komponentu */
+/* Reset box-sizing for all elements inside the component */
 * { box-sizing: border-box; font-family: inherit; }
 
 
-/* Dekoracyjne rozmyte plamy tła (efekt "glow").
-   position: fixed zajmuje cały ekran niezależnie od scrolla.
-   pointer-events: none sprawia że kliknięcia "przechodzą przez" te elementy do elementów poniżej.
-   Zdefiniowane w HTML jako <div class="bg-glow" aria-hidden="true"> */
+/* Decorative blurred background blobs (a "glow" effect).
+   position: fixed takes the whole screen regardless of scroll.
+   pointer-events: none makes clicks "pass through" these elements to the ones below.
+   Defined in HTML as <div class="bg-glow" aria-hidden="true"> */
 .bg-glow {
   position: fixed; inset: 0; z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
-/* Plama prawa-górna - fioletowa (indigo) */
+/* Top-right blob - indigo */
 .bg-glow-1 {
   position: absolute; top: -10%; right: -5%; width: 55vw; height: 55vw;
   background: radial-gradient(circle, rgba(99,102,241,0.09) 0%, transparent 70%);
 }
-/* Plama lewa-dolna - fioletowa (violet) */
+/* Bottom-left blob - violet */
 .bg-glow-2 {
   position: absolute; bottom: -15%; left: -10%; width: 45vw; height: 45vw;
   background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
 }
 
 
-/* Pasek górny przyklejony tuż pod Navbarem.
-   position: sticky + top: 0 powoduje że pasek "przykleja się" do górnej krawędzi :host
-   (nie viewportu) podczas scrollowania listy ofert w .main.
-   backdrop-filter: blur() tworzy efekt "matowego szkła" - rozmywa elementy za paskiem.
-   -webkit-backdrop-filter dla Safari który wymaga prefixu vendor. */
+/* Top bar pinned right below the Navbar.
+   position: sticky + top: 0 makes the bar "stick" to the top edge of :host
+   (not the viewport) while scrolling the offer list in .main.
+   backdrop-filter: blur() creates a "frosted glass" effect - blurs elements behind the bar.
+   -webkit-backdrop-filter for Safari which requires the vendor prefix. */
 .top-bar {
   position: sticky;
   top: 0;
-  z-index: 90; /* wysoki z-index żeby był nad kartami ofert (które mają position: relative) */
+  z-index: 90; /* high z-index so it's above the offer cards (which are position: relative) */
   height: var(--topbar-h);
-  background: rgba(238,242,255,0.82); /* lekko przeźroczyste tło indigo-50 */
+  background: rgba(238,242,255,0.82); /* slightly transparent indigo-50 background */
   backdrop-filter: blur(14px) saturate(170%);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
-  border-bottom: 1px solid rgba(99,102,241,.1); /* subtelna linia oddzielająca od listy ofert */
+  border-bottom: 1px solid rgba(99,102,241,.1); /* subtle line separating it from the offer list */
 }
 
-/* Wewnętrzny kontener paska górnego - centruje zawartość i ogranicza maksymalną szerokość.
-   display: flex dzieli na dwie kolumny: sidebar-space (lewa) i main-space (prawa) */
+/* Inner container of the top bar - centers the content and limits the max width.
+   display: flex splits it into two columns: sidebar-space (left) and main-space (right) */
 .top-bar__inner {
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 1600px; /* maksymalna szerokość layoutu na bardzo szerokich ekranach */
+  max-width: 1600px; /* max layout width on very wide screens */
   margin: 0 auto;
   height: 100%;
 }
 
-/* Lewa kolumna paska górnego - wyrównana szerokością z sidebarem.
-   Szerokość jest bindowana dynamicznie z TypeScript przez [style.width.px]="sidebarWidth".
-   transition: width animuje zmianę gdy sidebar jest pokazywany/ukrywany lub gdy zmienia się przez drag.
-   flex-shrink: 0 zapobiega kurczeniu się tej kolumny gdy brakuje miejsca */
+/* Left column of the top bar - width matched to the sidebar.
+   The width is bound dynamically from TypeScript via [style.width.px]="sidebarWidth".
+   transition: width animates the change when the sidebar is shown/hidden or resized by dragging.
+   flex-shrink: 0 prevents this column from shrinking when space runs out */
 .top-bar__sidebar-space {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   padding: 0 1.25rem 0 1.75rem;
   transition: width .3s cubic-bezier(.25,.8,.25,1);
-  overflow: hidden; /* ukrywa zawartość gdy szerokość = 0 podczas chowania sidebara */
+  overflow: hidden; /* hides the content when width = 0 while the sidebar is collapsing */
 }
-/* Modyfikator gdy sidebar jest ukryty - zmniejsza padding żeby przycisk toggle był bliżej krawędzi */
+/* Modifier when the sidebar is hidden - reduces padding so the toggle button is closer to the edge */
 .top-bar__sidebar-space--hidden {
   padding: 0 0 0 1.75rem;
 }
 
-/* Prawa kolumna paska górnego - rozciąga się na dostępną przestrzeń i zawiera wyszukiwarkę */
+/* Right column of the top bar - stretches to fill the available space and contains the search */
 .top-bar__main-space {
-  flex: 1; /* zajmuje całą pozostałą szerokość po sidebar-space */
+  flex: 1; /* takes all the remaining width after sidebar-space */
   display: flex;
   align-items: center;
   padding: 0 1.75rem 0 1rem;
-  min-width: 0; /* pozwala na kurczenie się poniżej naturalnej szerokości (flexbox fix) */
+  min-width: 0; /* allows shrinking below the natural width (flexbox fix) */
 }
 
-/* Przycisk pokazywania/ukrywania panelu filtrów.
-   Kliknięcie zmienia isFiltersVisible w szablonie (offers.component.html).
-   toggle-btn--active jest dodawany przez Angular gdy isFiltersVisible = true */
+/* Button that shows/hides the filter panel.
+   Clicking toggles isFiltersVisible in the template (offers.component.html).
+   toggle-btn--active is added by Angular when isFiltersVisible = true */
 .toggle-btn {
   display: inline-flex;
   align-items: center;
@@ -146,18 +146,18 @@
   font-size: .8rem;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap; /* tekst przycisku w jednej linii */
+  white-space: nowrap; /* button text on a single line */
   flex-shrink: 0;
   transition: border-color .18s, color .18s, background .18s, box-shadow .18s;
   backdrop-filter: blur(8px);
 }
-/* Hover i stan aktywny (gdy sidebar jest widoczny) - zmiana na kolor primary */
+/* Hover and active state (when the sidebar is visible) - switch to the primary color */
 .toggle-btn:hover        { border-color: var(--pri); color: var(--pri); background: var(--pri-lt); box-shadow: 0 0 0 3px var(--pri-ring); }
 .toggle-btn--active      { border-color: var(--pri); color: var(--pri); background: var(--pri-lt); }
 
-/* Pole wyszukiwania ofert po tytule/firmie/lokalizacji.
-   Wyszukiwanie jest obsługiwane przez searchTrigger$ z debounce 500ms (offers.component.ts).
-   Efekt "glass" przez background z opacity i backdrop-filter. */
+/* Field for searching offers by title/company/location.
+   The search is handled by searchTrigger$ with a 500ms debounce (offers.component.ts).
+   "glass" effect via a background with opacity and backdrop-filter. */
 .searchbar {
   display: flex;
   align-items: center;
@@ -171,26 +171,26 @@
   box-shadow: 0 2px 12px rgba(99,102,241,.06);
   transition: border-color .2s, box-shadow .2s, background .2s;
 }
-/* Stan aktywnego focusa - wyraźniejsze obramowanie i cień w kolorze primary.
-   Klasa searchbar--focused jest dodawana przez Angular gdy input ma focus (offers.component.html) */
+/* Active focus state - more prominent border and a shadow in the primary color.
+   The searchbar--focused class is added by Angular when the input is focused (offers.component.html) */
 .searchbar--focused {
   border-color: var(--pri);
   box-shadow: 0 0 0 3px var(--pri-ring), 0 2px 12px rgba(99,102,241,.1);
   background: rgba(255,255,255,.97);
 }
 .searchbar > svg    { flex-shrink: 0; color: var(--ink-4); transition: color .2s; }
-.searchbar--focused > svg { color: var(--pri); } /* ikona lupy zmienia kolor przy focusie */
+.searchbar--focused > svg { color: var(--pri); } /* the magnifier icon changes color on focus */
 
-/* Pole tekstowe wewnątrz wyszukiwarki - przezroczyste tło żeby widać styl .searchbar */
+/* Text field inside the search - transparent background so the .searchbar style shows through */
 .searchbar__input {
   flex: 1; border: none; outline: none; background: transparent;
   font-size: .9rem; color: var(--ink-1); font-weight: 500;
 }
 .searchbar__input::placeholder { color: var(--ink-4); font-weight: 400; }
 
-/* Okrągły przycisk "X" do czyszczenia wyszukiwania.
-   Widoczny tylko gdy searchQuery nie jest puste (*ngIf w szablonie).
-   Czerwony kolor po najechaniu sygnalizuje usunięcie/wyczyść */
+/* Round "X" button to clear the search.
+   Visible only when searchQuery is not empty (*ngIf in the template).
+   The red hover color signals removal/clearing */
 .searchbar__clear {
   display: flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; flex-shrink: 0;
@@ -201,54 +201,54 @@
 .searchbar__clear:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
 
 
-/* Główny kontener workspace - flex z sidebarem po lewej i listą po prawej.
-   height: calc(...) sprawia że workspace wypełnia dokładnie pozostałą przestrzeń ekranu
-   (całość - navbar - topbar), bez żadnego scrolla na poziomie body/strony.
-   workspace--no-sidebar - dodawane przez Angular gdy isFiltersVisible = false,
-   powoduje że lista ofert zajmuje całą szerokość */
+/* Main workspace container - flex with the sidebar on the left and the list on the right.
+   height: calc(...) makes workspace fill exactly the remaining screen space
+   (everything - navbar - topbar), with no scroll at the body/page level.
+   workspace--no-sidebar - added by Angular when isFiltersVisible = false,
+   making the offer list take the full width */
 .workspace {
   display: flex;
   height: calc(100vh - var(--nav-h) - var(--topbar-h));
   max-width: 1600px;
   margin: 0 auto;
-  overflow: hidden; /* kluczowe - blokuje scroll na workspace, scroll jest tylko w .main */
+  overflow: hidden; /* key - blocks scroll on workspace, the scroll is only in .main */
   position: relative;
-  z-index: 1; /* wyższy z-index niż .bg-glow (z-index: 0) żeby treść była nad tłem */
+  z-index: 1; /* higher z-index than .bg-glow (z-index: 0) so the content is above the background */
 }
 
 
-/* Panel filtrów po lewej stronie layoutu.
-   Szerokość jest kontrolowana dynamicznie z TypeScript ([style.width.px]="sidebarWidth").
-   flex-shrink: 0 zapobiega kurczeniu się sidebara gdy lista ofert jest długa.
-   Scrolluje się niezależnie od listy ofert (overflow-y: auto).
-   transition: width animuje płynne pokazywanie/ukrywanie sidebara */
+/* Filter panel on the left of the layout.
+   The width is controlled dynamically from TypeScript ([style.width.px]="sidebarWidth").
+   flex-shrink: 0 prevents the sidebar from shrinking when the offer list is long.
+   Scrolls independently of the offer list (overflow-y: auto).
+   transition: width animates the smooth show/hide of the sidebar */
 .sidebar {
   flex-shrink: 0;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative; /* potrzebne dla position: absolute na .drag-handle */
+  position: relative; /* needed for position: absolute on .drag-handle */
   border-right: 1px solid rgba(99,102,241,.1);
   transition: width .3s var(--ease), opacity .25s var(--ease);
-  /* Cienki scrollbar dla estetyki - scrollbar-width działa w Firefox */
+  /* Thin scrollbar for aesthetics - scrollbar-width works in Firefox */
   scrollbar-width: thin;
   scrollbar-color: #dde4f0 transparent;
   background: rgba(246,248,255,.6);
   backdrop-filter: blur(4px);
 }
-/* Stylowanie scrollbara dla Chrome/Safari/Edge (vendor-specific) */
+/* Scrollbar styling for Chrome/Safari/Edge (vendor-specific) */
 .sidebar::-webkit-scrollbar       { width: 4px; }
 .sidebar::-webkit-scrollbar-track { background: transparent; }
 .sidebar::-webkit-scrollbar-thumb { background: #dde4f0; border-radius: 4px; }
 .sidebar::-webkit-scrollbar-thumb:hover { background: #b8c2d8; }
 
-/* Wyłączamy transition podczas przeciągania uchwytu - bez tego sidebar "laga" za kursorem.
-   Klasa dodawana przez Angular gdy isSidebarDragging = true (offers.component.html) */
+/* Disable the transition while dragging the handle - without it the sidebar "lags" behind the cursor.
+   The class is added by Angular when isSidebarDragging = true (offers.component.html) */
 .sidebar--dragging { transition: none !important; }
 
-/* Stan ukrytego sidebara - width: 0 ustawiany przez TypeScript, a ten styl dodaje:
-   pointer-events: none = kliknięcia "przechodzą przez" niewidoczny sidebar
-   border-right: none = ukrywa linię oddzielającą gdy sidebar znika */
+/* Hidden sidebar state - width: 0 is set by TypeScript, and this style adds:
+   pointer-events: none = clicks "pass through" the invisible sidebar
+   border-right: none = hides the separator line when the sidebar disappears */
 .sidebar--hidden {
   overflow: hidden;
   opacity: 0;
@@ -256,19 +256,19 @@
   border-right: none;
 }
 
-/* Wewnętrzny padding treści sidebara.
-   min-width: 240px zabezpiecza przed zbyt wąskim formularzem przy minimalnej szerokości drag */
+/* Inner padding of the sidebar content.
+   min-width: 240px guards against a too-narrow form at the minimum drag width */
 .sidebar__inner {
   padding: 1.5rem 1.5rem 2.5rem 1.5rem;
   min-width: 240px;
   box-sizing: border-box;
 }
 
-/* Uchwyt do zmiany szerokości sidebara przez przeciąganie myszą.
-   position: absolute + right: -4px umieszcza go na prawej krawędzi sidebara, częściowo na liście.
-   cursor: col-resize zmienia kursor na dwukierunkową strzałkę poziomą.
-   Domyślnie niewidoczny (opacity: 0) - pojawia się dopiero po najechaniu na sidebar.
-   Interakcja obsługiwana przez onDragStart/onDragMove/onDragEnd w offers.component.ts */
+/* Handle for resizing the sidebar by dragging with the mouse.
+   position: absolute + right: -4px places it on the sidebar's right edge, partly over the list.
+   cursor: col-resize changes the cursor to a horizontal two-way arrow.
+   Hidden by default (opacity: 0) - appears only on sidebar hover.
+   The interaction is handled by onDragStart/onDragMove/onDragEnd in offers.component.ts */
 .drag-handle {
   position: absolute;
   top: 0; right: -4px;
@@ -281,35 +281,35 @@
   opacity: 0;
   transition: opacity .18s;
 }
-/* Uchwyt pojawia się gdy mysz jest nad sidebarem lub podczas aktywnego przeciągania */
+/* The handle appears when the mouse is over the sidebar or during an active drag */
 .sidebar:hover .drag-handle,
 .sidebar--dragging .drag-handle { opacity: 1; }
 
-/* Pionowa linia na uchwycie - wizualna wskazówka że można przeciągać */
+/* Vertical line on the handle - a visual hint that it can be dragged */
 .drag-handle::before {
   content: '';
   position: absolute;
   top: 0; bottom: 0;
   left: 4px; width: 2px;
-  background: var(--pri); /* kolor primary - niebieskofioletowy */
+  background: var(--pri); /* primary color - indigo */
   border-radius: 2px;
   opacity: .4;
 }
-/* Kropki na uchwycie - trzy pionowe kropki jako ikona "drag" */
+/* Dots on the handle - three vertical dots as a "drag" icon */
 .drag-handle__dots {
   position: relative; z-index: 1;
   width: 4px; height: 28px;
   background-image: radial-gradient(circle, #94a3b8 1.2px, transparent 1.2px);
-  background-size: 4px 7px; /* odstęp 7px między kropkami */
+  background-size: 4px 7px; /* 7px spacing between dots */
   background-repeat: repeat-y;
 }
 
 
-/* Style dla przycisków zwijania sekcji formularza filtrów wewnątrz sidebara.
-   ::ng-deep przebija enkapsulację Angular i pozwala stylować wewnętrzne elementy
-   komponentu FiltersFormComponent (shared/filters-form/filters-form.component.ts).
-   Bez ::ng-deep Angular blokuje style komponentu nadrzędnego w dziecku.
-   Prefix ".sidebar" ogranicza zasięg do kontekstu sidebara (nie nadpisuje globalnie). */
+/* Styles for the filter form's section-collapse buttons inside the sidebar.
+   ::ng-deep pierces Angular encapsulation and lets us style the internal elements
+   of FiltersFormComponent (shared/filters-form/filters-form.component.ts).
+   Without ::ng-deep Angular blocks the parent component's styles in the child.
+   The ".sidebar" prefix limits the scope to the sidebar context (no global override). */
 :host ::ng-deep .sidebar .section-toggle-btn {
   display: flex;
   align-items: center;
@@ -322,15 +322,15 @@
   font-size: .75rem;
   font-weight: 800;
   color: var(--ink-3);
-  text-transform: uppercase; /* etykiety sekcji pisane wielkimi literami */
+  text-transform: uppercase; /* section labels written in uppercase */
   letter-spacing: .06em;
   transition: color .15s;
   margin-bottom: .1rem;
 }
 :host ::ng-deep .sidebar .section-toggle-btn:hover { color: var(--pri); }
 
-/* Strzałka chevron w przycisku zwijania sekcji.
-   section-chevron--up jest dodawana gdy sekcja jest rozwinięta - obraca strzałkę o 180deg */
+/* Chevron arrow in the section-collapse button.
+   section-chevron--up is added when the section is expanded - rotates the arrow 180deg */
 :host ::ng-deep .sidebar .section-chevron {
   flex-shrink: 0;
   color: var(--ink-4);
@@ -341,18 +341,18 @@
   color: var(--pri);
 }
 
-/* Nadpisanie wyglądu kart (ff-card) i siatki (summary-grid) FiltersFormComponent w sidebarsie.
-   W widoku sidebara nie chcemy kart z tłem i cieniem - formularz ma być płaski i przezroczysty */
+/* Overriding the look of FiltersFormComponent's cards (ff-card) and grid (summary-grid) in the sidebar.
+   In the sidebar view we don't want cards with a background and shadow - the form should be flat and transparent */
 :host ::ng-deep .sidebar .ff-card {
   background: transparent; border: none; box-shadow: none;
   border-radius: 0; padding: 0; margin: 0;
 }
-/* summary-grid w sidebarze: jedna kolumna zamiast siatki - lista sekcji w pionie */
+/* summary-grid in the sidebar: a single column instead of a grid - a vertical list of sections */
 :host ::ng-deep .sidebar .summary-grid {
   grid-template-columns: 1fr;
   gap: 0;
 }
-/* Bloki sekcji formularza w sidebarze - oddzielone subtelną linią zamiast kart */
+/* Form section blocks in the sidebar - separated by a subtle line instead of cards */
 :host ::ng-deep .sidebar .summary-block {
   background: transparent;
   border: none;
@@ -363,7 +363,7 @@
 :host ::ng-deep .sidebar .summary-block:last-child { border-bottom: none; }
 :host ::ng-deep .sidebar .summary-block.full-width { grid-column: auto; }
 
-/* Nagłówki sekcji w formularzach wewnątrz sidebara */
+/* Section headings in the forms inside the sidebar */
 :host ::ng-deep .sidebar .summary-block h3 {
   font-size: .75rem;
   font-weight: 800;
@@ -373,18 +373,18 @@
   letter-spacing: .06em;
 }
 
-/* Kontener i styl kapsułek (pills) opcji filtrów w sidebarze.
-   Zamiast układu poziomego pills są w kolumnie dla lepszej czytelności w wąskim sidebarze */
+/* Container and style of the filter option pills in the sidebar.
+   Instead of a horizontal layout the pills are in a column for better readability in the narrow sidebar */
 :host ::ng-deep .sidebar .pills-container {
   display: flex;
-  flex-direction: column; /* pills jedna pod drugą zamiast poziomego wrapping */
+  flex-direction: column; /* pills one under another instead of horizontal wrapping */
   gap: .2rem;
   margin-top: .2rem;
   width: 100%;
 }
 :host ::ng-deep .sidebar .pill-card {
   display: block;
-  width: 100%; /* pill zajmuje całą szerokość sidebara */
+  width: 100%; /* the pill takes the full sidebar width */
 }
 :host ::ng-deep .sidebar .pill-content {
   display: flex;
@@ -395,7 +395,7 @@
   font-size: .79rem;
   font-weight: 500;
   border-radius: 7px;
-  white-space: normal;       /* pozwól na zawijanie tekstu w wąskim sidebarze */
+  white-space: normal;       /* allow text wrapping in the narrow sidebar */
   word-break: break-word;
   text-align: left;
   line-height: 1.4;
@@ -405,7 +405,7 @@
 :host ::ng-deep .sidebar .pill-content::before {
   width: 14px;
   height: 14px;
-  flex-shrink: 0; /* ikona przed tekstem nie kurczy się */
+  flex-shrink: 0; /* the icon before the text doesn't shrink */
 }
 :host ::ng-deep .sidebar .toggle-pill-btn {
   width: 100%;
@@ -416,7 +416,7 @@
   justify-content: flex-start;
   box-sizing: border-box;
 }
-/* Tech picker (wybieracz technologii) dostosowany do szerokości sidebara */
+/* Tech picker adjusted to the sidebar width */
 :host ::ng-deep .sidebar .tp-field {
   width: 100%;
   box-sizing: border-box;
@@ -424,7 +424,7 @@
 }
 :host ::ng-deep .sidebar .tp-tags  { min-width: 0; }
 :host ::ng-deep .sidebar .tp-input { min-width: 60px; font-size: .8rem; }
-/* Tagi wybranych technologii w sidebarze - elipsis gdy zbyt długie */
+/* Selected technology tags in the sidebar - ellipsis when too long */
 :host ::ng-deep .sidebar .tp-tag {
   font-size: .72rem;
   padding: 2px 6px 2px 8px;
@@ -435,14 +435,14 @@
 }
 
 
-/* Główny obszar listy ofert - jedyny element z scrollem na tej stronie.
-   flex: 1 sprawia że zajmuje całą pozostałą szerokość po sidebarze.
-   overflow-y: auto umożliwia scrollowanie listy niezależnie od sidebara i topbara.
-   #mainScroll w HTML to referencja do tego elementu używana przez IntersectionObserver */
+/* Main offer list area - the only element with a scroll on this page.
+   flex: 1 makes it take all the remaining width after the sidebar.
+   overflow-y: auto allows scrolling the list independently of the sidebar and topbar.
+   #mainScroll in HTML is the reference to this element used by IntersectionObserver */
 .main {
   flex: 1;
   height: 100%;
-  overflow-y: auto;   /* tylko tutaj jest scroll - reszta strony jest nieruchoma */
+  overflow-y: auto;   /* the scroll lives only here - the rest of the page is static */
   overflow-x: hidden;
   padding: 1.75rem 2rem 3rem;
   scrollbar-width: thin;
@@ -453,18 +453,18 @@
 .main::-webkit-scrollbar-thumb { background: #dde4f0; border-radius: 4px; }
 
 
-/* Stany interfejsu wyświetlane zamiast lub obok listy ofert */
+/* UI states shown instead of or alongside the offer list */
 
-/* Stan ładowania pierwszej strony - spinner + tekst wyśrodkowany z dużym paddingiem.
-   state-loading--sm to mniejsza wersja dla infinite scroll (na dole listy, mniejszy padding) */
+/* First-page loading state - spinner + centered text with large padding.
+   state-loading--sm is the smaller version for infinite scroll (at the bottom of the list, less padding) */
 .state-loading {
   display: flex; align-items: center; gap: .65rem;
   padding: 3.5rem 0; color: var(--ink-4); font-size: .875rem; font-weight: 500;
 }
 .state-loading--sm { padding: 1.25rem 0; }
 
-/* Stan błędu - czerwone tło z ikoną ostrzeżenia i komunikatem.
-   Wyświetlany gdy request do API się nie powiódł (sieć, backend offline, błąd HTTP) */
+/* Error state - red background with a warning icon and message.
+   Shown when an API request failed (network, backend offline, HTTP error) */
 .state-error {
   display: flex; align-items: center; gap: .5rem;
   padding: .8rem 1rem; margin-bottom: 1rem;
@@ -473,8 +473,8 @@
   backdrop-filter: blur(4px);
 }
 
-/* Stan pustej listy - wyświetlany gdy brak ofert pasujących do filtrów.
-   Przerywane obramowanie sygnalizuje "tutaj mogłyby być wyniki" */
+/* Empty list state - shown when no offers match the filters.
+   The dashed border signals "results could be here" */
 .state-empty {
   display: flex; flex-direction: column; align-items: center;
   text-align: center; padding: 5rem 2rem;
@@ -486,13 +486,13 @@
 .state-empty p  { margin: 0; color: var(--ink-4); font-size: .86rem; max-width: 320px; line-height: 1.7; }
 
 
-/* Lista ofert - sekcja zawierająca karty ofert w kolumnie z odstępem 0.75rem */
+/* Offer list - a section holding the offer cards in a column with a 0.75rem gap */
 section { display: flex; flex-direction: column; gap: .75rem; }
 
-/* Karta pojedynczej oferty pracy.
-   animation: fadeUp sprawia że nowe karty wjeżdżają od dołu przy pierwszym renderze.
-   position: relative potrzebne dla lewego paska kolorowego (::before).
-   overflow: hidden przycina lewy pasek do zaokrąglonych rogów karty */
+/* A single job offer card.
+   animation: fadeUp makes new cards slide in from below on the first render.
+   position: relative needed for the colored left bar (::before).
+   overflow: hidden clips the left bar to the card's rounded corners */
 .offer-card {
   background: var(--card);
   border: 1px solid rgba(226,232,240,.8);
@@ -501,12 +501,12 @@ section { display: flex; flex-direction: column; gap: .75rem; }
   box-shadow: var(--sh-xs);
   transition: transform .22s var(--ease), box-shadow .22s var(--ease), border-color .22s;
   backdrop-filter: blur(4px);
-  animation: fadeUp .35s ease both; /* animacja wejścia - fadeUp zdefiniowany poniżej */
+  animation: fadeUp .35s ease both; /* entry animation - fadeUp defined below */
   position: relative;
   overflow: hidden;
 }
-/* Lewy pionowy pasek w kolorze primary - pojawia się przy najechaniu myszą.
-   Gradient od indigo do fioletowego dla efektu "tęczowego" akcentu */
+/* Vertical left bar in the primary color - appears on hover.
+   Gradient from indigo to violet for a "rainbow" accent effect */
 .offer-card::before {
   content: '';
   position: absolute;
@@ -514,30 +514,30 @@ section { display: flex; flex-direction: column; gap: .75rem; }
   width: 3px;
   background: linear-gradient(180deg, var(--pri), #a855f7); /* indigo -> violet */
   border-radius: 18px 0 0 18px;
-  opacity: 0; /* domyślnie niewidoczny */
+  opacity: 0; /* invisible by default */
   transition: opacity .22s;
 }
-/* Efekt hover karty - unosenie o 2px i głębszy cień */
+/* Card hover effect - lift by 2px and a deeper shadow */
 .offer-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--sh-md);
-  border-color: #c7d2fe; /* lekko niebieskie obramowanie przy hover */
+  border-color: #c7d2fe; /* slightly blue border on hover */
 }
-.offer-card:hover::before { opacity: 1; } /* lewy pasek staje się widoczny przy hover */
+.offer-card:hover::before { opacity: 1; } /* the left bar becomes visible on hover */
 
-/* Animacja wejścia kart - fade in z przesunięciem o 10px od dołu */
+/* Card entry animation - fade in with a 10px shift from below */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Nagłówek karty - flex z logo (kwadratowy inicjał) i resztą treści obok siebie */
+/* Card header - flex with the logo (square initial) and the rest of the content side by side */
 .offer-card__header {
   display: flex; gap: .875rem; margin-bottom: .65rem;
 }
 
-/* Logo firmy - kwadratowy element z pierwszą literą nazwy firmy (brak zewnętrznych obrazków).
-   Gradient tła i cień w kolorze primary dla estetycznego efektu */
+/* Company logo - a square element with the first letter of the company name (no external images).
+   Gradient background and a primary-colored shadow for a nice effect */
 .offer-card__logo {
   flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px;
   background: linear-gradient(135deg, #eef2ff, #e0e7ff);
@@ -547,16 +547,16 @@ section { display: flex; flex-direction: column; gap: .75rem; }
   box-shadow: 0 2px 8px rgba(99,102,241,.12);
 }
 
-/* Kontener treści obok logo - min-width: 0 pozwala na obcinanie tekstu (ellipsis) */
+/* Content container next to the logo - min-width: 0 allows text truncation (ellipsis) */
 .offer-card__content { flex: 1; min-width: 0; }
 
-/* Wiersz z tytułem stanowiska i wynagrodzeniem - tytuł po lewej, salary po prawej */
+/* Row with the job title and salary - title on the left, salary on the right */
 .offer-card__title-row {
   display: flex; align-items: flex-start;
   justify-content: space-between; gap: .75rem;
   margin-bottom: .25rem;
 }
-/* Tytuł stanowiska - pogrubiony, obcinany z wielokropkiem gdy za długi */
+/* Job title - bold, truncated with an ellipsis when too long */
 .offer-card__title {
   margin: 0; font-size: .97rem; font-weight: 800; color: var(--ink-1);
   line-height: 1.35; flex: 1; min-width: 0;
@@ -564,47 +564,47 @@ section { display: flex; flex-direction: column; gap: .75rem; }
   letter-spacing: -.01em;
 }
 
-/* Odznaka wynagrodzenia - zielona gdy podane, szara gdy "Nie podano".
-   offer-card__salary--na dodawane przez Angular gdy hasSalary(offer) = false */
+/* Salary badge - green when present, gray when "Nie podano".
+   offer-card__salary--na added by Angular when hasSalary(offer) = false */
 .offer-card__salary {
   flex-shrink: 0; white-space: nowrap;
-  font-size: .78rem; font-weight: 700; color: #059669; /* zielony - emerald-600 */
+  font-size: .78rem; font-weight: 700; color: #059669; /* green - emerald-600 */
   background: rgba(240,253,244,.9); border: 1px solid #bbf7d0;
   border-radius: 7px; padding: .2rem .6rem; line-height: 1.6;
 }
-/* Wariant szary gdy brak danych o wynagrodzeniu */
+/* Gray variant when there is no salary data */
 .offer-card__salary--na {
   color: var(--ink-4); background: rgba(241,245,249,.8); border-color: var(--b-md);
   font-weight: 500;
 }
 
-/* Wiersz metadanych oferty - firma, lokalizacja, tryb pracy, źródło.
-   flex-wrap: wrap pozwala na zawinięcie na wąskich ekranach */
+/* Offer metadata row - company, location, work mode, source.
+   flex-wrap: wrap allows wrapping on narrow screens */
 .offer-card__meta {
   display: flex; flex-wrap: wrap; align-items: center;
   gap: .28rem; font-size: .77rem; color: var(--ink-3);
 }
-.offer-card__company { font-weight: 700; color: var(--ink-2); } /* nazwa firmy pogrubiona */
-.dot  { color: var(--ink-4); font-size: .6rem; } /* separator kropkowy miedzy metadanymi */
+.offer-card__company { font-weight: 700; color: var(--ink-2); } /* company name in bold */
+.dot  { color: var(--ink-4); font-size: .6rem; } /* dot separator between metadata */
 
-/* Kontener tagów ról i technologii */
+/* Container for the role and technology tags */
 .offer-card__tags { display: flex; flex-wrap: wrap; gap: .28rem; margin-bottom: .875rem; }
 
-/* Bazowy styl tagu - szary, mały zaokrąglony prostokąt.
-   Klasy modyfikujące dodawane przez Angular w szablonie na podstawie matchedRoles/matchedTech */
+/* Base tag style - gray, small rounded rectangle.
+   Modifier classes are added by Angular in the template based on matchedRoles/matchedTech */
 .tag {
   display: inline-flex; align-items: center;
   padding: 2px 9px; border-radius: 5px;
   border: 1px solid var(--b-md); background: rgba(241,245,249,.8);
   color: var(--ink-4); font-size: .7rem; font-weight: 600; line-height: 1.55;
 }
-/* Tag roli - niebieskofioletowy (primary). Dodawany gdy rola z oferty pasuje do filtrów użytkownika */
+/* Role tag - indigo (primary). Added when a role from the offer matches the user's filters */
 .tag--role  { background: var(--pri-lt); border-color: #c7d2fe; color: var(--pri); }
-/* Tag technologii dopasowanej - ciemniejszy primary gdy technologia jest w filtrach użytkownika */
+/* Matched technology tag - darker primary when the technology is in the user's filters */
 .tag--match { background: var(--pri-lt); border-color: #a5b4fc; color: var(--pri-dk); font-weight: 700; }
 
-/* Stopka karty z przyciskiem otwierającym ofertę na zewnętrznym portalu.
-   Linia border-top oddziela footer od tagów technologii */
+/* Card footer with the button that opens the offer on the external board.
+   The border-top line separates the footer from the technology tags */
 .offer-card__footer {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: .875rem; border-top: 1px solid rgba(226,232,240,.6);
@@ -616,9 +616,9 @@ section { display: flex; flex-direction: column; gap: .75rem; }
 }
 .offer-card__date--expiry { color: #f59e0b; }
 
-/* Główny przycisk akcji - "Otwórz ofertę".
-   Kliknięcie wywołuje openOffer() który otwiera offer.url w nowej karcie.
-   :disabled gdy oferta nie ma URL (offer.url jest puste lub null) */
+/* Main action button - "Otwórz ofertę".
+   Clicking calls openOffer() which opens offer.url in a new tab.
+   :disabled when the offer has no URL (offer.url is empty or null) */
 .btn-primary {
   display: inline-flex; align-items: center; gap: .35rem;
   padding: .42rem 1.1rem; border-radius: 8px;
@@ -632,9 +632,9 @@ section { display: flex; flex-direction: column; gap: .75rem; }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 
-/* Animowany spinner ładowania - obracające się kółko.
-   border-top-color: var(--pri) - tylko górna krawędź w kolorze primary, reszta szara,
-   co tworzy efekt obracającego się łuku */
+/* Animated loading spinner - a spinning ring.
+   border-top-color: var(--pri) - only the top edge is in the primary color, the rest gray,
+   which creates the effect of a spinning arc */
 .spinner {
   width: 16px; height: 16px; border-radius: 50%;
   border: 2px solid var(--b-md); border-top-color: var(--pri);
@@ -642,60 +642,60 @@ section { display: flex; flex-direction: column; gap: .75rem; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Kontener elementu sentinel dla infinite scroll.
-   #scrollSentinel w HTML to niewidoczny div obserwowany przez IntersectionObserver.
-   padding: 1.5rem zapewnia margines między ostatnią kartą a spinnerem ładowania */
+/* Container for the infinite scroll sentinel element.
+   #scrollSentinel in HTML is an invisible div observed by IntersectionObserver.
+   padding: 1.5rem provides a margin between the last card and the loading spinner */
 .scroll-sentinel { display: flex; justify-content: center; padding: 1.5rem 0; }
 
 
-/* Responsywność - tablet i mniejsze ekrany (max 900px szerokości).
-   Na małych ekranach układ pionowy: sidebar na górze, lista poniżej.
-   Scrollowanie wraca do normalnego (strona scrolluje się jako całość) */
+/* Responsiveness - tablet and smaller screens (max 900px wide).
+   On small screens the layout is vertical: sidebar on top, list below.
+   Scrolling returns to normal (the page scrolls as a whole) */
 @media (max-width: 900px) {
-  /* Wyłączamy stały layout SaaS - strona scrolluje się normalnie */
+  /* Disable the fixed SaaS layout - the page scrolls normally */
   :host { height: auto; overflow: visible; }
 
-  /* Workspace zmienia kierunek z poziomego na pionowy */
+  /* Workspace changes direction from horizontal to vertical */
   .workspace { flex-direction: column; height: auto; overflow: visible; }
 
-  /* Sidebar zajmuje pełną szerokość i jest automatycznej wysokości */
+  /* The sidebar takes the full width and is auto height */
   .sidebar {
-    width: 100% !important;   /* nadpisuje dynamiczną szerokość z TypeScript */
+    width: 100% !important;   /* overrides the dynamic width from TypeScript */
     height: auto !important;
     overflow: visible;
     opacity: 1 !important;
     pointer-events: auto !important;
     border-right: none;
-    border-bottom: 1px solid rgba(99,102,241,.1); /* pozioma linia oddzielająca od listy */
+    border-bottom: 1px solid rgba(99,102,241,.1); /* horizontal line separating it from the list */
     transition: none;
   }
-  /* Na mobile sidebar--hidden ukrywa cały element (display: none) */
+  /* On mobile sidebar--hidden hides the whole element (display: none) */
   .sidebar--hidden { display: none; }
-  /* Uchwyt drag nie ma sensu na urządzeniach dotykowych */
+  /* The drag handle makes no sense on touch devices */
   .drag-handle { display: none; }
   .sidebar__inner { min-width: 0; padding: .875rem 1rem 1.25rem; }
 
-  /* Lista ofert scrolluje się razem z całą stroną */
+  /* The offer list scrolls together with the whole page */
   .main { height: auto; overflow: visible; padding: 1.25rem 1rem 3rem; }
 
-  /* Siatka filtrów na tablecie - 2 kolumny zamiast 1 (lepsze wykorzystanie przestrzeni) */
+  /* Filter grid on tablet - 2 columns instead of 1 (better use of space) */
   :host ::ng-deep .sidebar .summary-grid { grid-template-columns: repeat(2,1fr) !important; }
   :host ::ng-deep .sidebar .full-width   { grid-column: 1/-1 !important; }
 }
 
-/* Responsywność - telefony (max 540px szerokości) */
+/* Responsiveness - phones (max 540px wide) */
 @media (max-width: 540px) {
-  /* Zmniejszone paddingi paska górnego na wąskim ekranie */
+  /* Reduced top bar padding on a narrow screen */
   .top-bar__sidebar-space { padding: 0 .75rem 0 .75rem; }
   .top-bar__main-space { padding: 0 .75rem; }
-  /* Na telefonie chowamy tekst przycisku toggle - zostaje tylko ikona (oszczędność miejsca) */
+  /* On phones we hide the toggle button text - only the icon remains (saves space) */
   .toggle-btn span { display: none; }
-  /* Tytuł i salary zawijają się do dwóch wierszy na wąskich kartach */
+  /* Title and salary wrap to two lines on narrow cards */
   .offer-card__title-row { flex-wrap: wrap; }
   .offer-card__salary { margin-top: .15rem; }
-  /* Przycisk "Otwórz ofertę" na pełną szerokość na telefonie */
+  /* "Otwórz ofertę" button full-width on phones */
   .offer-card__footer { flex-direction: column; }
   .btn-primary { width: 100%; justify-content: center; }
-  /* Siatka filtrów na telefonie - z powrotem 1 kolumna */
+  /* Filter grid on phones - back to 1 column */
   :host ::ng-deep .sidebar .summary-grid { grid-template-columns: 1fr !important; }
 }

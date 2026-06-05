@@ -33,9 +33,9 @@ describe('ProfileComponent', () => {
     uploadCv: vi.fn(),
   };
 
-  // NEVER - forkJoin w FiltersFormComponent nigdy nie kończy, więc filtersChange nie jest
-  // emitowany automatycznie podczas init. Dzięki temu currentFilterValue zostaje null
-  // dopóki test jawnie nie wywoła onFiltersChange().
+  // NEVER - forkJoin in FiltersFormComponent never completes, so filtersChange is not
+  // emitted automatically during init. This keeps currentFilterValue null
+  // until a test explicitly calls onFiltersChange().
   const lookupsApiMock = {
     getTechnologies:     vi.fn().mockReturnValue(NEVER),
     getSpecializations:  vi.fn().mockReturnValue(NEVER),

@@ -1,4 +1,4 @@
-// Dane słownikowe pobierane w forkJoin przez FiltersFormComponent przy inicjalizacji
+// Lookup data fetched with forkJoin by FiltersFormComponent on initialization
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';

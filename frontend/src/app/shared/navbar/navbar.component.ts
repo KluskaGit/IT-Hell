@@ -1,5 +1,5 @@
-// Pasek nawigacji renderowany na kazdej stronie przez <app-navbar>.
-// Obsluguje logowanie i wylogowanie przez AuthService (Keycloak).
+// Navigation bar rendered on every page via <app-navbar>.
+// Handles login and logout through AuthService (Keycloak).
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -15,7 +15,7 @@ import { AuthService } from '../../../features/auth/auth.service';
 export class NavbarComponent {
   constructor(private readonly authService: AuthService) {}
 
-  // Gettery eksponuja sygnaly Keycloak do szablonu - wywolywane jako isAuthenticated() i username()
+  // Getters expose the Keycloak signals to the template - called as isAuthenticated() and username()
   get isAuthenticated() { return this.authService.isAuthenticated; }
   get username()        { return this.authService.username; }
 

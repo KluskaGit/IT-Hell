@@ -1,17 +1,17 @@
-# ✨ Features — CV_ANALIZER Frontend
+# ✨ Features — IT-Hell Frontend
 
-Szczegółowa dokumentacja wszystkich stron (`features/`) i komponentów współdzielonych (`shared/`). Każdy podrozdział opisuje: pliki, stan komponentu, kluczowe metody, flow użytkownika i pułapki implementacyjne.
+Detailed documentation of all pages (`features/`) and shared components (`shared/`). Each subsection covers: files, component state, key methods, the user flow and implementation gotchas.
 
-Uzupełnienie [głównego README](../README.md) oraz [`docs/architecture.md`](architecture.md).
+Complements the [main README](../README.md) and [`docs/architecture.md`](architecture.md).
 
-## 📑 Spis treści
+## 📑 Table of contents
 
-- [Mapa features](#-mapa-features)
-- [HOME `/` — strona główna](#-home---strona-główna)
-- [OFFERS `/offers` — lista ofert](#-offers-offers--lista-ofert)
-- [PROFILE `/profile` — profil użytkownika](#-profile-profile--profil-użytkownika)
-- [ABOUT `/about` — strona informacyjna](#-about-about--strona-informacyjna)
-- [LEGAL `/legal` — regulamin i FAQ](#-legal-legal--regulamin-i-faq)
+- [Features map](#-features-map)
+- [HOME `/` — home page](#-home--home-page)
+- [OFFERS `/offers` — offer list](#-offers-offers--offer-list)
+- [PROFILE `/profile` — user profile](#-profile-profile--user-profile)
+- [ABOUT `/about` — info page](#-about-about--info-page)
+- [LEGAL `/legal` — terms and FAQ](#-legal-legal--terms-and-faq)
 - [Shared: FiltersFormComponent](#-shared-filtersformcomponent-)
 - [Shared: NavbarComponent](#-shared-navbarcomponent)
 - [Shared: FooterComponent](#-shared-footercomponent)
@@ -21,89 +21,90 @@ Uzupełnienie [głównego README](../README.md) oraz [`docs/architecture.md`](ar
 
 ---
 
-## 🗺️ Mapa features
+## 🗺️ Features map
 
-| Strona | Route | SSR mode | Auth | Główne zadanie |
+| Page | Route | SSR mode¹ | Auth | Main job |
 |---|---|---|---|---|
-| Home | `/` | Prerender | — | Drop CV + analiza + przejście do ofert |
-| Offers | `/offers` | **Client** | — | Lista ofert z filtrami + infinite scroll + resizable sidebar |
-| Profile | `/profile` | Prerender | ✅ `authGuard` | Edycja danych + zapis CV + preferencji do bazy |
-| About | `/about` | Prerender | — | Statyczna prezentacja projektu |
-| Legal | `/legal` | Prerender | — | Regulamin, FAQ, instrukcja użytkowania (2 zakładki) |
+| Home | `/` | Prerender | — | Drop CV + analysis + navigate to offers |
+| Offers | `/offers` | **Client** | — | Offer list with filters + infinite scroll + resizable sidebar |
+| Profile | `/profile` | Prerender | ✅ `authGuard` | Edit data + save CV + preferences to the DB |
+| About | `/about` | Prerender | — | Static project presentation |
+| Legal | `/legal` | Prerender | — | Terms, FAQ, usage guide (2 tabs) |
 
-| Shared | Plik | Cel |
+> ¹ "SSR mode" is the `RenderMode` configured in `app.routes.server.ts`. **SSR is not currently wired into the build** (`angular.json` only defines `browser`), so the app ships as a client-only SPA and these modes are dormant — see [architecture.md](architecture.md).
+
+| Shared | File | Purpose |
 |---|---|---|
-| FiltersFormComponent | `app/shared/filters-form/` | Reużywalny formularz filtrów (home/offers/profile) |
-| NavbarComponent | `app/shared/navbar/` | Górna belka z login/logout |
-| FooterComponent | `app/shared/footer/` | Stopka z linkami |
-| TechPickerComponent | `app/shared/tech-picker/` | Multi-select technologii z autocomplete |
-| LocationPickerComponent | `app/shared/location-picker/` | Multi-select miast z autocomplete |
-| highlight.ts | `app/shared/highlight.ts` | Helper do bezpiecznego podświetlania `<strong>` (XSS-safe) |
+| FiltersFormComponent | `app/shared/filters-form/` | Reusable filter form (home/offers/profile) |
+| NavbarComponent | `app/shared/navbar/` | Top bar with login/logout |
+| FooterComponent | `app/shared/footer/` | Footer with links |
+| TechPickerComponent | `app/shared/tech-picker/` | Technology multi-select with autocomplete |
+| LocationPickerComponent | `app/shared/location-picker/` | City multi-select with autocomplete |
+| highlight.ts | `app/shared/highlight.ts` | Helper for safe `<strong>` highlighting (XSS-safe) |
 
 ---
 
-## 🏠 HOME — strona główna
+## 🏠 HOME — home page
 
 <div align="center">
-  <img src="images/cv-analysis.png" alt="Analiza CV na stronie głównej" width="800">
+  <img src="images/cv-analysis.png" alt="CV analysis on the home page" width="800">
 </div>
 
-**Ścieżka:** `src/features/home/`
+**Path:** `src/features/home/`
 **Route:** `/`
-**SSR mode:** `Prerender`
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `home.component.ts` | Logika dropzone CV, animacja skanowania, fillFromProfile, integracja z FiltersFormComponent |
-| `home.component.html` | Hero + dropzone + animacja skanu + formularz filtrów + 3 feature cards |
-| `home.component.css` | Glassmorphism, gradienty, animowane glow w tle |
+| `home.component.ts` | CV dropzone logic, scanning animation, fillFromProfile, FiltersFormComponent integration |
+| `home.component.html` | Hero + dropzone + scan animation + filter form + 3 feature cards |
+| `home.component.css` | Light cards, gradients, static glow blobs in the background |
 
-### Stałe modułu
+### Module constants
 
 ```typescript
 const MAX_CV_SIZE_MB = 10;
 const MAX_CV_SIZE_BYTES = MAX_CV_SIZE_MB * 1024 * 1024;
 ```
 
-Limit 10 MB to kompromis: większość CV w PDF/DOC mieści się, a większe pliki spowalniają backend.
+The 10 MB limit is a compromise: most PDF/DOC CVs fit, while larger files slow down the backend.
 
-### Stan komponentu
+### Component state
 
-| Pole | Typ | Cel |
+| Field | Type | Purpose |
 |---|---|---|
-| `selectedFile` | `File \| null` | Wgrany plik CV po walidacji |
-| `uploadError` | `string \| null` | Błąd walidacji (zły format / za duży) |
-| `isDragging` | `boolean` | Czy użytkownik aktualnie przeciąga plik nad dropzone |
-| `isScanning` | `boolean` | Czy trwa upload + animacja (true od POST do końca animacji) |
-| `scanProgress` | `number` | 0–100, steruje paskiem postępu |
-| `scanStatus` | `string` | Tekst nad paskiem: „Analiza CV..." → „Zakończono!" |
-| `scanComplete` | `boolean` | Czy pokazać baner sukcesu |
-| `isFillingFromProfile` | `boolean` | Blokada wielokrotnych kliknięć „Uzupełnij z profilu" |
-| `fillProfileError` | `string \| null` | Błąd fillFromProfile |
-| `savedFilters` | `FiltersInitialState \| null` | Stan przekazany do `<app-filters-form [initialFilters]>` |
+| `selectedFile` | `File \| null` | The uploaded CV after validation |
+| `uploadError` | `string \| null` | Validation error (wrong format / too large) |
+| `isDragging` | `boolean` | Whether the user is currently dragging a file over the dropzone |
+| `isScanning` | `boolean` | Whether the upload + animation is in progress (true from POST until the animation ends) |
+| `scanProgress` | `number` | 0–100, drives the progress bar |
+| `scanStatus` | `string` | Text above the bar: "Analiza CV..." → "Zakończono!" |
+| `scanComplete` | `boolean` | Whether to show the success banner |
+| `isFillingFromProfile` | `boolean` | Blocks repeated clicks on "Fill from profile" |
+| `fillProfileError` | `string \| null` | fillFromProfile error |
+| `savedFilters` | `FiltersInitialState \| null` | State passed to `<app-filters-form [initialFilters]>` |
 
-### Kluczowe metody
+### Key methods
 
-#### `handleFile(file: File)` — walidacja przed uploadem
+#### `handleFile(file: File)` — validation before upload
 
 ```
-1. Sprawdza rozszerzenie (.pdf / .doc / .docx, case-insensitive)
-2. Sprawdza rozmiar (≤ 10 MB)
-3. Jeśli OK → uploadError = null, selectedFile = file, analyzeCV(file)
-4. Jeśli błąd → uploadError = komunikat po polsku, return
+1. Checks the extension (.pdf / .doc / .docx, case-insensitive)
+2. Checks the size (≤ 10 MB)
+3. If OK → uploadError = null, selectedFile = file, analyzeCV(file)
+4. If error → uploadError = a Polish message, return
 ```
 
-#### `analyzeCV(file: File)` — upload + sztuczna animacja postępu
+#### `analyzeCV(file: File)` — upload + fake progress animation
 
 ```
 1. isScanning = true, scanProgress = 0, scanStatus = 'Analiza CV...'
-2. setTimeout 200ms → scanProgress = 35 (sygnał że coś się dzieje)
+2. setTimeout 200ms → scanProgress = 35 (signal that something is happening)
 3. cvApi.uploadCv(file).subscribe({
      next: (techs) => {
        scanProgress = 100, scanStatus = 'Zakończono!'
-       setTimeout 150ms → przełącz na baner, patchValue selectedTechnologies, autoFillForm()
+       setTimeout 150ms → switch to the banner, patchValue selectedTechnologies, autoFillForm()
      },
      error: () => {
        scanProgress = 100, scanStatus = 'Nie udało się...'
@@ -112,48 +113,48 @@ Limit 10 MB to kompromis: większość CV w PDF/DOC mieści się, a większe pli
    })
 ```
 
-> ⚠️ Backend nie zwraca progressu w czasie rzeczywistym — animacja jest **fałszywa**. Skok do 35% to czysto UX (użytkownik widzi że coś się dzieje), opóźnienie 150 ms po odpowiedzi to czas żeby zobaczył „100% Zakończono!".
+> ⚠️ The backend doesn't return real-time progress — the animation is **fake**. The jump to 35% is pure UX (the user sees something happening), the 150ms delay after the response gives time to see "100% Zakończono!".
 
-Wszystkie timery są pushowane do `scanTimers[]` i clearowane w `ngOnDestroy` — bez tego callback timera może uruchomić się po zniszczeniu komponentu.
+All timers are pushed to `scanTimers[]` and cleared in `ngOnDestroy` — without that a timer callback could run after the component is destroyed.
 
-#### `fillFromProfile()` — pobranie preferencji z backendu
+#### `fillFromProfile()` — fetch preferences from the backend
 
 ```
 1. Guard: isPlatformBrowser + isAuthenticated() (Keycloak)
 2. isFillingFromProfile = true
 3. await userApi.getMyProfile() (GET /v1/users/me/profile)
-4. Zmapuj technologie: { id, name } (format LocationItem)
+4. Map technologies: { id, name } (the LocationItem format)
 5. expLevelId = profile.exp_level?.id ?? ''
-6. Spread aktualnych filtrów (filtersFormRef.computeValue())
-   + nadpisz: selectedTechnologies, technologies (Record), seniority (Record)
-7. patchValue na FiltersFormComponent
-8. autoFillForm() (zapis do localStorage)
-9. cdr.markForCheck() (bo to async callback)
+6. Spread the current filters (filtersFormRef.computeValue())
+   + override: selectedTechnologies, technologies (Record), seniority (Record)
+7. patchValue on FiltersFormComponent
+8. autoFillForm() (save to localStorage)
+9. cdr.markForCheck() (because this is an async callback)
 ```
 
-> 💡 Spread `...computeValue()` zachowuje filtry które użytkownik już ręcznie ustawił (lokalizacja, salary), nadpisuje tylko seniority i technologie z profilu.
+> 💡 The `...computeValue()` spread keeps the filters the user already set manually (location, salary) and overrides only seniority and technologies from the profile.
 
-#### `onSubmit(value: FiltersValue)` — klik „Szukaj"
+#### `onSubmit(value: FiltersValue)` — clicking "Search"
 
 ```typescript
-saveFilters(value);  // zapis do localStorage pod FILTERS_STORAGE_KEY
+saveFilters(value);  // save to localStorage under FILTERS_STORAGE_KEY
 router.navigate(['/offers'], {
   state: { filters: value, cvFileName: this.selectedFile?.name ?? null }
 });
 ```
 
-Filtry są przekazywane przez **`history.state`** — `OffersComponent.ngOnInit()` odczyta je jako jedno ze źródeł (priorytet: URL > history.state > localStorage > `{}`).
+Filters are passed via **`history.state`** — `OffersComponent.ngOnInit()` reads them as one of its sources (priority: URL > history.state > localStorage > `{}`).
 
 ### Drag & Drop API
 
-| Handler | Co robi |
+| Handler | What it does |
 |---|---|
-| `onDragOver(e)` | `e.preventDefault()` (bez tego `drop` jest ignorowany), `isDragging = true` |
+| `onDragOver(e)` | `e.preventDefault()` (without it `drop` is ignored), `isDragging = true` |
 | `onDragLeave(e)` | `e.preventDefault()`, `isDragging = false` |
-| `onDrop(e)` | `e.preventDefault()`, pobierz `dataTransfer.files[0]`, `handleFile(file)` |
-| `onFileSelected(e)` | Handler ukrytego `<input type="file">` wyzwalanego kliknięciem dropzone |
+| `onDrop(e)` | `e.preventDefault()`, take `dataTransfer.files[0]`, `handleFile(file)` |
+| `onFileSelected(e)` | Handler for the hidden `<input type="file">` triggered by clicking the dropzone |
 
-### Integracja z FiltersFormComponent
+### Integration with FiltersFormComponent
 
 ```html
 <app-filters-form
@@ -167,16 +168,16 @@ Filtry są przekazywane przez **`history.state`** — `OffersComponent.ngOnInit(
 </app-filters-form>
 ```
 
-`@ViewChild(FiltersFormComponent) filtersFormRef` daje dostęp do:
-- `filtersFormRef.computeValue()` — odczyt aktualnego stanu
-- `filtersFormRef.patchValue({ selectedTechnologies })` — programatyczna aktualizacja po analizie CV
+`@ViewChild(FiltersFormComponent) filtersFormRef` gives access to:
+- `filtersFormRef.computeValue()` — read the current state
+- `filtersFormRef.patchValue({ selectedTechnologies })` — programmatic update after CV analysis
 
-### Cykl życia
+### Lifecycle
 
 ```
 ngOnInit:
-  guard SSR → return
-  router.events.subscribe(takeUntil) → markForCheck() przy każdej nawigacji
+  SSR guard → return
+  router.events.subscribe(takeUntil) → markForCheck() on every navigation
 
 ngOnDestroy:
   scanTimers.forEach(clearTimeout)
@@ -185,70 +186,70 @@ ngOnDestroy:
 
 ### UI highlights
 
-- **Hero** z `text-gradient` (background-clip: text, indigo → fiolet)
-- **2 background glow blobs** (CSS keyframes `glowFloat`, `backdrop-filter: blur(60px)`)
-- **Dropzone z animacją radaru** podczas skanowania (`radar-sweep`, klasa `radar-done` zatrzymuje przy 100%)
-- **3 feature cards** w sekcji marketingowej (Smart Scraper / Analiza CV / Twoje filtry)
+- **Hero** with `text-gradient` (background-clip: text, indigo → violet)
+- **2 background glow blobs** — static radial gradients (no animation; the animated variant is on `/profile`)
+- **Dropzone with a radar animation** during scanning (`radar-sweep`, the `radar-done` class stops it at 100%)
+- **3 feature cards** in the marketing section (Smart Scraper / CV analysis / your filters)
 
 ---
 
-## 💼 OFFERS `/offers` — lista ofert
+## 💼 OFFERS `/offers` — offer list
 
 <div align="center">
-  <img src="images/offers-list.png" alt="Lista ofert z sidebarem filtrów" width="800">
-  <p><sub>Pełen widok: sidebar z filtrami po lewej, lista ofert po prawej, pasek górny z wyszukiwarką</sub></p>
+  <img src="images/offers-list.png" alt="Offer list with the filter sidebar" width="800">
+  <p><sub>Full view: filter sidebar on the left, offer list on the right, top bar with the search</sub></p>
 </div>
 
-**Ścieżka:** `src/features/offers/`
+**Path:** `src/features/offers/`
 **Route:** `/offers`
-**SSR mode:** `Client` ⚠️ (wymaga `IntersectionObserver`, `localStorage`, `history.state`)
+**SSR mode:** `Client` ⚠️ (needs `IntersectionObserver`, `localStorage`, `history.state`)
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `offers.component.ts` | Filtry + paginacja + infinite scroll + resizable sidebar (628+ linii) |
-| `offers.component.html` | Sidebar z filtrami (resize handle) + lista ofert (`#mainScroll` + `#scrollSentinel`) |
-| `offers.component.css` | Responsive grid, drag handle, glassmorphism kart, pasek górny sticky |
+| `offers.component.ts` | Filters + pagination + infinite scroll + resizable sidebar (~628 lines) |
+| `offers.component.html` | Filter sidebar (resize handle) + offer list (`#mainScroll` + `#scrollSentinel`) |
+| `offers.component.css` | Responsive grid, drag handle, card glassmorphism, sticky top bar |
 
-### Stałe modułu
+### Module constants
 
 ```typescript
-const MAX_SALARY = 50000;  // synchronizowane z SALARY_OPTIONS w FiltersFormComponent
+const MAX_SALARY = 50000;  // synced with SALARY_OPTIONS in FiltersFormComponent
 ```
 
-### Interfejs ViewModel
+### ViewModel interface
 
 ```typescript
 interface OfferViewModel extends MappedOffer {
-  matchedTech: string[];   // ID technologii oferty pasujące do filtrów (do badge'a)
-  matchedRoles: string[];  // ID ról oferty pasujące do filtrów
+  matchedTech: string[];   // offer technology IDs matching the filters (for the badge)
+  matchedRoles: string[];  // offer role IDs matching the filters
 }
 ```
 
-### Stan komponentu
+### Component state
 
-| Pole | Typ | Cel |
+| Field | Type | Purpose |
 |---|---|---|
-| `initialFilters` | `FiltersInitialState \| null` | Stan przekazany do FiltersFormComponent przy pierwszym renderze |
-| `currentFilters` | `FiltersValue \| null` | Pełny stan filtrów po każdej zmianie |
-| `allOffers` | `MappedOffer[]` | Wszystkie pobrane oferty (akumulowane przy infinite scroll) |
-| `matchedOffers` | `OfferViewModel[]` | Przefiltrowane klient-side + wzbogacone o matched |
-| `searchQuery` | `string` | Tekst w wyszukiwarce tytułu |
-| `searchFocused` | `boolean` | Stylowanie aktywnego pola search |
-| `isLoading` | `boolean` | Spinner głównej listy (pierwsza strona) |
-| `isLoadingMore` | `boolean` | Mały spinner pod listą (kolejne strony) |
-| `loadError` | `string \| null` | Polski komunikat błędu API |
-| `currentPage` | `number` | Numer załadowanej strony (0 = pierwsza) |
-| `hasMore` | `boolean` | false gdy ostatnia odpowiedź < pageSize |
-| `pageSize` | `readonly 20` | Rozmiar paginacji (skip/limit) |
-| `isFiltersVisible` | `boolean` | Toggle sidebar |
-| `sidebarWidth` | `number` | Aktualna szerokość px (clamp 240–480) |
-| `isSidebarDragging` | `boolean` | Czy trwa przeciąganie uchwytu |
+| `initialFilters` | `FiltersInitialState \| null` | State passed to FiltersFormComponent on the first render |
+| `currentFilters` | `FiltersValue \| null` | Full filter state after every change |
+| `allOffers` | `MappedOffer[]` | All fetched offers (accumulated during infinite scroll) |
+| `matchedOffers` | `OfferViewModel[]` | Client-side filtered + enriched with matched data |
+| `searchQuery` | `string` | Text in the title search |
+| `searchFocused` | `boolean` | Styling of the active search field |
+| `isLoading` | `boolean` | Main list spinner (first page) |
+| `isLoadingMore` | `boolean` | Small spinner below the list (next pages) |
+| `loadError` | `string \| null` | Polish API error message |
+| `currentPage` | `number` | Index of the loaded page (0 = first) |
+| `hasMore` | `boolean` | false when the last response < pageSize |
+| `pageSize` | `readonly 20` | Pagination size (skip/limit) |
+| `isFiltersVisible` | `boolean` | Sidebar toggle |
+| `sidebarWidth` | `number` | Current width in px (clamp 240–480) |
+| `isSidebarDragging` | `boolean` | Whether the handle is being dragged |
 
-### Resizable sidebar — szczegóły
+### Resizable sidebar — details
 
-**Stałe:**
+**Constants:**
 ```typescript
 SIDEBAR_KEY     = 'cv_offers_sidebar_width';
 SIDEBAR_MIN     = 240;
@@ -256,15 +257,15 @@ SIDEBAR_MAX     = 480;
 SIDEBAR_DEFAULT = 340;
 ```
 
-**Mechanizm drag (mouse-based):**
+**Drag mechanism (mouse-based):**
 
 ```
 onDragStart(event):
-  preventDefault()  // blokada zaznaczania tekstu
+  preventDefault()  // block text selection
   isSidebarDragging = true
   dragStartX = event.clientX
   dragStartWidth = sidebarWidth
-  document.addEventListener('mousemove', boundMove)   // globalne! żeby działało poza uchwytem
+  document.addEventListener('mousemove', boundMove)   // global! so it works outside the handle
   document.addEventListener('mouseup', boundEnd)
   document.body.style.cursor = 'col-resize'
   document.body.style.userSelect = 'none'
@@ -283,25 +284,25 @@ onDragEnd():
   localStorage.setItem(SIDEBAR_KEY, String(sidebarWidth))
 ```
 
-> ⚠️ **Krytyczna pułapka:** `boundMove` i `boundEnd` to **stałe referencje** utworzone w polach klasy przez `.bind(this)`. Bez tego `removeEventListener` nie mógłby znaleźć listenera (każde `.bind()` tworzy nową referencję funkcji).
+> ⚠️ **Critical gotcha:** `boundMove` and `boundEnd` are **stable references** created in class fields via `.bind(this)`. Without them `removeEventListener` couldn't find the listener (each `.bind()` creates a new function reference).
 
-`loadSidebarWidth()` w `ngOnInit` odczytuje zapisaną wartość i clampuje do MIN-MAX (na wypadek gdyby stałe zmieniły się od poprzedniej wizyty).
+`loadSidebarWidth()` in `ngOnInit` reads the saved value and clamps it to MIN-MAX (in case the constants changed since the previous visit).
 
 ### Infinite scroll — IntersectionObserver
 
-Setter `@ViewChild('scrollSentinel')` jest wywoływany przez Angular **dynamicznie** (sentinel pojawia się i znika z DOM):
+The `@ViewChild('scrollSentinel')` setter is called by Angular **dynamically** (the sentinel appears and disappears from the DOM):
 
 ```typescript
 set scrollSentinel(el) {
-  if (el?.nativeElement === this.sentinelEl) return;  // bez zmiany - skip
-  this.intersectionObserver?.disconnect();             // rozłącz poprzedni
+  if (el?.nativeElement === this.sentinelEl) return;  // no change - skip
+  this.intersectionObserver?.disconnect();             // disconnect the previous one
   this.sentinelEl = el?.nativeElement;
   if (this.sentinelEl && isPlatformBrowser(this.platformId)) {
     this.intersectionObserver = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) this.loadMore(); },
       {
         root: this.mainScrollRef?.nativeElement ?? null,
-        rootMargin: '200px',  // ładuj 200px przed dotarciem do końca
+        rootMargin: '200px',  // load 200px before reaching the end
         threshold: 0,
       }
     );
@@ -310,26 +311,26 @@ set scrollSentinel(el) {
 }
 ```
 
-`rootMargin: '200px'` — observer reaguje gdy sentinel jest 200px przed wejściem w viewport, co eliminuje pauzę podczas scrollowania.
+`rootMargin: '200px'` — the observer reacts when the sentinel is 200px before entering the viewport, eliminating a pause while scrolling.
 
-### Źródła filtrów — priorytety
+### Filter sources — priorities
 
-W `ngOnInit` subskrypcja `route.queryParamMap`:
+In `ngOnInit`, the `route.queryParamMap` subscription:
 
 ```
-1. URL query params (?roles=...&tech=...)   ← najwyższy priorytet (shareable links)
-2. history.state.filters                     ← przekazane z home przez router.navigate
-3. localStorage (FILTERS_STORAGE_KEY)        ← ostatnio zapisane filtry
-4. {} (puste)                                ← pierwsze wejście
+1. URL query params (?roles=...&tech=...)   ← highest priority (shareable links)
+2. history.state.filters                     ← passed from home via router.navigate
+3. localStorage (FILTERS_STORAGE_KEY)        ← last saved filters
+4. {} (empty)                                ← first visit
 ```
 
-Sprawdzane raz: `if (this.initialFilters) return;` chroni przed kolejnymi emisjami (np. po `updateUrl()`).
+Checked once: `if (this.initialFilters) return;` guards against later emissions (e.g. after `updateUrl()`).
 
-### URL sync — skrócone klucze
+### URL sync — short keys
 
-`buildQueryParams(value)` używa krótkich aliasów (URL musi być czytelny):
+`buildQueryParams(value)` uses short aliases (the URL must stay readable):
 
-| Pełna nazwa | URL alias |
+| Full name | URL alias |
 |---|---|
 | `specializationIds` | `roles` |
 | `expLevelIds` | `seniority` |
@@ -340,13 +341,13 @@ Sprawdzane raz: `if (this.initialFilters) return;` chroni przed kolejnymi emisja
 | `salaryFromIndex` | `salFrom` |
 | `salaryToIndex` | `salTo` |
 
-`null` oznacza „usuń ten parametr z URL" gdy filtr nie jest aktywny.
+`null` means "remove this param from the URL" when the filter isn't active.
 
-`urlToFilters(params)` — operacja odwrotna. `getIds(key)` obsługuje oba formaty: `?tech=a&tech=b` ORAZ `?tech=a,b` (split przecinkiem).
+`urlToFilters(params)` — the inverse. `getIds(key)` handles both formats: `?tech=a&tech=b` AND `?tech=a,b` (comma split).
 
 ### Debouncing
 
-Dwa osobne Subjecty z różnymi opóźnieniami:
+Two separate Subjects with different delays:
 
 ```typescript
 filtersTrigger$.pipe(skip(1), debounceTime(700)).subscribe(value => {
@@ -359,56 +360,56 @@ searchTrigger$.pipe(debounceTime(500)).subscribe(() => {
 });
 ```
 
-- **Filtry: 700 ms** — użytkownik klika kilka checkboxów pod rząd
-- **Search: 500 ms** — krótszy bo wyszukiwanie powinno reagować szybciej
-- **`skip(1)`** — pomija pierwszą emisję, bo pierwsze ładowanie uruchamia `onFiltersReady()` (bez tego: podwójne ładowanie przy starcie)
+- **Filters: 700 ms** — the user clicks several checkboxes in a row
+- **Search: 500 ms** — shorter because search should react faster
+- **`skip(1)`** — skips the first emission, because the first load is triggered by `onFiltersReady()` (without it: a double load on startup)
 
-### Filtrowanie klient-side: salary
+### Client-side filtering: salary
 
-`computeMatchedOffers()` filtruje lokalnie tylko po widełkach:
+`computeMatchedOffers()` filters locally only by salary range:
 
 ```typescript
 isSalaryInRange(offer, filters):
-  if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;  // brak widełek = OK
+  if (offer.salaryMin === 0 && offer.salaryMax === 0) return true;  // no range = OK
   return offer.salaryMax >= filters.salaryFrom && offer.salaryMin <= filters.salaryTo;
 ```
 
-> 💡 Oferty bez podanych widełek **zawsze przechodzą** — ukrywanie ich byłoby złym UX bo pracodawca po prostu nie ujawnił widełek.
+> 💡 Offers with no stated range **always pass** — hiding them would be bad UX because the employer simply didn't disclose the range.
 
-### Sortowanie
+### Sorting
 
 ```typescript
 sortBatch(offers):
-  oferty z salary → malejąco po salaryMax
-  oferty bez salary → na końcu, alfabetycznie po title (locale 'pl')
+  offers with a salary → descending by salaryMax
+  offers without a salary → last, alphabetically by title (locale 'pl')
 ```
 
-### Wzbogacanie ofert o `matchedTech`/`matchedRoles`
+### Enriching offers with `matchedTech`/`matchedRoles`
 
 ```typescript
 toOfferViewModel(offer, filters):
-  selectedRoles = klucze z filters.itArea gdzie wartość true
-  selectedTech  = klucze z filters.technologies gdzie wartość true
+  selectedRoles = keys from filters.itArea where the value is true
+  selectedTech  = keys from filters.technologies where the value is true
   matchedRoles  = offer.roles.filter(r => selectedRoles.includes(r))
   matchedTech   = offer.technologies.filter(t => selectedTech.includes(t))
   return { ...offer, matchedRoles, matchedTech }
 ```
 
-W szablonie tagi technologii dostają klasę `tag--match` jeśli `offer.matchedTech.includes(tech)` — wizualnie wyróżnione (border + glow).
+In the template, technology tags get the `tag--match` class when `offer.matchedTech.includes(tech)` — visually highlighted (border + glow).
 
 <div align="center">
-  <img src="images/offer-card-matched.png" alt="Karta oferty z podświetlonymi dopasowaniami" width="600">
-  <p><sub>Zbliżenie na kartę oferty — technologie zaznaczone w filtrach dostają klasę <code>tag--match</code> (kolorowa ramka)</sub></p>
+  <img src="images/offer-card-matched.png" alt="Offer card with highlighted matches" width="600">
+  <p><sub>Close-up of an offer card — technologies selected in the filters get the <code>tag--match</code> class (colored border)</sub></p>
 </div>
 
-### Stopka karty — daty i przycisk
+### Card footer — dates and button
 
-Każda karta oferty ma stopkę z dwoma elementami:
+Each offer card has a footer with two elements:
 
-- **Daty (lewa strona):** `publication_date` wyświetlana jako „Dodano: DD.MM.YYYY", `expiration_date` jako „Wygasa: DD.MM.YYYY" (klasa `offer-card__date--expiry`). Widoczne tylko gdy backend zwrócił wartość (`*ngIf`). Formatowanie przez Angular pipe `date:'dd.MM.yyyy'`.
-- **Przycisk „Otwórz ofertę" (prawa strona):** `[disabled]` gdy `offer.url` jest pusty.
+- **Dates (left):** `publication_date` shown as "Dodano: DD.MM.YYYY", `expiration_date` as "Wygasa: DD.MM.YYYY" (class `offer-card__date--expiry`). Shown only when the backend returned a value (`*ngIf`). Formatted with the Angular pipe `date:'dd.MM.yyyy'`.
+- **"Otwórz ofertę" button (right):** `[disabled]` when `offer.url` is empty.
 
-### Otwieranie ofert zewnętrznych
+### Opening external offers
 
 ```typescript
 openOffer(offer):
@@ -417,32 +418,32 @@ openOffer(offer):
   }
 ```
 
-- `noopener` — nowa karta nie ma dostępu do `window.opener`
-- `noreferrer` — nie wysyła nagłówka `Referer` do zewnętrznego serwisu
+- `noopener` — the new tab has no access to `window.opener`
+- `noreferrer` — doesn't send the `Referer` header to the external site
 
-### Formatery delegowane
+### Delegated formatters
 
-`formatRole(key)`, `formatTech(key)`, `formatSource(key)`, `getWorkModeLabel(id)` delegują do `filtersFormRef` ponieważ to **tam są załadowane słowniki** z backendu. Fallback: zwraca surowy klucz.
+`formatRole(key)`, `formatTech(key)`, `formatSource(key)`, `getWorkModeLabel(id)` delegate to `filtersFormRef` because that's **where the backend lookups are loaded**. Fallback: returns the raw key.
 
-### TrackBy w `*ngFor`
+### TrackBy in `*ngFor`
 
 ```typescript
 trackOffer(_, offer) → offer.id
 trackByString(_, value) → value
 ```
 
-Bez `trackBy` Angular niszczy i tworzy wszystkie elementy listy przy każdej zmianie — bardzo nieefektywne przy 20+ kartach z animacjami.
+Without `trackBy` Angular destroys and recreates all list elements on every change — very inefficient with 20+ cards with animations.
 
-### Cykl życia
+### Lifecycle
 
 ```
 ngOnInit:
-  guard SSR → return
+  SSR guard → return
   loadSidebarWidth()
-  router.events → markForCheck (na nawigację)
+  router.events → markForCheck (on navigation)
   filtersTrigger$ → skip(1) + debounce 700ms → updateUrl + resetAndLoad
   searchTrigger$ → debounce 500ms → resetAndLoad
-  route.queryParamMap → ustal źródło filtrów
+  route.queryParamMap → determine the filter source
 
 ngOnDestroy:
   destroy$.next() + complete()
@@ -453,153 +454,155 @@ ngOnDestroy:
 
 ---
 
-## 👤 PROFILE `/profile` — profil użytkownika
+## 👤 PROFILE `/profile` — user profile
 
 <div align="center">
-  <img src="images/profile-view.png" alt="Strona profilu użytkownika" width="800">
-  <p><sub>Dane z JWT (read-only) + dropzone CV + uproszczone filtry (seniority radio + technologie)</sub></p>
+  <img src="images/profile-view.png" alt="User profile page" width="800">
+  <p><sub>Data from the JWT (read-only) + CV dropzone + simplified filters (seniority radio + technologies)</sub></p>
 </div>
 
-**Ścieżka:** `src/features/profile/`
-**Route:** `/profile` (chroniony `authGuard`)
-**SSR mode:** `Prerender`
+**Path:** `src/features/profile/`
+**Route:** `/profile` (protected by `authGuard`)
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `profile.component.ts` | 2-etapowy load, CV upload, save flow do `/v1/users/me/profile` |
-| `profile.component.html` | Dane z JWT + drag-drop CV + uproszczony FiltersFormComponent |
-| `profile.component.css` | Layout jednokolumnowy, sekcje karty |
+| `profile.component.ts` | 2-stage load, CV upload, save flow to `/v1/users/me/profile` |
+| `profile.component.html` | JWT data + drag-drop CV + simplified FiltersFormComponent |
+| `profile.component.css` | Single-column layout, card sections, glassmorphism |
 
-### Stan komponentu
+### Component state
 
-| Pole | Typ | Cel |
+| Field | Type | Purpose |
 |---|---|---|
-| `email`, `firstName`, `lastName` | `string` | Dane z JWT/backendu (read-only w UI) |
-| `currentCvFile` | `string \| null` | Nazwa wgranego pliku CV |
-| `currentCvDate` | `string` | Data uploadu (pl-PL format) |
-| `isDragging`, `isScanning`, `scanProgress`, `scanStatus`, `scanComplete` | — | Tak jak na home |
-| `savedFilters` | `FiltersInitialState \| null` | Stan dla FiltersFormComponent |
-| `currentFilterValue` | `FiltersValue \| null` | Aktualizowane przez (filtersChange), używane przy save |
-| `isSaving` | `boolean` | Disable przycisku Zapisz |
-| `loadError`, `saveError`, `saveSuccess` | `string \| null` | Komunikaty UI |
+| `email`, `firstName`, `lastName` | `string` | Data from the JWT/backend (read-only in the UI) |
+| `currentCvFile` | `string \| null` | Uploaded CV file name |
+| `currentCvDate` | `string` | Upload date (pl-PL format) |
+| `isDragging`, `isScanning`, `scanProgress`, `scanStatus`, `scanComplete` | — | Same as on home |
+| `savedFilters` | `FiltersInitialState \| null` | State for FiltersFormComponent |
+| `currentFilterValue` | `FiltersValue \| null` | Updated via (filtersChange), used on save |
+| `isSaving` | `boolean` | Disables the Save button |
+| `loadError`, `saveError`, `saveSuccess` | `string \| null` | UI messages |
 
 ### Two-stage load
 
 ```
 ngOnInit:
   isPlatformBrowser guard
-  initFromToken()                ← synchronicznie z JWT
-  await loadUserDataFromBackend()  ← async z API
+  initFromToken()                ← synchronously from the JWT
+  await loadUserDataFromBackend()  ← async from the API
 ```
 
 **`initFromToken()`:**
 ```typescript
-const profile = this.authService.getProfile();  // czyta tokenParsed
+const profile = this.authService.getProfile();  // reads tokenParsed
 this.email     = profile.email;
 this.firstName = profile.firstName ?? '';
 this.lastName  = profile.lastName  ?? '';
 ```
 
-> 💡 Imię i email są dostępne **natychmiast** z JWT — nie czekamy na backend dla podstawowych pól. To skraca czas do pierwszego sensownego widoku.
+> 💡 First name and email are available **immediately** from the JWT — we don't wait for the backend for the basic fields. This shortens the time to a first meaningful view.
 
 **`loadUserDataFromBackend()`:**
 ```
 try:
   me = await userApi.getMe()                  ← GET /v1/users/me
-  patchUserData(me)                            ← nadpisz dane z tokenu
+  patchUserData(me)                            ← override the token data
   try:
     profile = await userApi.getMyProfile()    ← GET /v1/users/me/profile
     patchProfileData(profile)
   catch (err):
     if err.status === 404:
       savedFilters = { selectedTechnologies: [], technologies: {}, seniority: {} }
-      return    ← 404 oczekiwany dla nowych użytkowników
-    throw err   ← inne błędy propagujemy
+      return    ← 404 is expected for new users
+    throw err   ← propagate other errors
 catch (err):
   loadError = 'Nie udało się pobrać danych profilu z backendu.'
 ```
 
-> ⚠️ **404 to NIE błąd** — nowy użytkownik nigdy nie zapisał profilu. Wewnętrzny try/catch obsługuje to gracefully.
+> ⚠️ **404 is NOT an error** — a new user never saved a profile. The inner try/catch handles it gracefully.
 
 ### CV upload flow
 
-Identyczny mechanizm jak na home (`handleFile` + `analyzeCV`), ale z dwoma różnicami:
+The same mechanism as on home (`handleFile` + `analyzeCV`), with two differences:
 
-1. **Po sukcesie:** synchronizuje `currentFilterValue` z nowymi technologiami żeby `onSave()` miał aktualne dane (bez tego stan formularza i `currentFilterValue` mogłyby się rozjechać).
-2. **Po sukcesie:** ustawia `currentCvDate` polską datą: `toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })` (np. „28.05.2026, 14:35").
+1. **On success:** it syncs `currentFilterValue` with the new technologies so `onSave()` has up-to-date data (without it the form state and `currentFilterValue` could drift apart).
+2. **On success:** it sets `currentCvDate` to a Polish date: `toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })` (e.g. "28.05.2026, 14:35").
 
 ### `onSave()` flow
 
 ```
-1. Guard: jeśli !currentFilterValue → 'Najpierw wybierz...'
+1. Guard: if !currentFilterValue → 'Najpierw wybierz...'
 2. payload = buildProfilePayload():
      {
        exp_level_id:   currentFilterValue.expLevelIds[0] ?? '',  ← single selection
        technology_ids: currentFilterValue.technologyIds ?? []
      }
-3. Walidacja: jeśli !exp_level_id → 'Wybierz poziom doświadczenia.'
-4. isSaving = true, czyść timer poprzedniego sukcesu
+3. Validation: if !exp_level_id → 'Wybierz poziom doświadczenia.'
+4. isSaving = true, clear the previous success timer
 5. await userApi.updateMyProfile(updatePayload)  ← PUT /v1/users/me/profile
-6. patchProfileData(savedProfile)  ← sync z odpowiedzią backendu (single source of truth)
+6. patchProfileData(savedProfile)  ← sync with the backend response (single source of truth)
 7. saveSuccess = 'Profil został zapisany.'
 8. saveSuccessTimer = setTimeout 3000ms → saveSuccess = null
 9. catch → saveError = 'Nie udało się zapisać profilu.'
 10. finally → isSaving = false
 ```
 
-### Uproszczony FiltersFormComponent
+### Simplified FiltersFormComponent
 
-Na `/profile` formularz jest **mocno okrojony**. Konfiguracja w szablonie:
+On `/profile` the form is **heavily trimmed**. Config in the template:
 
 ```html
 <app-filters-form
   [initialFilters]="savedFilters"
-  [singleExpLevelSelection]="true"  <!-- radio zamiast checkbox -->
+  [showApplyButton]="false"
+  summaryHeading="Technologie i doświadczenie"
+  [showSummaryHeader]="true"
   [showLocation]="false"
   [showWorkMode]="false"
   [showSalary]="false"
   [showRoles]="false"
   [showSites]="false"
-  [showApplyButton]="false"
+  [showExpLevel]="true"
+  [showTechnologies]="true"
+  [singleExpLevelSelection]="true"  <!-- radio instead of checkbox -->
   (filtersChange)="onFiltersChange($event)">
 </app-filters-form>
 ```
 
-Użytkownik widzi **tylko**: seniority (jeden poziom) + technologie.
+The user sees **only**: seniority (one level) + technologies.
 
-### Cykl życia
+### Lifecycle
 
 ```
 ngOnInit:
-  guard SSR → return
+  SSR guard → return
   initFromToken()
   await loadUserDataFromBackend()
 
 ngOnDestroy:
   scanTimers.forEach(clearTimeout)
   clearTimeout(saveSuccessTimer)
-  destroy$.next() + complete()  ← anuluje uploadCv jeśli trwa
+  destroy$.next() + complete()  ← cancels uploadCv if in progress
 ```
 
 ---
 
-## ℹ️ ABOUT `/about` — strona informacyjna
+## ℹ️ ABOUT `/about` — info page
 
-**Ścieżka:** `src/features/about/`
+**Path:** `src/features/about/`
 **Route:** `/about`
-**SSR mode:** `Prerender`
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `about.component.ts` | Pusty komponent — czysta prezentacja |
-| `about.component.html` | Statyczny content (zespół, technologie, misja) |
-| `about.component.css` | Layout, typografia |
+| `about.component.ts` | Empty component — pure presentation |
+| `about.component.html` | Static content (team, navigation cards) |
+| `about.component.css` | Layout, typography |
 
-### Implementacja
+### Implementation
 
 ```typescript
 @Component({
@@ -612,37 +615,34 @@ ngOnDestroy:
 export class AboutComponent {}
 ```
 
-**Brak:** logiki, API, OnInit, Signals. Wszystkie dane statyczne w HTML.
-
-**Korzyść z Prerender:** strona generowana raz przy buildzie → idealny SEO i TTFB.
+**No:** logic, API, OnInit, Signals. All data is static in the HTML.
 
 ---
 
-## 📜 LEGAL `/legal` — regulamin i FAQ
+## 📜 LEGAL `/legal` — terms and FAQ
 
-**Ścieżka:** `src/features/legal/`
+**Path:** `src/features/legal/`
 **Route:** `/legal`
-**SSR mode:** `Prerender`
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `legal.component.ts` | Logika zakładek + accordion FAQ |
-| `legal.component.html` | 2 zakładki, lista kroków, lista features, accordion FAQ |
-| `legal.component.css` | Layout zakładek, animacje accordion |
+| `legal.component.ts` | Tab logic + FAQ accordion |
+| `legal.component.html` | 2 tabs, step list, feature list, FAQ accordion |
+| `legal.component.css` | Tab layout, accordion animations |
 
-### Dwa stany aktywnej zakładki
+### Two active-tab states
 
 ```typescript
 activeTab: 'how' | 'terms' = 'how';
 ```
 
-### Synchronizacja z URL
+### URL sync
 
 ```typescript
 ngOnInit():
-  // snapshot zamiast subskrypcji - zakładka nie zmienia się przez nawigację zewnętrzną
+  // snapshot instead of a subscription - the tab doesn't change through external navigation
   const tab = this.route.snapshot.queryParamMap.get('tab');
   if (tab === 'how')   this.activeTab = 'how';
   if (tab === 'terms') this.activeTab = 'terms';
@@ -652,15 +652,15 @@ setTab(tab):
   this.router.navigate([], {
     relativeTo: this.route,
     queryParams: { tab },
-    replaceUrl: true,  ← KLUCZOWE: "Wstecz" wraca do poprzedniej strony, NIE do poprzedniej zakładki
+    replaceUrl: true,  ← KEY: "Back" returns to the previous page, NOT the previous tab
   });
 ```
 
-> 💡 `replaceUrl: true` jest świadomą decyzją UX — przełączanie zakładek nie powinno zaśmiecać historii przeglądarki.
+> 💡 `replaceUrl: true` is a deliberate UX decision — switching tabs shouldn't clutter the browser history.
 
-### Dane statyczne
+### Static data
 
-Wszystkie dane w klasie jako `readonly` properties (nie w HTML — łatwiejsze do edycji):
+All data lives in the class as `readonly` properties (not in HTML — easier to edit):
 
 ```typescript
 readonly steps = [
@@ -670,12 +670,12 @@ readonly steps = [
   { number: '04', icon: '🚀', title: 'Otwórz ofertę u źródła', desc: '...' },
 ];
 
-readonly features = [/* 6 obiektów z icon/title/desc */];
+readonly features = [/* 6 objects with icon/title/desc */];
 
-readonly faq = [/* 6 par q/a */];
+readonly faq = [/* 6 q/a pairs */];
 ```
 
-### FAQ accordion — wzorzec „jeden otwarty naraz"
+### FAQ accordion — "one open at a time" pattern
 
 ```typescript
 expandedFaq: number | null = null;
@@ -684,26 +684,26 @@ toggleFaq(index):
   this.expandedFaq = this.expandedFaq === index ? null : index;
 ```
 
-Kliknięcie pytania → otwiera (lub zamyka jeśli już otwarte). Kliknięcie innego → zamyka poprzednie i otwiera nowe (klasyczny accordion behavior).
+Clicking a question → opens it (or closes it if already open). Clicking another → closes the previous and opens the new (classic accordion behavior).
 
 ---
 
 ## 🧩 Shared: FiltersFormComponent ⭐
 
-**Ścieżka:** `src/app/shared/filters-form/`
+**Path:** `src/app/shared/filters-form/`
 **Selector:** `<app-filters-form>`
-**Używany przez:** Home, Offers, Profile
+**Used by:** Home, Offers, Profile
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `filters-form.component.ts` | Logika (FormGroup, forkJoin lookupy, patchValue/computeValue, salary slider) |
-| `filters-form.component.html` | Sekcje formularza (collapsible, conditional via @Input flags) |
-| `filters-form.component.css` | Layout sekcji, slider salary, summary header |
-| `filters-form.types.ts` | Eksport typów `FiltersValue`, `FiltersInitialState`, `FILTERS_STORAGE_KEY` |
+| `filters-form.component.ts` | Logic (FormGroup, forkJoin lookups, patchValue/computeValue, salary slider) |
+| `filters-form.component.html` | Form sections (conditional via @Input flags) |
+| `filters-form.component.css` | Section layout, salary slider, summary header |
+| `filters-form.types.ts` | Exports `FiltersValue`, `FiltersInitialState`, `FILTERS_STORAGE_KEY` |
 
-### Stałe eksportowane
+### Exported constants
 
 ```typescript
 export const SALARY_OPTIONS = [
@@ -715,61 +715,61 @@ export const MAX_SALARY_INDEX = SALARY_OPTIONS.length - 1;  // 25
 export const FILTERS_STORAGE_KEY = 'cv_analizer_candidate_filters';
 ```
 
-> 💡 Krok nieregularny — gęstszy przy niskich kwotach (typowy rynek IT), rzadszy przy wysokich.
+> 💡 An irregular step — denser at lower amounts (typical for the IT market), sparser at higher ones.
 
-### Inputs (kontrola widoczności i zachowania)
+### Inputs (visibility and behavior control)
 
-| Input | Default | Opis |
+| Input | Default | Description |
 |---|---|---|
-| `initialFilters` | `null` | Pre-fill z URL / localStorage / state |
-| `collapsible` | `false` | Czy całość można zwijać (header click) |
-| `initialCollapsed` | `false` | Czy startuje zwinięty |
-| `showSummaryHeader` | `false` | Header „Filtry" z licznikiem aktywnych |
-| `summaryHeading` | `'Filtry'` | Tekst nagłówka |
-| `showApplyButton` | `true` | Przycisk „Szukaj" |
-| `applyButtonLabel` | `'Szukaj ofert'` | Tekst przycisku |
-| `showProfileFillButton` | `false` | Przycisk „Uzupełnij z profilu" (tylko dla zalogowanych) |
-| `profileFillButtonLabel` | `'Uzupełnij z profilu'` | Tekst przycisku |
+| `initialFilters` | `null` | Pre-fill from URL / localStorage / state |
+| `collapsible` | `false` | Whether the whole form can collapse (header click) |
+| `initialCollapsed` | `false` | Whether it starts collapsed |
+| `showSummaryHeader` | `false` | "Filtry" header |
+| `summaryHeading` | `'Filtry'` | Header text |
+| `showApplyButton` | `true` | "Search" button |
+| `applyButtonLabel` | `'Szukaj ofert'` | Button text |
+| `showProfileFillButton` | `false` | "Fill from profile" button (logged-in users only) |
+| `profileFillButtonLabel` | `'Uzupełnij z profilu'` | Button text |
 | `profileFillButtonPosition` | `'top'` | `'top' \| 'above-technologies' \| 'header-right'` |
-| `singleExpLevelSelection` | `false` | Radio zamiast checkbox dla seniority (profile) |
-| `showLocation` | `true` | Sekcja lokalizacji |
-| `showExpLevel` | `true` | Sekcja seniority |
-| `showWorkMode` | `true` | Sekcja trybu pracy |
-| `showSalary` | `true` | Slider salary |
-| `showRoles` | `true` | Sekcja ról / specjalizacji |
-| `showTechnologies` | `true` | Sekcja technologii (z TechPickerem) |
-| `showSites` | `true` | Sekcja portali ogłoszeń |
+| `singleExpLevelSelection` | `false` | Radio instead of checkbox for seniority (profile) |
+| `showLocation` | `true` | Location section |
+| `showExpLevel` | `true` | Seniority section |
+| `showWorkMode` | `true` | Work mode section |
+| `showSalary` | `true` | Salary slider |
+| `showRoles` | `true` | Roles / specializations section |
+| `showTechnologies` | `true` | Technologies section (with TechPicker) |
+| `showSites` | `true` | Job boards section |
 
 ### Outputs
 
-| Output | Typ | Kiedy emitowany |
+| Output | Type | Emitted when |
 |---|---|---|
-| `ready` | `FiltersValue` | **Raz** po pierwszej inicjalizacji (forkJoin + ustawienie stanu). Offers czeka na to przed pierwszym fetchem. |
-| `filtersChange` | `FiltersValue` | Przy **każdej** zmianie formularza (debounce w nadrzędnym komponencie) |
-| `applyClicked` | `FiltersValue` | Klik „Szukaj" |
-| `profileFillClicked` | `void` | Klik „Uzupełnij z profilu" (nadrzędny komponent decyduje co zrobić) |
+| `ready` | `FiltersValue` | **Once** after the first initialization (forkJoin + state set). Offers waits for it before the first fetch. |
+| `filtersChange` | `FiltersValue` | On **every** form change (debounced in the parent component) |
+| `applyClicked` | `FiltersValue` | "Search" click |
+| `profileFillClicked` | `void` | "Fill from profile" click (the parent decides what to do) |
 
-### Stan komponentu (publiczny)
+### Component state (public)
 
-| Pole | Typ | Cel |
+| Field | Type | Purpose |
 |---|---|---|
-| `filtersForm` | `FormGroup \| null` | `null` dopóki forkJoin nie zakończy |
-| `isLoading` | `boolean` | Spinner dopóki lookupy się ładują |
-| `loadError` | `string \| null` | Błąd forkJoin |
-| `availableRoles` | `LookupItem[]` | Po forkJoin |
-| `availableTechs` | `LookupItem[]` | Po forkJoin |
-| `availableTechItems` | `LocationItem[]` | Te same w formacie `{id, name}` dla TechPickera |
-| `availableSites` | `LookupItem[]` | Po forkJoin |
-| `availableExpLevels` | `LookupItem[]` | Po forkJoin |
-| `availableWorkTypes` | `LookupItem[]` | Po forkJoin |
-| `availableLocations` | `LocationItem[]` | Po forkJoin, sortowane alfabetycznie |
-| `selectedLocations` | `LocationItem[]` | **POZA FormGroup** — picker ma własny stan |
-| `selectedTechnologies` | `LocationItem[]` | **POZA FormGroup** — picker ma własny stan |
-| `collapsed` | `boolean` | Stan zwinięcia |
-| `showAllRoles` | `boolean` | Toggle „Pokaż więcej ról" |
-| `techPickerReady` | `boolean` | Flaga dwuetapowego renderu |
+| `filtersForm` | `FormGroup \| null` | `null` until forkJoin finishes |
+| `isLoading` | `boolean` | Spinner while the lookups load |
+| `loadError` | `string \| null` | forkJoin error |
+| `availableRoles` | `LookupItem[]` | After forkJoin |
+| `availableTechs` | `LookupItem[]` | After forkJoin |
+| `availableTechItems` | `LocationItem[]` | The same in `{id, name}` format for the TechPicker |
+| `availableSites` | `LookupItem[]` | After forkJoin |
+| `availableExpLevels` | `LookupItem[]` | After forkJoin |
+| `availableWorkTypes` | `LookupItem[]` | After forkJoin |
+| `availableLocations` | `LocationItem[]` | After forkJoin, sorted alphabetically |
+| `selectedLocations` | `LocationItem[]` | **OUTSIDE the FormGroup** — the picker has its own state |
+| `selectedTechnologies` | `LocationItem[]` | **OUTSIDE the FormGroup** — the picker has its own state |
+| `collapsed` | `boolean` | Collapse state |
+| `showAllRoles` | `boolean` | "Show more roles" toggle |
+| `techPickerReady` | `boolean` | Two-step render flag |
 
-### Inicjalizacja — forkJoin równolegle
+### Initialization — forkJoin in parallel
 
 ```typescript
 forkJoin({
@@ -782,54 +782,54 @@ forkJoin({
 }).subscribe(...)
 ```
 
-`of([])` jako fallback gdy sekcja jest ukryta przez `@Input` — nie marnujemy requestu.
+`of([])` as a fallback when a section is hidden via `@Input` — we don't waste a request.
 
-### Deduplikacja
+### Deduplication
 
-`dedupeByKey(items)` — backend czasem zwraca duplikaty słowników (race condition w cache). Set-based dedup po `key`.
+`dedupeByKey(items)` — the backend sometimes returns duplicate lookups. Set-based dedup by `key`.
 
-### Dwuetapowy render TechPickera
+### Two-step TechPicker render
 
 ```typescript
 this.techPickerReady = false;
-this.cdr.detectChanges();          // synchroniczne ukrycie pickera
+this.cdr.detectChanges();          // synchronously hide the picker
 queueMicrotask(() => {
   this.techPickerReady = true;
-  this.cdr.detectChanges();        // pokaż picker z gotowym selectedTechnologies
+  this.cdr.detectChanges();        // show the picker with selectedTechnologies ready
   this.ready.emit(initial);
   this.filtersChange.emit(initial);
 });
 ```
 
-> ⚠️ **Anti-flicker pattern.** Bez tego TechPicker renderuje się zanim `selectedTechnologies` jest ustawione, co powoduje miganie pustego stanu na ułamek sekundy.
+> ⚠️ **Anti-flicker pattern.** Without it the TechPicker renders before `selectedTechnologies` is set, causing a flash of empty state for a split second.
 
-### Restore stanu z `initialFilters`
+### Restoring state from `initialFilters`
 
-**Priorytety dla lokalizacji:**
+**Location priority:**
 ```
-selectedLocations (pełne obiekty)  >  locationIds (tablica ID do wyszukania w availableLocations)
-```
-
-**Priorytety dla technologii:**
-```
-selectedTechnologies (pełne obiekty)  >  technologies (stary Record<id, boolean>)
+selectedLocations (full objects)  >  locationIds (array of IDs to look up in availableLocations)
 ```
 
-Backward-compat: stare zapisy w localStorage używają `Record<string, boolean>`, nowe przekazują `LocationItem[]`.
+**Technology priority:**
+```
+selectedTechnologies (full objects)  >  technologies (old Record<id, boolean>)
+```
 
-### Słowniki — wszystkie publiczne dla zewnętrznego użycia
+Backward-compat: old localStorage entries use `Record<string, boolean>`, new ones pass `LocationItem[]`.
 
-`OffersComponent` używa `filtersFormRef.availableSites`, `.availableWorkTypes`, `.availableRoles` itp. do formatowania kluczy na czytelne nazwy (`formatSource`, `getWorkModeLabel`). To dlatego słowniki są w polach **publicznych**.
+### Lookups — all public for external use
 
-### Cykl życia
+`OffersComponent` uses `filtersFormRef.availableSites`, `.availableWorkTypes`, `.availableRoles`, etc. to format keys into readable names (`formatSource`, `getWorkModeLabel`). That's why the lookups are in **public** fields.
+
+### Lifecycle
 
 ```
 ngOnInit:
   collapsed = collapsible && initialCollapsed
-  forkJoin(wszystkie lookupy) → buildForm() → subscribeFormChanges() → techPickerReady + ready + filtersChange
+  forkJoin(all lookups) → buildForm() → subscribeFormChanges() → techPickerReady + ready + filtersChange
 
 ngOnChanges:
-  jeśli initialFilters się zmieniło → patchValue(nowyStan)
+  if initialFilters changed → patchValue(newState)
 
 ngOnDestroy:
   destroy$.next() + complete()
@@ -839,18 +839,18 @@ ngOnDestroy:
 
 ## 🧭 Shared: NavbarComponent
 
-**Ścieżka:** `src/app/shared/navbar/`
+**Path:** `src/app/shared/navbar/`
 **Selector:** `<app-navbar>`
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `navbar.component.ts` | Gettery isAuthenticated / username z AuthService, login/logout |
-| `navbar.component.html` | Logo + linki (/, /offers, /about, /legal) + warunkowy login/logout |
+| `navbar.component.ts` | isAuthenticated / username getters from AuthService, login/logout |
+| `navbar.component.html` | Logo + links (/, /offers) + conditional login/logout |
 | `navbar.component.css` | Sticky header, glassmorphism |
 
-### Implementacja
+### Implementation
 
 ```typescript
 export class NavbarComponent {
@@ -864,28 +864,28 @@ export class NavbarComponent {
 }
 ```
 
-> 💡 Gettery (a nie pola) bo `authService.isAuthenticated` to **Signal** (funkcja). W szablonie: `*ngIf="isAuthenticated()"` — wywołanie funkcji.
+> 💡 Getters (not fields) because `authService.isAuthenticated` is a **Signal** (a function). In the template: `*ngIf="isAuthenticated()"` — calling the function.
 
-### Brak własnego stanu
+### No local state
 
-Cały stan pochodzi z `AuthService` (Signals). Komponent jest reaktywny — gdy `isAuthenticated` zmienia wartość, Angular odświeża widok automatycznie (signal-based change detection).
+All state comes from `AuthService` (Signals). The component is reactive — when `isAuthenticated` changes value, Angular refreshes the view automatically (signal-based change detection).
 
 ---
 
 ## 🦶 Shared: FooterComponent
 
-**Ścieżka:** `src/app/shared/footer/`
+**Path:** `src/app/shared/footer/`
 **Selector:** `<app-footer>`
 
-### Pliki
+### Files
 
-| Plik | Opis |
+| File | Description |
 |---|---|
-| `footer.component.ts` | Pusty (`RouterModule` dla `routerLink`) |
-| `footer.component.html` | Linki do `/legal`, `/about`, copyright, nazwa projektu |
-| `footer.component.css` | Layout grid stopki |
+| `footer.component.ts` | Empty (`RouterModule` for `routerLink`) |
+| `footer.component.html` | Links to `/legal`, `/about`, copyright, project name |
+| `footer.component.css` | Footer grid layout |
 
-### Implementacja
+### Implementation
 
 ```typescript
 @Component({
@@ -898,60 +898,60 @@ Cały stan pochodzi z `AuthService` (Signals). Komponent jest reaktywny — gdy 
 export class FooterComponent {}
 ```
 
-Klasa pusta. Cała wartość w HTML/CSS.
+Empty class. All the value is in the HTML/CSS.
 
 ---
 
 ## 🧠 Shared: TechPickerComponent
 
-**Ścieżka:** `src/app/shared/tech-picker/tech-picker.component.ts` (inline template/styles)
+**Path:** `src/app/shared/tech-picker/tech-picker.component.ts` (inline template/styles)
 **Selector:** `<app-tech-picker>`
 
-Multi-select z autocomplete dla **technologii**. Inline template + inline styles (mały komponent, łatwiej utrzymać w jednym pliku).
+A multi-select with autocomplete for **technologies**. Inline template + inline styles (a small component, easier to keep in one file).
 
 ### Inputs
 
-| Input | Typ | Opis |
+| Input | Type | Description |
 |---|---|---|
-| `technologies` | `LocationItem[]` | Lista dostępnych technologii (z LookupsApi) |
-| `selected` | `LocationItem[]` | Aktualnie wybrane (kontrolowane z zewnątrz) |
-| `placeholderEmpty` | `string?` | Placeholder gdy `selected.length === 0` |
-| `placeholderMore` | `string?` | Placeholder gdy są już wybrane |
+| `technologies` | `LocationItem[]` | List of available technologies (from LookupsApi) |
+| `selected` | `LocationItem[]` | Currently selected (controlled from outside) |
+
+> The placeholders are hardcoded in the template ("Wpisz lub wybierz technologię…" / "Dodaj kolejną…").
 
 ### Outputs
 
-| Output | Typ | Opis |
+| Output | Type | Description |
 |---|---|---|
-| `selectedChange` | `LocationItem[]` | Emit przy każdej zmianie wyboru |
+| `selectedChange` | `LocationItem[]` | Emitted on every selection change |
 
 ### UI elements
 
-- **Field** (`.tp-field`): chevron + tagi wybranych (z `×`) + input do wpisywania
-- **Badge** (`.tp-badge`): liczba wybranych
-- **Clear button** (`.tp-clear`): czyści cały wybór
-- **Dropdown** (`.tp-dropdown`): header z licznikiem + lista opcji z `[innerHTML]="highlight(item.name)"` (podświetlanie matchu)
+- **Field** (`.tp-field`): chevron + selected tags (with `×`) + a typing input
+- **Badge** (`.tp-badge`): the count of selected items
+- **Clear button** (`.tp-clear`): clears the whole selection
+- **Dropdown** (`.tp-dropdown`): header with a counter + an option list with `[innerHTML]="highlight(item.name)"` (match highlighting)
 
 ### Behavior
 
-- **Autocomplete** filtruje `technologies` po `query` (substring match, case-insensitive)
-- **Click outside** zamyka dropdown (`@HostListener`)
-- **Escape** zamyka dropdown
-- **Tab navigation** kompatybilna (button + input)
+- **Autocomplete** filters `technologies` by `query` (substring match, case-insensitive, excludes already-selected)
+- **Click outside** closes the dropdown (`@HostListener`)
+- **Escape** closes the dropdown
+- **Scroll** closes the dropdown (it would otherwise be aligned to the field's old position)
 
 ### Highlighting
 
-`highlight(name)` używa `highlightMatch(name, query, '#6366f1')` z `shared/highlight.ts` — zwraca HTML z `<strong style="color:#6366f1">` wokół trafienia, **escape'owany** przed XSS.
+`highlight(name)` uses `highlightMatch(name, query, '#4338ca')` from `shared/highlight.ts` — returns HTML with a `<strong style="color:#4338ca">` around the match, **escaped** against XSS.
 
 ---
 
 ## 📍 Shared: LocationPickerComponent
 
-**Ścieżka:** `src/app/shared/location-picker/location-picker.component.ts` (inline template/styles)
+**Path:** `src/app/shared/location-picker/location-picker.component.ts` (inline template/styles)
 **Selector:** `<app-location-picker>`
 
-Multi-select z autocomplete dla **miast/lokalizacji**. Bardzo podobny do TechPickera — wręcz dzieli z nim interfejs `LocationItem`.
+A multi-select with autocomplete for **cities/locations**. Very similar to the TechPicker — in fact it shares the `LocationItem` interface with it.
 
-### Eksportowany interfejs
+### Exported interface
 
 ```typescript
 export interface LocationItem {
@@ -960,45 +960,45 @@ export interface LocationItem {
 }
 ```
 
-> 💡 `LocationItem` jest używany **WSZĘDZIE** — w FiltersFormComponent, TechPickerComponent, FiltersInitialState/FiltersValue, w home/offers/profile. To główny typ słowników w aplikacji.
+> 💡 `LocationItem` is used **EVERYWHERE** — in FiltersFormComponent, TechPickerComponent, FiltersInitialState/FiltersValue, in home/offers/profile. It's the main lookup type in the app.
 
 ### Inputs
 
-| Input | Typ | Opis |
+| Input | Type | Description |
 |---|---|---|
-| `locations` | `LocationItem[]` | Lista dostępnych miast |
-| `selected` | `LocationItem[]` | Aktualnie wybrane |
+| `locations` | `LocationItem[]` | List of available cities |
+| `selected` | `LocationItem[]` | Currently selected |
 
 ### Outputs
 
-| Output | Typ | Opis |
+| Output | Type | Description |
 |---|---|---|
-| `selectedChange` | `LocationItem[]` | Emit przy każdej zmianie |
+| `selectedChange` | `LocationItem[]` | Emitted on every change |
 
 ### UI elements
 
-- **Field** (`.lp-field`): ikona pinezki + tagi (z `×`) + input
-- **Dropdown** (`.lp-dropdown`): lista opcji z highlight + komunikat „Brak wyników"
-- **Clear button** (`.lp-clear`): czyści cały wybór
+- **Field** (`.lp-field`): pin icon + tags (with `×`) + input
+- **Dropdown** (`.lp-dropdown`): option list with highlighting + a "Brak wyników" message
+- **Clear button** (`.lp-clear`): clears the whole selection
 
 ### Behavior
 
-- **mousedown na opcji** (nie click!) — bo `blur` na input odpaliłby się przed `click` i zamknął dropdown. `mousedown` jest przed `blur`.
-- **focus/blur** sterują `showDropdown` z drobnym opóźnieniem (`setTimeout 0`) żeby kliknięcie opcji zdążyło się zarejestrować.
+- **mousedown on an option** (not click!) — because `blur` on the input would fire before `click` and close the dropdown. `mousedown` fires before `blur`.
+- **focus/blur** drive `showDropdown` with a small delay (`setTimeout 160`) so an option click registers in time.
 
 ### Highlighting
 
-Tak jak TechPicker — `highlightMatch(name, query, '#6366f1')`.
+Like the TechPicker — `highlightMatch(name, query, '#4f46e5')`.
 
-> ⚠️ Praca zdalna jest **osobnym checkboxem** w FiltersFormComponent (`workMode.remote`), nie lokalizacją. Lista lokalizacji to fizyczne miasta.
+> ⚠️ Remote work is a **separate checkbox** in FiltersFormComponent (a work mode), not a location. The location list is physical cities.
 
 ---
 
 ## ✨ Shared: highlight.ts
 
-**Ścieżka:** `src/app/shared/highlight.ts`
+**Path:** `src/app/shared/highlight.ts`
 
-Helper do bezpiecznego podświetlania fragmentów tekstu pasujących do query (autocomplete dropdowns).
+A helper for safely highlighting parts of text matching a query (autocomplete dropdowns).
 
 ### API
 
@@ -1006,7 +1006,7 @@ Helper do bezpiecznego podświetlania fragmentów tekstu pasujących do query (a
 export function highlightMatch(name: string, query: string, color: string): string;
 ```
 
-### Implementacja
+### Implementation
 
 ```typescript
 function escapeHtml(str: string): string {
@@ -1030,23 +1030,23 @@ export function highlightMatch(name, query, color) {
 }
 ```
 
-### Bezpieczeństwo
+### Security
 
-> 🛡️ **XSS-safe.** `escapeHtml()` konwertuje wszystkie sekcje surowego tekstu przed wstawieniem do `<strong>`. Wynik jest wstrzykiwany przez `[innerHTML]` co normalnie byłoby niebezpieczne — dlatego escape jest **obowiązkowy**.
+> 🛡️ **XSS-safe.** `escapeHtml()` escapes every raw-text section before inserting it into `<strong>`. The result is injected via `[innerHTML]`, which would normally be dangerous — hence the escaping is **mandatory**.
 
-Co jest escapowane:
+What's escaped:
 - `&` → `&amp;`
 - `<` → `&lt;`
 - `>` → `&gt;`
 - `"` → `&quot;`
 
-Apostrofu (`'`) nie escape'ujemy bo nie używamy go w atrybutach inline z single quotes. Color przekazywany jako parametr `color: string` jest **kontrolowany przez kod** (hardcoded `'#6366f1'`), nie pochodzi od użytkownika.
+The apostrophe (`'`) is not escaped because we don't use it in inline attributes with single quotes. The `color` argument is **code-controlled** (the pickers pass `'#4338ca'` and `'#4f46e5'`), it never comes from the user.
 
 ---
 
-## 📚 Powiązane dokumenty
+## 📚 Related documents
 
 - [`README.md`](../README.md) — quick-start
-- [`docs/architecture.md`](architecture.md) — wzorce Angular (standalone, Signals, OnPush)
-- [`docs/api-services.md`](api-services.md) — serwisy API używane przez features
-- [`docs/auth-flow.md`](auth-flow.md) — Keycloak flow + authGuard chroniący `/profile`
+- [`docs/architecture.md`](architecture.md) — Angular patterns (standalone, Signals, OnPush)
+- [`docs/api-services.md`](api-services.md) — API services used by the features
+- [`docs/auth-flow.md`](auth-flow.md) — Keycloak flow + authGuard protecting `/profile`

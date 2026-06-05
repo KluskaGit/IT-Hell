@@ -1,8 +1,8 @@
-/* Strona /legal - dwie zakładki: "Jak to działa" i "Regulamin".
-   Zakładka zmienia się przez @if (DOM usuwany/tworzony), stąd fadeIn zamiast tranzycji wysokości. */
+/* /legal page - two tabs: "How it works" and "Terms".
+   The tab switches via @if (DOM removed/created), hence fadeIn instead of a height transition. */
 
-/* display: block wymagane bo Angular renderuje komponenty jako inline domyślnie.
-   Zmienne tu zamiast w :root - zasięg ograniczony do tego komponentu. */
+/* display: block required because Angular renders components as inline by default.
+   Variables here instead of in :root - scope limited to this component. */
 :host {
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -22,30 +22,30 @@
 
 /* === background === */
 
-/* Tlo strony przyklejone do viewportu - nie scrolluje sie wraz z trescia.
-   overflow: hidden zapobiega scrollbarowi gdy plamy wychodza poza viewport */
+/* Page background pinned to the viewport - does not scroll with the content.
+   overflow: hidden prevents a scrollbar when the blobs go outside the viewport */
 .background-glow {
   position: fixed; width: 100vw; height: 100vh;
   top: 0; left: 0; z-index: -1;
   background: var(--bg); overflow: hidden;
 }
 
-/* Plama prawa gorna - indigo 12% opacity */
+/* Top-right blob - indigo 12% opacity */
 .glow-1 {
   position: absolute; top: -10%; right: -5%;
   width: 50vw; height: 50vw;
   background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
 }
 
-/* Plama lewa dolna - ciemniejszy indigo, słabsza (8%) */
+/* Bottom-left blob - darker indigo, weaker (8%) */
 .glow-2 {
   position: absolute; bottom: -15%; left: -10%;
   width: 45vw; height: 45vw;
   background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
 }
 
-/* Trzecia plama srodkowa - potrzebna przy dluzszej zakladce "Regulamin"
-   ktora scrolluje sie poza dolna krawedz dwoch pozostalych plam */
+/* Third, middle blob - needed for the longer "Terms" tab
+   which scrolls past the bottom edge of the other two blobs */
 .glow-3 {
   position: absolute; top: 40%; left: 30%;
   width: 30vw; height: 30vw;
@@ -55,7 +55,7 @@
 
 /* === layout === */
 
-/* padding-top: 88px zostawia miejsce na fixed navbar (identyczne jak /home i /offers) */
+/* padding-top: 88px leaves room for the fixed navbar (same as /home and /offers) */
 .legal-wrapper {
   max-width: 900px;
   margin: 0 auto;
@@ -65,7 +65,7 @@
 
 /* === tabs === */
 
-/* padding 0.35rem zostawia miejsce na box-shadow aktywnej zakładki */
+/* padding 0.35rem leaves room for the active tab's box-shadow */
 .legal-tabs {
   display: flex; gap: 0.4rem;
   margin-bottom: 1.75rem;
@@ -76,7 +76,7 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
 
-/* flex: 1 sprawia ze oba przyciski maja rowna szerokosc niezaleznie od dlugosci tekstu */
+/* flex: 1 makes both buttons equal width regardless of text length */
 .legal-tabs button {
   flex: 1; padding: 0.75rem 0.75rem;
   border: none; border-radius: 12px;
@@ -90,16 +90,16 @@
 .tab-icon { font-size: 1rem; }
 .legal-tabs button:hover { background: #f1f5f9; color: var(--text-main); }
 
-/* Aktywna zakladka - pełne indigo z kolorowym cieniem pasujacym do tla przycisku */
+/* Active tab - solid indigo with a colored shadow matching the button background */
 .legal-tabs button.active {
   background: var(--primary); color: #fff;
   box-shadow: 0 4px 14px rgba(99,102,241,0.35);
 }
 
 
-/* === karta dokumentu (zakladka "Regulamin") === */
+/* === document card (the "Terms" tab) === */
 
-/* border-radius: 22px - większy niż reszta (16-18px) żeby wizualnie odróżnić "dokument" od kart interaktywnych */
+/* border-radius: 22px - larger than the rest (16-18px) to visually distinguish the "document" from interactive cards */
 .legal-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -121,7 +121,7 @@
 
 .legal-card section { margin-bottom: 2.25rem; }
 
-/* #f1f5f9 celowo jaśniejszy niż --border żeby linia nie konkurowała z ramką karty */
+/* #f1f5f9 deliberately lighter than --border so the line doesn't compete with the card border */
 .legal-card h2 {
   font-size: 1.05rem; font-weight: 800;
   color: var(--primary); margin: 0 0 0.85rem;
@@ -129,7 +129,7 @@
   border-bottom: 2px solid #f1f5f9;
 }
 
-/* line-height: 1.75 dla komfortowego czytania dlugich tekstow prawnych */
+/* line-height: 1.75 for comfortable reading of long legal text */
 .legal-card p {
   font-size: 0.95rem; line-height: 1.75;
   margin: 0 0 0.65rem; color: #334155;
@@ -140,7 +140,7 @@
 .legal-card strong { color: var(--text-main); font-weight: 700; }
 .legal-card a { color: var(--primary); }
 
-/* border: none usuwa domyslny styl <hr>, border-top zastepuje tylko gorna krawedz */
+/* border: none removes the default <hr> style, border-top replaces only the top edge */
 .legal-divider {
   border: none;
   border-top: 1.5px solid var(--border);
@@ -148,9 +148,9 @@
 }
 
 
-/* === blok informacyjny RODO === */
+/* === GDPR info block === */
 
-/* flex-start - ikona wyrównana do góry, nie do środka gdy tekst jest wieloliniowy */
+/* flex-start - the icon aligns to the top, not the center, when the text is multi-line */
 .rodo-highlight {
   display: flex; align-items: flex-start; gap: 1rem;
   background: var(--primary-light); border: 1px solid #c7d2fe;
@@ -159,14 +159,14 @@
 }
 
 .rodo-icon { font-size: 1.6rem; flex-shrink: 0; }
-/* #3730a3 - ciemny indigo na jasnoindigo tle, kontrast WCAG AA */
+/* #3730a3 - dark indigo on a light indigo background, WCAG AA contrast */
 .rodo-highlight p { margin: 0; font-size: 0.9rem; line-height: 1.65; color: #3730a3; }
 .rodo-check { margin-right: 0.4rem; }
 
 
-/* === zakladka "Jak to dziala" === */
+/* === "How it works" tab === */
 
-/* 6px translateY - subtelniejszy niż na /about (14px) bo zmiana zakładki to szybka akcja */
+/* 6px translateY - subtler than on /about (14px) because switching tabs is a quick action */
 .tab-content { animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -175,7 +175,7 @@
 
 .hero-block { text-align: center; padding: 2rem 1rem 2.5rem; }
 
-/* 100px = "zawsze okragle konce" niezaleznie od szerokosci elementu */
+/* 100px = "always rounded ends" regardless of element width */
 .hero-badge {
   display: inline-block;
   background: var(--primary-light); color: var(--primary);
@@ -191,21 +191,21 @@
   letter-spacing: -0.75px;
 }
 
-/* max-width: 520px - optymalna dlugosc linii do czytania (ok. 70 znakow) */
+/* max-width: 520px - optimal line length for reading (about 70 characters) */
 .hero-sub {
   font-size: 1.05rem; color: var(--text-sub);
   max-width: 520px; margin: 0 auto; line-height: 1.65;
 }
 
 
-/* === kroki === */
+/* === steps === */
 
 .steps-section { margin-bottom: 3rem; }
 
-/* column zamiast grid - kroki są sekwencyjne i opisy potrzebują pełnej szerokości */
+/* column instead of grid - the steps are sequential and the descriptions need full width */
 .steps-list { display: flex; flex-direction: column; gap: 1rem; }
 
-/* flex-start - ikona i numer wyrównują się do góry gdy opis jest wieloliniowy */
+/* flex-start - the icon and number align to the top when the description is multi-line */
 .step-card {
   display: flex; align-items: flex-start; gap: 1.25rem;
   background: var(--card-bg);
@@ -216,7 +216,7 @@
 }
 .step-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.1); }
 
-/* flex-shrink: 0 na numerze i ikonie - nie kurczy sie gdy opis obok jest dlugi */
+/* flex-shrink: 0 on the number and icon - they don't shrink when the description next to them is long */
 .step-number {
   font-size: 0.75rem; font-weight: 900;
   color: var(--primary); background: var(--primary-light);
@@ -229,12 +229,12 @@
 .step-body p { font-size: 0.9rem; color: var(--text-sub); line-height: 1.65; margin: 0; }
 
 
-/* === funkcjonalnosci === */
+/* === features === */
 
 .features-section { margin-bottom: 3rem; }
 .section-title { font-size: 1.3rem; font-weight: 900; color: var(--text-main); margin: 0 0 1.25rem; letter-spacing: -0.3px; }
 
-/* auto-fill zamiast auto-fit - kolumny nie rozciągają się gdy jest ich mniej niż mieści się w wierszu */
+/* auto-fill instead of auto-fit - columns don't stretch when there are fewer than fit in a row */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -253,19 +253,19 @@
 .feature-card p { font-size: 0.87rem; color: var(--text-sub); line-height: 1.6; margin: 0; }
 
 
-/* === stack technologiczny === */
+/* === technology stack === */
 
 .tech-section { margin-bottom: 3rem; }
 .tech-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 
-/* border: 1px solid bez wartosci - kolor pochodzi z podklas (.frontend, .backend itp.) */
+/* border: 1px solid with no value - the color comes from the subclasses (.frontend, .backend, etc.) */
 .tech-badge {
   font-size: 0.8rem; font-weight: 700;
   padding: 0.35rem 0.8rem; border-radius: 100px;
   border: 1px solid;
 }
 
-/* Kolor odznaki dobrany do "marki" technologii */
+/* Badge color matched to the technology's "brand" */
 .tech-badge.frontend  { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 .tech-badge.backend   { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
 .tech-badge.db        { background: #fefce8; color: #ca8a04; border-color: #fde68a; }
@@ -280,14 +280,14 @@
 .faq-section { margin-bottom: 1rem; }
 .faq-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
-/* overflow: hidden potrzebne żeby border-radius działał na .faq-answer */
+/* overflow: hidden needed so border-radius works on .faq-answer */
 .faq-item {
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 14px; overflow: hidden; transition: box-shadow 0.2s;
 }
 .faq-item.open { border-color: #c7d2fe; box-shadow: 0 4px 16px rgba(99,102,241,0.1); }
 
-/* background: transparent usuwa domyslne szare tlo <button> */
+/* background: transparent removes the default gray <button> background */
 .faq-question {
   width: 100%; display: flex; align-items: center;
   justify-content: space-between; gap: 1rem;
@@ -300,7 +300,7 @@
 .faq-question:hover { background: #f8fafc; }
 .faq-chevron { color: var(--primary); flex-shrink: 0; font-size: 0.75rem; }
 
-/* padding-top osobno po border-top - shorthand padding musiałby być nadpisany */
+/* padding-top set separately after border-top - the padding shorthand would have to be overridden */
 .faq-answer {
   padding: 0 1.4rem 1.1rem;
   font-size: 0.9rem; color: var(--text-sub);
@@ -313,22 +313,22 @@
 
 .cta-section { margin-bottom: 1rem; }
 
-/* flex-wrap: wrap - na wąskich ekranach tekst i przyciski zawijaja sie do nowych wierszy */
+/* flex-wrap: wrap - on narrow screens the text and buttons wrap to new lines */
 .cta-card {
   border-radius: 20px; padding: 2rem 2.25rem;
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 1.5rem;
 }
 
-/* Gradient zalogowany: indigo -> zielony (konto aktywne / gotowe)
-   Gradient gosc: indigo -> fiolet (zacheta do rejestracji) */
+/* Logged-in gradient: indigo -> green (account active / ready)
+   Guest gradient: indigo -> purple (encouragement to register) */
 .cta-logged { background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%); border: 1px solid #c7d2fe; }
 .cta-guest  { background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%); border: 1px solid #c7d2fe; }
 
 .cta-text h3 { font-size: 1.15rem; font-weight: 900; color: var(--text-main); margin: 0 0 0.35rem; }
 .cta-text p  { font-size: 0.9rem; color: var(--text-sub); margin: 0; line-height: 1.55; }
 
-/* flex-shrink: 0 - przyciski nie kurczy sie gdy tekst obok zajmuje wiecej miejsca */
+/* flex-shrink: 0 - the buttons don't shrink when the text next to them takes more space */
 .cta-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0; }
 
 .cta-btn {
@@ -337,18 +337,18 @@
   padding: 0.6rem 1.25rem; transition: all 0.2s; white-space: nowrap;
 }
 
-/* Kolorowy cien pasuje do koloru tla przycisku (glow effect) */
+/* The colored shadow matches the button's background color (glow effect) */
 .cta-btn.primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
 .cta-btn.primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(99,102,241,0.4); }
 
-/* Ghost button - bialy z indigo ramka */
+/* Ghost button - white with an indigo border */
 .cta-btn.secondary { background: var(--card-bg); color: var(--primary); border: 1px solid #c7d2fe; }
 .cta-btn.secondary:hover { background: var(--primary-light); }
 
 
-/* === responsywnosc === */
+/* === responsiveness === */
 
-/* 640px - dostosowania tylko dla paddingu, font-size i ukrycia tab-icon żeby tekst się zmieścił */
+/* 640px - adjustments only for padding, font-size and hiding the tab-icon so the text fits */
 @media (max-width: 640px) {
   .legal-card { padding: 1.75rem 1.25rem; }
   .legal-card h1 { font-size: 1.4rem; }

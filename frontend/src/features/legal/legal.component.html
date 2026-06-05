@@ -1,7 +1,7 @@
 <app-navbar></app-navbar>
 
-<!-- trzy rozmyte plamy w tle, position:fixed - nie scrollują się z treścią.
-     glow-3 potrzebna przy dłuższej zakładce "Regulamin" która wychodzi poza dwie pozostałe -->
+<!-- three blurred background blobs, position:fixed - they don't scroll with the content.
+     glow-3 is needed for the longer "Terms" tab which extends past the other two -->
 <div class="background-glow">
   <div class="glow-1"></div>
   <div class="glow-2"></div>
@@ -10,7 +10,7 @@
 
 <div class="legal-wrapper">
 
-  <!-- setTab() aktualizuje URL przez replaceUrl - "Wstecz" wraca do poprzedniej strony, nie zakładki -->
+  <!-- setTab() updates the URL via replaceUrl - "Back" returns to the previous page, not the previous tab -->
   <nav class="legal-tabs">
     <button [class.active]="activeTab === 'how'" (click)="setTab('how')">
       <span class="tab-icon">⚡</span> Jak to działa
@@ -20,10 +20,10 @@
     </button>
   </nav>
 
-  <!-- @if usuwa/tworzy blok DOM przy zmianie zakładki, stąd animacja fadeIn na .tab-content
-       zamiast tranzycji wysokości - nie ma czego animować gdy element nie istnieje -->
+  <!-- @if removes/creates the DOM block on tab change, hence the fadeIn animation on .tab-content
+       instead of a height transition - there's nothing to animate when the element doesn't exist -->
 
-  <!-- === zakładka: jak to działa === -->
+  <!-- === tab: how it works === -->
   @if (activeTab === 'how') {
   <div class="tab-content">
 
@@ -33,7 +33,7 @@
       <p class="hero-sub">Agregator ofert IT z wielu portali pracy z mocnymi filtrami i automatycznym wykrywaniem technologii z Twojego CV — w czterech krokach.</p>
     </div>
 
-    <!-- track step.number zamiast $index bo mamy unikalne numery kroków "01"-"04" -->
+    <!-- track step.number instead of $index because we have unique step numbers "01"-"04" -->
     <section class="steps-section">
       <div class="steps-list">
         @for (step of steps; track step.number) {
@@ -49,7 +49,7 @@
       </div>
     </section>
 
-    <!-- track $index bo obiekty features nie mają unikalnego pola ID -->
+    <!-- track $index because the feature objects have no unique ID field -->
     <section class="features-section">
       <h2 class="section-title">Co wyróżnia nasz serwis?</h2>
       <div class="features-grid">
@@ -76,7 +76,7 @@
       </div>
     </section>
 
-    <!-- let i = $index potrzebne żeby porównać indeks z expandedFaq w [class.open] i toggleFaq -->
+    <!-- let i = $index needed to compare the index with expandedFaq in [class.open] and toggleFaq -->
     <section class="faq-section">
       <h2 class="section-title">Najczęstsze pytania</h2>
       <div class="faq-list">
@@ -86,7 +86,7 @@
               <span>{{ item.q }}</span>
               <span class="faq-chevron">{{ expandedFaq === i ? '▲' : '▼' }}</span>
             </button>
-            <!-- @if usuwa odpowiedź z DOM gdy zamknięta, nie tylko ukrywa przez display:none -->
+            <!-- @if removes the answer from the DOM when closed, not just hides it via display:none -->
             @if (expandedFaq === i) {
               <div class="faq-answer">{{ item.a }}</div>
             }
@@ -124,7 +124,7 @@
   </div>
   }
 
-  <!-- === zakładka: regulamin === -->
+  <!-- === tab: terms === -->
   @if (activeTab === 'terms') {
   <div class="legal-card tab-content">
     <h1>Regulamin Serwisu CV_ANALIZER</h1>
