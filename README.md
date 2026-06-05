@@ -69,7 +69,7 @@ To get a local copy up and running, follow these simple steps.
 
 
 Once the services are running, you can access the following entry points:
-
+*  **Frontend**: [http://localhost:4200](http://localhost:4200)
 *   **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs) (Swagger UI)
 *   **Keycloak Admin**: [http://localhost:8080](http://localhost:8080) (Default credentials: `admin`/`admin`)
 *   **PostgreSQL**: Exposed on the port specified in your `.env`
@@ -97,3 +97,6 @@ IT-Hell follows a microservices architecture to handle the full lifecycle of job
 
 ## Not implemented features
 * **User account removal/editing**: Currently, users cannot edit personal informations or remove their accounts. This feature is planned for future development.
+* **Sorting offers**: The current implementation does not support sorting job offers by criteria such as date or relevance. This feature is also planned for future development.
+* **Dynamic filters**: Since filter is selected others are not updated. For example, if user selects "AI/ML" specialization, the technologies filter will not be updated to show only technologies related to AI/ML. This feature is planned for future development.
+* **The same offer from different sources**: The system does not currently handle duplicate job offers that may appear on multiple job boards. This feature is planned for future development.
