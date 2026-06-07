@@ -2,6 +2,46 @@
 
 The backend code is organized around a three-tier architecture, which facilitates testing and managing complex database operations.
 
+## Getting started
+1. **Environment Setup**:
+   - Ensure you have Python 3.13+ installed.
+   - Install the [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager if you haven't installed yet.
+   - Ensure you have configured PostgreSQL, Redis, and Keycloak correctly.
+2. **Install dependencies**:
+   - Run `uv sync` to install the required dependencies from `pyproject.toml`.
+3. **Setup environment variables**:
+   - Copy the `.env_template` file to `.env` in the root of the backend directory and adjust the values as needed:
+     ```bash
+     cp .env_template .env
+     ```
+     ```
+      POSTGRES_USER=
+      POSTGRES_PASSWORD=
+      POSTGRES_HOST=
+      POSTGRES_PORT=
+      POSTGRES_DB=
+
+      KEYCLOAK_URL=
+      KEYCLOAK_REALM_NAME=
+      KEYCLOAK_CLIENT_ID=
+      KEYCLOAK_ALGORITHM=
+
+      REDIS_HOST=
+      REDIS_PORT=
+      REDIS_DB=
+      REDIS_PASSWORD=
+      REDIS_STREAM=
+      REDIS_GROUP=
+      REDIS_CONSUMER=
+
+     ```
+4. **Run backend**:
+   - Start the FastAPI development server with auto-reload:
+     ```bash
+     uv run uvicorn src.api.main:app --reload
+     ```
+     *(Note: Adjust `src.main:app` if your FastAPI application instance is located elsewhere)*
+
 ##  Layered Architecture
 
 1. **Models (`src/models/`)**: Data layer mapped to a relational database (PostgreSQL) using SQLAlchemy 2.0. It contains class definitions (entities), table structures, and relationships between them (e.g., `UserProfile`, `Technology`).
