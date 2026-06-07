@@ -27,7 +27,7 @@ The `worker` module is an asynchronous background service responsible for consum
       REDIS_CONSUMER=
 
      ```
-3. **Run the Worker**:
+4. **Run the Worker**:
    - Execute `uv run -m worker.main` to start the worker process. It will continuously listen for new job offers in the Redis stream and process them accordingly.
 
 ## Architecture and Data Flow
