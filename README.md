@@ -89,6 +89,21 @@ IT-Hell follows a microservices architecture to handle the full lifecycle of job
 ### System architecture diagram
 ![System Architecture](images/system-architecture-diagram.png)
 
+### Cloud migration
+Since the system is designed with microservices and containerization in mind, it was easily migrated to Azure. The following services were used for the migration:
+
+* **Database**: Azure Database for PostgreSQL - Flexible Server
+* **Private zone (not accessible from the outside)**:
+  * **Redis**: Azure Container Apps
+  * **Worker**: Azure Container Apps
+  * **Scrapers**: Azure Container Jobs
+
+* **Public zone**:
+  * **Frontend**: Azure Static Web Apps
+  * **Backend**: Azure Container Apps
+  * **Keycloak**: Azure Container Apps
+
+
 
 ## Features
 * **Autofill technologies from CV**: After uploading a CV, the system automatically extracts technologies and applies them as filters for job search.
